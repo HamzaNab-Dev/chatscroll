@@ -1,0 +1,47 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+.vs/
+.vscode/
+*.log
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment
+.env
+.env.local
+.env*.local
+.env.production
+appsettings.Development.json
+appsettings.Local.json
+
+# AWS / Secrets
+.aws-sam/
+aws-credentials.json
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+*.iml
+.idea/
+.vscode/settings.json
+
+# Misc
+*.swp
+*.swo
+coverage/
+.nyc_output/
