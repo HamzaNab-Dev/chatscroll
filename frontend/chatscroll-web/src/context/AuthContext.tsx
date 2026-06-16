@@ -7,7 +7,28 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { isCognitoConfigured } from "@/lib/auth-config";
+import { Amplify } from "aws-amplify";
+import {
+  signIn as amplifySignIn,
+  signUp as amplifySignUp,
+  confirmSignUp as amplifyConfirmSignUp,
+  signOut as amplifySignOut,
+  getCurrentUser,
+  fetchAuthSession,
+} from "aws-amplify/auth";
+import { isCognitoConfigured, cognitoConfig } from "@/lib/auth-config";
+
+// Configure Amplify once on the client when Cognito is available
+if (typeof window !== "undefined" && isCognitoConfigured) {
+  Amplify.configure({
+    Auth: {
+      Cognito: {
+        userPoolId: cognitoConfig.userPoolId,
+        userPoolClientId: cognitoConfig.userPoolClientId,
+      },
+    },
+  });
+}
 
 export type AuthUser = {
   id: string;
@@ -26,6 +47,7 @@ type AuthContextType = {
   authState: AuthState;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  confirmSignUp: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
   user: AuthUser | null;
@@ -49,17 +71,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    try {
-      const storedUser = localStorage.getItem("chatscroll_user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser) as AuthUser;
+    // Restore an existing Amplify/Cognito session on page load
+    const restore = async () => {
+      try {
+        const { userId } = await getCurrentUser();
+        const session = await fetchAuthSession();
+        const idToken = session.tokens?.idToken;
+        const payload = idToken?.payload ?? {};
+        const user: AuthUser = {
+          id: userId,
+          email: String(payload["email"] ?? ""),
+          displayName: String(
+            payload["name"] ?? String(payload["email"] ?? "").split("@")[0]
+          ),
+          plan: "free",
+          token: idToken?.toString(),
+        };
         setAuthState({ status: "authenticated", user });
-      } else {
+      } catch {
         setAuthState({ status: "unauthenticated" });
       }
-    } catch {
-      setAuthState({ status: "unauthenticated" });
-    }
+    };
+
+    restore();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -69,46 +103,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         displayName: email.split("@")[0],
       };
-      localStorage.setItem("chatscroll_user", JSON.stringify(user));
       setAuthState({ status: "authenticated", user });
       return;
     }
 
-    // Phase 6: integrate aws-amplify v6 Cognito sign-in here
-    // import { signIn } from 'aws-amplify/auth';
-    // const result = await signIn({ username: email, password });
-    throw new Error("Cognito sign-in: configure AWS_COGNITO_* env vars and integrate aws-amplify in Phase 6");
+    const { nextStep } = await amplifySignIn({ username: email, password });
+
+    if (nextStep.signInStep === "CONFIRM_SIGN_UP") {
+      throw new Error(
+        "Please verify your email first. Check your inbox for the confirmation code."
+      );
+    }
+    if (nextStep.signInStep !== "DONE") {
+      throw new Error(`Unexpected sign-in step: ${nextStep.signInStep}`);
+    }
+
+    const { userId } = await getCurrentUser();
+    const session = await fetchAuthSession();
+    const idToken = session.tokens?.idToken;
+    const payload = idToken?.payload ?? {};
+    const user: AuthUser = {
+      id: userId,
+      email: String(payload["email"] ?? email),
+      displayName: String(
+        payload["name"] ?? String(payload["email"] ?? email).split("@")[0]
+      ),
+      plan: "free",
+      token: idToken?.toString(),
+    };
+    setAuthState({ status: "authenticated", user });
   };
 
   const signUp = async (email: string, password: string, displayName: string) => {
     if (!isCognitoConfigured) {
-      const user: AuthUser = {
-        ...DEV_USER,
-        email,
-        displayName,
-      };
-      localStorage.setItem("chatscroll_user", JSON.stringify(user));
+      const user: AuthUser = { ...DEV_USER, email, displayName };
       setAuthState({ status: "authenticated", user });
       return;
     }
 
-    // Phase 6: integrate aws-amplify v6 Cognito sign-up here
-    // import { signUp } from 'aws-amplify/auth';
-    // await signUp({ username: email, password, options: { userAttributes: { email, name: displayName } } });
-    throw new Error("Cognito sign-up: configure AWS_COGNITO_* env vars and integrate aws-amplify in Phase 6");
+    await amplifySignUp({
+      username: email,
+      password,
+      options: {
+        userAttributes: { email, name: displayName },
+      },
+    });
+    // Cognito sends a 6-digit code to the user's email.
+    // Caller should now prompt for that code and call confirmSignUp.
+  };
+
+  const confirmSignUp = async (email: string, code: string) => {
+    await amplifyConfirmSignUp({ username: email, confirmationCode: code });
   };
 
   const signOut = async () => {
-    localStorage.removeItem("chatscroll_user");
-
-    if (!isCognitoConfigured) {
-      setAuthState({ status: "unauthenticated" });
-      return;
+    if (isCognitoConfigured) {
+      await amplifySignOut();
     }
-
-    // Phase 6: integrate aws-amplify v6 Cognito sign-out here
-    // import { signOut } from 'aws-amplify/auth';
-    // await signOut();
     setAuthState({ status: "unauthenticated" });
   };
 
@@ -118,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authState,
         signIn,
         signUp,
+        confirmSignUp,
         signOut,
         isAuthenticated: authState.status === "authenticated",
         user: authState.status === "authenticated" ? authState.user : null,

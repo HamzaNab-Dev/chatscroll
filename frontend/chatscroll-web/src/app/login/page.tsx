@@ -2,21 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ScrollText, Eye, EyeOff, Loader2 } from "lucide-react";
+import { ScrollText, Eye, EyeOff, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { isCognitoConfigured } from "@/lib/auth-config";
 import { cn } from "@/lib/utils";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "verify";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, confirmSignUp } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,14 +33,22 @@ export default function LoginPage() {
       if (mode === "signin") {
         await signIn(email, password);
         router.push("/");
-      } else {
+
+      } else if (mode === "signup") {
         await signUp(email, password, displayName);
         if (isCognitoConfigured) {
-          setSuccess("Account created! Check your email to verify, then sign in.");
-          setMode("signin");
+          // Switch to verification step — email with 6-digit code was sent
+          setMode("verify");
+          setSuccess(`Verification code sent to ${email}`);
         } else {
           router.push("/");
         }
+
+      } else if (mode === "verify") {
+        await confirmSignUp(email, verifyCode.trim());
+        setSuccess("Email verified! You can now sign in.");
+        setVerifyCode("");
+        setMode("signin");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
@@ -72,80 +81,110 @@ export default function LoginPage() {
         )}
 
         <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-5">
-          <div className="flex rounded-lg bg-slate-800/60 p-1">
-            {(["signin", "signup"] as Mode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => {
-                  setMode(m);
-                  setError("");
-                }}
-                className={cn(
-                  "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
-                  mode === m
-                    ? "bg-slate-700 text-slate-100 shadow-sm"
-                    : "text-slate-500 hover:text-slate-300"
-                )}
-              >
-                {m === "signin" ? "Sign In" : "Sign Up"}
-              </button>
-            ))}
-          </div>
+          {/* Tab switcher — hidden during verify step */}
+          {mode !== "verify" && (
+            <div className="flex rounded-lg bg-slate-800/60 p-1">
+              {(["signin", "signup"] as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); setError(""); setSuccess(""); }}
+                  className={cn(
+                    "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
+                    mode === m
+                      ? "bg-slate-700 text-slate-100 shadow-sm"
+                      : "text-slate-500 hover:text-slate-300"
+                  )}
+                >
+                  {m === "signin" ? "Sign In" : "Sign Up"}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Verify email step */}
+          {mode === "verify" && (
+            <div className="flex items-center gap-3 pb-1">
+              <div className="w-9 h-9 rounded-xl bg-amber-900/40 border border-amber-700/40 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-4 h-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-200">Check your email</p>
+                <p className="text-xs text-slate-500">Enter the 6-digit code sent to {email}</p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "signup" && (
+            {mode === "verify" ? (
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-slate-400">
-                  Display Name
+                  Verification Code
                 </label>
                 <input
                   type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   required
-                  placeholder="Hamza"
-                  className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                  placeholder="123456"
+                  maxLength={6}
+                  className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50 tracking-[0.3em] text-center font-mono text-base"
+                  autoComplete="one-time-code"
+                  autoFocus
                 />
               </div>
+            ) : (
+              <>
+                {mode === "signup" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-400">
+                      Display Name
+                    </label>
+                    <input
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      required
+                      placeholder="Hamza"
+                      className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-400">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="hamza@example.com"
+                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-400">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 pr-10 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-400">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="hamza@example.com"
-                className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-400">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 pr-10 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
 
             {error && (
               <div className="bg-red-950/40 border border-red-800/40 rounded-xl px-4 py-2.5">
@@ -161,17 +200,29 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (mode === "verify" && verifyCode.length !== 6)}
               className="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 rounded-xl"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : mode === "signin" ? (
                 "Sign In"
-              ) : (
+              ) : mode === "signup" ? (
                 "Create Account"
+              ) : (
+                "Verify Email"
               )}
             </Button>
+
+            {mode === "verify" && (
+              <button
+                type="button"
+                onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}
+                className="w-full text-xs text-slate-600 hover:text-slate-400 transition-colors"
+              >
+                ← Back to sign up
+              </button>
+            )}
           </form>
         </div>
 
