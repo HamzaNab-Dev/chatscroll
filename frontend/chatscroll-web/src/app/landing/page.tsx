@@ -100,25 +100,25 @@ const PLANS = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-slate-800 max-w-6xl mx-auto">
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-800 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
             <ScrollText className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold text-slate-100 tracking-tight">ChatScroll</span>
+          <span className="font-bold text-gray-900 dark:text-slate-100 tracking-tight">ChatScroll</span>
         </div>
         <div className="flex items-center gap-4">
           <Link
             href="#pricing"
-            className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors"
           >
             Pricing
           </Link>
           <Link
             href="/login"
-            className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
+            className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors"
           >
             Sign in
           </Link>
@@ -133,19 +133,19 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 bg-amber-950/40 border border-amber-800/30 rounded-full px-4 py-1.5 text-xs text-amber-400 mb-8">
+        <div className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/30 rounded-full px-4 py-1.5 text-xs text-amber-600 dark:text-amber-400 mb-8">
           <Zap className="w-3 h-3" />
           Built for the AWS H0 Hackathon · Aurora PostgreSQL + Bedrock
         </div>
 
-        <h1 className="text-4xl sm:text-5xl font-bold text-slate-100 leading-tight mb-6">
+        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-slate-100 leading-tight mb-6">
           Every question becomes{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">
             lasting knowledge
           </span>
         </h1>
 
-        <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
           ChatScroll turns every AI conversation into permanent, organized knowledge.
           Ask questions on the left. Watch your personal knowledge tree grow on the right.
         </p>
@@ -159,47 +159,47 @@ export default function LandingPage() {
           </Link>
           <Link
             href="#how-it-works"
-            className="text-slate-400 hover:text-slate-200 transition-colors text-base"
+            className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors text-base"
           >
             See how it works
           </Link>
         </div>
 
         {/* Hero visual */}
-        <div className="mt-14 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 text-left max-w-2xl mx-auto">
+        <div className="mt-14 rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-4 text-left max-w-2xl mx-auto shadow-sm dark:shadow-none">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-3 h-3 rounded-full bg-red-500/60" />
             <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
             <div className="w-3 h-3 rounded-full bg-green-500/60" />
-            <span className="text-xs text-slate-600 ml-2">ChatScroll</span>
+            <span className="text-xs text-gray-400 dark:text-slate-600 ml-2">ChatScroll</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-slate-950 rounded-lg p-3 border border-slate-800">
-              <div className="text-xs text-slate-500 mb-2">Chat</div>
-              <div className="bg-amber-700/20 border border-amber-700/30 rounded-lg p-2 text-xs text-amber-200 mb-2">
+            <div className="bg-gray-50 dark:bg-slate-950 rounded-lg p-3 border border-gray-200 dark:border-slate-800">
+              <div className="text-xs text-gray-400 dark:text-slate-500 mb-2">Chat</div>
+              <div className="bg-amber-50 dark:bg-amber-700/20 border border-amber-200 dark:border-amber-700/30 rounded-lg p-2 text-xs text-amber-800 dark:text-amber-200 mb-2">
                 What is dependency injection?
               </div>
-              <div className="bg-slate-800/60 rounded-lg p-2 text-xs text-slate-400">
+              <div className="bg-gray-100 dark:bg-slate-800/60 rounded-lg p-2 text-xs text-gray-600 dark:text-slate-400">
                 Dependency Injection (DI) is a design pattern where dependencies are provided from outside rather than created internally...
               </div>
-              <div className="mt-2 bg-slate-800/40 border border-amber-600/20 rounded-lg p-2 text-xs text-amber-400">
+              <div className="mt-2 bg-gray-50 dark:bg-slate-800/40 border border-amber-200 dark:border-amber-600/20 rounded-lg p-2 text-xs text-amber-600 dark:text-amber-400">
                 💾 Save to programming.dotnet?
               </div>
             </div>
-            <div className="bg-slate-950 rounded-lg p-3 border border-slate-800">
-              <div className="text-xs text-slate-500 mb-2">Knowledge Tree</div>
+            <div className="bg-gray-50 dark:bg-slate-950 rounded-lg p-3 border border-gray-200 dark:border-slate-800">
+              <div className="text-xs text-gray-400 dark:text-slate-500 mb-2">Knowledge Tree</div>
               <div className="space-y-1.5">
                 {["📁 Programming", "  📂 .NET", "    📄 DI Pattern", "📁 Medicine"].map((item) => (
-                  <div key={item} className="text-xs text-slate-500">{item}</div>
+                  <div key={item} className="text-xs text-gray-500 dark:text-slate-500">{item}</div>
                 ))}
               </div>
-              <div className="mt-3 border-t border-slate-800 pt-2">
-                <div className="text-xs text-slate-600 mb-1">This week</div>
+              <div className="mt-3 border-t border-gray-200 dark:border-slate-800 pt-2">
+                <div className="text-xs text-gray-400 dark:text-slate-600 mb-1">This week</div>
                 <div className="flex items-end gap-1 h-6">
                   {[1, 3, 2, 4, 1, 3, 5].map((h, i) => (
                     <div
                       key={i}
-                      className="flex-1 bg-amber-500/50 rounded-sm"
+                      className="flex-1 bg-amber-400/50 dark:bg-amber-500/50 rounded-sm"
                       style={{ height: `${(h / 5) * 24}px` }}
                     />
                   ))}
@@ -212,10 +212,10 @@ export default function LandingPage() {
 
       {/* Features */}
       <section className="max-w-5xl mx-auto px-6 py-16">
-        <h2 className="text-2xl font-bold text-center text-slate-100 mb-3">
+        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-slate-100 mb-3">
           Powered by AWS
         </h2>
-        <p className="text-slate-500 text-center mb-12 max-w-lg mx-auto">
+        <p className="text-gray-500 dark:text-slate-500 text-center mb-12 max-w-lg mx-auto">
           Built on enterprise-grade AWS infrastructure so your knowledge is always fast,
           searchable, and secure.
         </p>
@@ -223,14 +223,14 @@ export default function LandingPage() {
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 hover:border-amber-800/40 transition-colors"
+              className="rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-6 hover:border-amber-300 dark:hover:border-amber-800/40 transition-colors shadow-sm dark:shadow-none"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-900/30 border border-amber-800/30 flex items-center justify-center mb-4">
-                <f.icon className="w-5 h-5 text-amber-400" />
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/30 flex items-center justify-center mb-4">
+                <f.icon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
-              <h3 className="text-base font-semibold text-slate-200 mb-2">{f.title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-3">{f.description}</p>
-              <span className="text-xs text-amber-500 bg-amber-950/40 border border-amber-800/30 rounded-full px-2.5 py-0.5">
+              <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-2">{f.title}</h3>
+              <p className="text-sm text-gray-500 dark:text-slate-500 leading-relaxed mb-3">{f.description}</p>
+              <span className="text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/30 rounded-full px-2.5 py-0.5">
                 {f.highlight}
               </span>
             </div>
@@ -239,21 +239,21 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="max-w-4xl mx-auto px-6 py-16 border-t border-slate-800">
-        <h2 className="text-2xl font-bold text-center text-slate-100 mb-3">
+      <section id="how-it-works" className="max-w-4xl mx-auto px-6 py-16 border-t border-gray-200 dark:border-slate-800">
+        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-slate-100 mb-3">
           How it works
         </h2>
-        <p className="text-slate-500 text-center mb-12">
+        <p className="text-gray-500 dark:text-slate-500 text-center mb-12">
           Three steps from question to permanent knowledge
         </p>
         <div className="grid md:grid-cols-3 gap-8">
           {HOW_IT_WORKS.map((step) => (
             <div key={step.step} className="text-center">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-600/20 to-orange-600/10 border border-amber-700/30 flex items-center justify-center mx-auto mb-4">
-                <span className="text-lg font-bold text-amber-500">{step.step}</span>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-600/20 dark:to-orange-600/10 border border-amber-200 dark:border-amber-700/30 flex items-center justify-center mx-auto mb-4">
+                <span className="text-lg font-bold text-amber-600 dark:text-amber-500">{step.step}</span>
               </div>
-              <h3 className="text-base font-semibold text-slate-200 mb-2">{step.title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">{step.body}</p>
+              <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-2">{step.title}</h3>
+              <p className="text-sm text-gray-500 dark:text-slate-500 leading-relaxed">{step.body}</p>
             </div>
           ))}
         </div>
@@ -261,15 +261,15 @@ export default function LandingPage() {
 
       {/* "Already Know This" feature callout */}
       <section className="max-w-4xl mx-auto px-6 py-12">
-        <div className="rounded-2xl border border-amber-800/30 bg-amber-950/20 p-8 flex flex-col md:flex-row items-center gap-6">
-          <div className="w-16 h-16 rounded-2xl bg-amber-900/40 border border-amber-700/40 flex items-center justify-center flex-shrink-0">
-            <Brain className="w-8 h-8 text-amber-400" />
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-950/20 p-8 flex flex-col md:flex-row items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/40 flex items-center justify-center flex-shrink-0">
+            <Brain className="w-8 h-8 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-amber-300 mb-2">
+            <h3 className="text-lg font-semibold text-amber-700 dark:text-amber-300 mb-2">
               &ldquo;You&apos;ve researched this before!&rdquo;
             </h3>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed">
               Before Claude answers, ChatScroll checks your knowledge tree for similar notes using
               pgvector semantic similarity. If you&apos;ve already saved an answer, you&apos;ll see which note
               to review instead of repeating the same research.
@@ -279,37 +279,37 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="max-w-5xl mx-auto px-6 py-16 border-t border-slate-800">
-        <h2 className="text-2xl font-bold text-center text-slate-100 mb-3">
+      <section id="pricing" className="max-w-5xl mx-auto px-6 py-16 border-t border-gray-200 dark:border-slate-800">
+        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-slate-100 mb-3">
           Simple, transparent pricing
         </h2>
-        <p className="text-slate-500 text-center mb-12">
+        <p className="text-gray-500 dark:text-slate-500 text-center mb-12">
           Start free. Upgrade when your knowledge base grows.
         </p>
         <div className="grid md:grid-cols-3 gap-6">
           {PLANS.map((plan) => (
             <div
               key={plan.name}
-              className={`rounded-2xl border p-6 flex flex-col ${
+              className={`rounded-2xl border p-6 flex flex-col shadow-sm dark:shadow-none ${
                 plan.highlighted
-                  ? "border-amber-600/50 bg-amber-950/20"
-                  : "border-slate-800 bg-slate-900/40"
+                  ? "border-amber-400 dark:border-amber-600/50 bg-amber-50 dark:bg-amber-950/20"
+                  : "border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/40"
               }`}
             >
               {plan.highlighted && (
-                <div className="text-xs text-amber-400 font-medium mb-3 flex items-center gap-1">
+                <div className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-3 flex items-center gap-1">
                   <Zap className="w-3 h-3" /> Most popular
                 </div>
               )}
-              <h3 className="text-xl font-bold text-slate-100">{plan.name}</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100">{plan.name}</h3>
               <div className="my-3">
-                <span className="text-3xl font-bold text-slate-100">${plan.price}</span>
-                <span className="text-slate-500 text-sm ml-1">/{plan.period}</span>
+                <span className="text-3xl font-bold text-gray-900 dark:text-slate-100">${plan.price}</span>
+                <span className="text-gray-400 dark:text-slate-500 text-sm ml-1">/{plan.period}</span>
               </div>
-              <p className="text-sm text-slate-500 mb-6">{plan.description}</p>
+              <p className="text-sm text-gray-500 dark:text-slate-500 mb-6">{plan.description}</p>
               <ul className="space-y-2.5 flex-1 mb-6">
                 {plan.features.map((feat) => (
-                  <li key={feat} className="flex items-start gap-2 text-sm text-slate-400">
+                  <li key={feat} className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-400">
                     <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                     {feat}
                   </li>
@@ -320,7 +320,7 @@ export default function LandingPage() {
                 className={`text-center py-2.5 px-4 rounded-xl text-sm font-medium transition-colors ${
                   plan.highlighted
                     ? "bg-amber-600 hover:bg-amber-500 text-white"
-                    : "border border-slate-700 text-slate-300 hover:border-slate-600 hover:text-slate-100"
+                    : "border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:border-gray-400 dark:hover:border-slate-600 hover:text-gray-900 dark:hover:text-slate-100"
                 }`}
               >
                 {plan.cta}
@@ -331,9 +331,9 @@ export default function LandingPage() {
       </section>
 
       {/* AWS Tech stack strip */}
-      <section className="border-t border-slate-800 py-10">
+      <section className="border-t border-gray-200 dark:border-slate-800 py-10">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <p className="text-xs text-slate-600 uppercase tracking-widest mb-6">
+          <p className="text-xs text-gray-400 dark:text-slate-600 uppercase tracking-widest mb-6">
             Built on enterprise AWS infrastructure
           </p>
           <div className="flex flex-wrap justify-center gap-4">
@@ -348,7 +348,7 @@ export default function LandingPage() {
             ].map((tech) => (
               <span
                 key={tech}
-                className="text-xs text-slate-500 bg-slate-900 border border-slate-800 rounded-full px-3 py-1"
+                className="text-xs text-gray-500 dark:text-slate-500 bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full px-3 py-1"
               >
                 {tech}
               </span>
@@ -362,10 +362,10 @@ export default function LandingPage() {
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-6">
           <ScrollText className="w-7 h-7 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-100 mb-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-4">
           Stop losing your best ideas
         </h2>
-        <p className="text-slate-400 mb-8">
+        <p className="text-gray-500 dark:text-slate-400 mb-8">
           Join developers and learners building a second brain with ChatScroll.
           Every question you ask makes you permanently smarter.
         </p>
@@ -379,20 +379,20 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 py-8">
+      <footer className="border-t border-gray-200 dark:border-slate-800 py-8">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
               <ScrollText className="w-3 h-3 text-white" />
             </div>
-            <span className="text-sm font-semibold text-slate-400">ChatScroll</span>
+            <span className="text-sm font-semibold text-gray-500 dark:text-slate-400">ChatScroll</span>
           </div>
-          <p className="text-xs text-slate-600 text-center">
+          <p className="text-xs text-gray-400 dark:text-slate-600 text-center">
             Created for the AWS H0 Hackathon · #H0Hackathon
           </p>
-          <div className="flex items-center gap-4 text-xs text-slate-600">
-            <Link href="/" className="hover:text-slate-400 transition-colors">App</Link>
-            <Link href="/login" className="hover:text-slate-400 transition-colors">Sign in</Link>
+          <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-slate-600">
+            <Link href="/" className="hover:text-gray-700 dark:hover:text-slate-400 transition-colors">App</Link>
+            <Link href="/login" className="hover:text-gray-700 dark:hover:text-slate-400 transition-colors">Sign in</Link>
           </div>
         </div>
       </footer>

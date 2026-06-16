@@ -45,17 +45,17 @@ export function SaveNoteModal({
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 space-y-3">
+    <div className="mt-3 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span className="text-sm font-medium text-amber-300">
+          <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+          <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
             Save to your knowledge tree?
           </span>
         </div>
         <button
           onClick={onDismiss}
-          className="text-slate-500 hover:text-slate-300 transition-colors"
+          className="text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -63,28 +63,28 @@ export function SaveNoteModal({
 
       {suggestedFolder && (
         <div className="space-y-1">
-          <p className="text-xs text-slate-500">AI suggests:</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500">AI suggests:</p>
           <button
             onClick={() => setSelectedFolderId(suggestedFolder.id)}
             className={cn(
               "w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left transition-all",
               selectedFolderId === suggestedFolder.id || !selectedFolderId
-                ? "border-amber-500/50 bg-amber-900/30 text-amber-200"
-                : "border-slate-700 bg-slate-800/50 text-slate-300 hover:border-slate-500"
+                ? "border-amber-400 dark:border-amber-500/50 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200"
+                : "border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-gray-700 dark:text-slate-300 hover:border-gray-400 dark:hover:border-slate-500"
             )}
           >
             <span className="text-lg">{suggestedFolder.icon ?? "📁"}</span>
             <div className="flex-1">
               <div className="text-sm font-medium">{suggestedFolder.name}</div>
-              <div className="text-xs text-slate-500">{suggestedFolder.path}</div>
+              <div className="text-xs text-gray-400 dark:text-slate-500">{suggestedFolder.path}</div>
             </div>
             {(!selectedFolderId || selectedFolderId === suggestedFolder.id) && (
-              <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-400">
+              <Badge variant="outline" className="text-xs border-amber-400 dark:border-amber-500/50 text-amber-600 dark:text-amber-400">
                 Suggested
               </Badge>
             )}
           </button>
-          <p className="text-xs text-slate-600 pl-1">{folderSuggestion.reasoning}</p>
+          <p className="text-xs text-gray-400 dark:text-slate-600 pl-1">{folderSuggestion.reasoning}</p>
         </div>
       )}
 
@@ -92,7 +92,7 @@ export function SaveNoteModal({
         <div className="space-y-1">
           <button
             onClick={() => setShowAllFolders(!showAllFolders)}
-            className="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-colors"
+            className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 flex items-center gap-1 transition-colors"
           >
             <FolderOpen className="w-3 h-3" />
             {showAllFolders ? "Hide" : "Choose different folder"}
@@ -109,8 +109,8 @@ export function SaveNoteModal({
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-left transition-all text-sm",
                       selectedFolderId === folder.id
-                        ? "border-amber-500/50 bg-amber-900/30 text-amber-200"
-                        : "border-slate-700 bg-slate-800/30 text-slate-400 hover:border-slate-600 hover:text-slate-300"
+                        ? "border-amber-400 dark:border-amber-500/50 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200"
+                        : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 text-gray-600 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 hover:text-gray-700 dark:hover:text-slate-300"
                     )}
                   >
                     <span>{folder.icon ?? "📁"}</span>
@@ -142,7 +142,7 @@ export function SaveNoteModal({
           onClick={onDismiss}
           variant="ghost"
           size="sm"
-          className="text-slate-400 hover:text-slate-200"
+          className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200"
         >
           Skip
         </Button>

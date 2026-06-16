@@ -36,13 +36,13 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-slate-800 transition-colors">
+        <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
           <Avatar className="w-7 h-7">
             <AvatarFallback className="bg-amber-700 text-white text-xs font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm text-slate-300 hidden sm:block max-w-24 truncate">
+          <span className="text-sm text-gray-700 dark:text-slate-300 hidden sm:block max-w-24 truncate">
             {user.displayName}
           </span>
         </button>
@@ -50,15 +50,15 @@ export function UserMenu() {
 
       <DropdownMenuContent
         align="end"
-        className="w-56 bg-slate-900 border-slate-800 text-slate-300"
+        className="w-56 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-gray-700 dark:text-slate-300"
       >
         <DropdownMenuLabel className="space-y-1">
-          <p className="text-sm font-medium text-slate-100">{user.displayName}</p>
-          <p className="text-xs text-slate-500 font-normal">{user.email}</p>
+          <p className="text-sm font-medium text-gray-900 dark:text-slate-100">{user.displayName}</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 font-normal">{user.email}</p>
           <div className="flex items-center gap-1 pt-1">
             <Badge
               variant="outline"
-              className="text-xs border-amber-700/50 text-amber-400 capitalize"
+              className="text-xs border-amber-400 dark:border-amber-700/50 text-amber-600 dark:text-amber-400 capitalize"
             >
               <Zap className="w-3 h-3 mr-1" />
               {user.plan} plan
@@ -66,7 +66,7 @@ export function UserMenu() {
             {!isCognitoConfigured && (
               <Badge
                 variant="outline"
-                className="text-xs border-slate-700 text-slate-500"
+                className="text-xs border-gray-300 dark:border-slate-700 text-gray-400 dark:text-slate-500"
               >
                 Dev mode
               </Badge>
@@ -74,21 +74,21 @@ export function UserMenu() {
           </div>
         </DropdownMenuLabel>
 
-        <DropdownMenuSeparator className="bg-slate-800" />
+        <DropdownMenuSeparator className="bg-gray-200 dark:bg-slate-800" />
 
         <DropdownMenuItem
-          className="text-slate-400 focus:bg-slate-800 focus:text-slate-200 cursor-pointer"
+          className="text-gray-400 dark:text-slate-400 focus:bg-gray-100 dark:focus:bg-slate-800 focus:text-gray-700 dark:focus:text-slate-200 cursor-pointer"
           disabled
         >
           <User className="w-4 h-4 mr-2" />
           Profile (coming soon)
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="bg-slate-800" />
+        <DropdownMenuSeparator className="bg-gray-200 dark:bg-slate-800" />
 
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="text-red-400 focus:bg-red-950/40 focus:text-red-300 cursor-pointer"
+          className="text-red-500 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-950/40 focus:text-red-600 dark:focus:text-red-300 cursor-pointer"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out

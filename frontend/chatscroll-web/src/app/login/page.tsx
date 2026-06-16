@@ -37,7 +37,6 @@ export default function LoginPage() {
       } else if (mode === "signup") {
         await signUp(email, password, displayName);
         if (isCognitoConfigured) {
-          // Switch to verification step — email with 6-digit code was sent
           setMode("verify");
           setSuccess(`Verification code sent to ${email}`);
         } else {
@@ -58,32 +57,31 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-3">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
             <ScrollText className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-100">ChatScroll</h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">ChatScroll</h1>
+            <p className="text-sm text-gray-500 dark:text-slate-500 mt-1">
               Every question becomes lasting knowledge
             </p>
           </div>
         </div>
 
         {!isCognitoConfigured && (
-          <div className="bg-amber-950/30 border border-amber-800/40 rounded-xl px-4 py-3 text-center">
-            <p className="text-xs text-amber-400">
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-xl px-4 py-3 text-center">
+            <p className="text-xs text-amber-600 dark:text-amber-400">
               🛠️ Dev mode — any credentials work
             </p>
           </div>
         )}
 
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 space-y-5">
-          {/* Tab switcher — hidden during verify step */}
+        <div className="bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-sm dark:shadow-none">
           {mode !== "verify" && (
-            <div className="flex rounded-lg bg-slate-800/60 p-1">
+            <div className="flex rounded-lg bg-gray-100 dark:bg-slate-800/60 p-1">
               {(["signin", "signup"] as Mode[]).map((m) => (
                 <button
                   key={m}
@@ -91,8 +89,8 @@ export default function LoginPage() {
                   className={cn(
                     "flex-1 py-1.5 text-sm font-medium rounded-md transition-all",
                     mode === m
-                      ? "bg-slate-700 text-slate-100 shadow-sm"
-                      : "text-slate-500 hover:text-slate-300"
+                      ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
+                      : "text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300"
                   )}
                 >
                   {m === "signin" ? "Sign In" : "Sign Up"}
@@ -101,15 +99,14 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Verify email step */}
           {mode === "verify" && (
             <div className="flex items-center gap-3 pb-1">
-              <div className="w-9 h-9 rounded-xl bg-amber-900/40 border border-amber-700/40 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-4 h-4 text-amber-400" />
+              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/40 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-200">Check your email</p>
-                <p className="text-xs text-slate-500">Enter the 6-digit code sent to {email}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-slate-200">Check your email</p>
+                <p className="text-xs text-gray-500 dark:text-slate-500">Enter the 6-digit code sent to {email}</p>
               </div>
             </div>
           )}
@@ -117,7 +114,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "verify" ? (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-400">
+                <label className="text-xs font-medium text-gray-500 dark:text-slate-400">
                   Verification Code
                 </label>
                 <input
@@ -127,7 +124,7 @@ export default function LoginPage() {
                   required
                   placeholder="123456"
                   maxLength={6}
-                  className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50 tracking-[0.3em] text-center font-mono text-base"
+                  className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500 dark:focus:border-amber-500/50 tracking-[0.3em] text-center font-mono text-base"
                   autoComplete="one-time-code"
                   autoFocus
                 />
@@ -136,7 +133,7 @@ export default function LoginPage() {
               <>
                 {mode === "signup" && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-400">
+                    <label className="text-xs font-medium text-gray-500 dark:text-slate-400">
                       Display Name
                     </label>
                     <input
@@ -145,25 +142,25 @@ export default function LoginPage() {
                       onChange={(e) => setDisplayName(e.target.value)}
                       required
                       placeholder="Hamza"
-                      className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                      className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500 dark:focus:border-amber-500/50"
                     />
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-400">Email</label>
+                  <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Email</label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="hamza@example.com"
-                    className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                    className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500 dark:focus:border-amber-500/50"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-400">Password</label>
+                  <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Password</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -172,12 +169,12 @@ export default function LoginPage() {
                       required
                       minLength={8}
                       placeholder="••••••••"
-                      className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 pr-10 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                      className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-2.5 pr-10 text-sm text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500 dark:focus:border-amber-500/50"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -187,14 +184,14 @@ export default function LoginPage() {
             )}
 
             {error && (
-              <div className="bg-red-950/40 border border-red-800/40 rounded-xl px-4 py-2.5">
-                <p className="text-xs text-red-400">{error}</p>
+              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 rounded-xl px-4 py-2.5">
+                <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
 
             {success && (
-              <div className="bg-emerald-950/40 border border-emerald-800/40 rounded-xl px-4 py-2.5">
-                <p className="text-xs text-emerald-400">{success}</p>
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 rounded-xl px-4 py-2.5">
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">{success}</p>
               </div>
             )}
 
@@ -218,7 +215,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => { setMode("signup"); setError(""); setSuccess(""); }}
-                className="w-full text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                className="w-full text-xs text-gray-400 dark:text-slate-600 hover:text-gray-600 dark:hover:text-slate-400 transition-colors"
               >
                 ← Back to sign up
               </button>
@@ -226,7 +223,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-600">
+        <p className="text-center text-xs text-gray-400 dark:text-slate-600">
           Built for the AWS H0 Hackathon · June 2026
         </p>
       </div>

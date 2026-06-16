@@ -36,12 +36,12 @@ function FolderNode({
         }}
         className={cn(
           "w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-left transition-all",
-          "hover:bg-slate-800/60",
-          isSelected && "bg-slate-800 text-amber-300"
+          "hover:bg-gray-100 dark:hover:bg-slate-800/60",
+          isSelected && "bg-gray-100 dark:bg-slate-800 text-amber-600 dark:text-amber-300"
         )}
         style={{ paddingLeft: `${8 + depth * 16}px` }}
       >
-        <span className="w-4 flex-shrink-0 text-slate-600">
+        <span className="w-4 flex-shrink-0 text-gray-400 dark:text-slate-600">
           {hasChildren ? (
             expanded ? (
               <ChevronDown className="w-3.5 h-3.5" />
@@ -58,14 +58,16 @@ function FolderNode({
         <span
           className={cn(
             "text-sm flex-1 truncate",
-            isSelected ? "text-amber-200 font-medium" : "text-slate-300"
+            isSelected
+              ? "text-amber-700 dark:text-amber-200 font-medium"
+              : "text-gray-700 dark:text-slate-300"
           )}
         >
           {folder.name}
         </span>
 
         {folder.noteCount > 0 && (
-          <span className="text-xs text-slate-600 flex-shrink-0">
+          <span className="text-xs text-gray-400 dark:text-slate-600 flex-shrink-0">
             {folder.noteCount}
           </span>
         )}
