@@ -1,11 +1,5 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@chatscroll_api_url",
-    "NEXT_PUBLIC_AWS_REGION": "@chatscroll_aws_region",
-    "NEXT_PUBLIC_COGNITO_USER_POOL_ID": "@chatscroll_cognito_pool_id",
-    "NEXT_PUBLIC_COGNITO_CLIENT_ID": "@chatscroll_cognito_client_id"
-  }
+  "outputDirectory": ".next"
 }
