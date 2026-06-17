@@ -62,20 +62,10 @@ builder.Services.AddCors(options =>
 
 var awsRegion = builder.Configuration["AWS:Region"] ?? "us-east-1";
 
-// Detect AWS credentials across all provider chain sources:
-//   AWS_ACCESS_KEY_ID                      — static keys (CI, local export)
-//   AWS_CONTAINER_CREDENTIALS_RELATIVE_URI — ECS task role / App Runner instance role
-//   AWS_CONTAINER_CREDENTIALS_FULL_URI     — ECS task role (alternative form)
-//   AWS_WEB_IDENTITY_TOKEN_FILE            — EKS pod identity / IAM Roles Anywhere
-//   ~/.aws/credentials                     — local developer profile
-var hasAwsCredentials =
-    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")) ||
-    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")) ||
-    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_CONTAINER_CREDENTIALS_FULL_URI")) ||
-    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_WEB_IDENTITY_TOKEN_FILE")) ||
-    File.Exists(Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".aws", "credentials"));
+// In Production (ECS Fargate) the task IAM role provides credentials automatically
+// via the instance metadata service — no env vars are set by the platform.
+// Use ASPNETCORE_ENVIRONMENT as the switch: Production → Bedrock, Development → Mock.
+var isProduction = builder.Environment.IsProduction();
 
 builder.Services.AddScoped<IFolderRepository, MockFolderRepository>();
 builder.Services.AddScoped<INoteRepository, MockNoteRepository>();
@@ -83,16 +73,16 @@ builder.Services.AddScoped<IConversationRepository, MockConversationRepository>(
 // DynamoDB chat history — mock locally, real AWSSDK.DynamoDBv2 in production when hasAwsCredentials
 builder.Services.AddScoped<IDynamoDbChatRepository, MockDynamoDbChatRepository>();
 
-if (hasAwsCredentials)
+if (isProduction)
 {
-    Log.Information("AWS credentials detected — using Bedrock AI service");
+    Log.Information("Production environment — using Bedrock AI service with ECS task role");
     builder.Services.AddSingleton(_ =>
         new AmazonBedrockRuntimeClient(Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
     builder.Services.AddScoped<IAiService, BedrockAiService>();
 }
 else
 {
-    Log.Information("No AWS credentials — using Mock AI service for local development");
+    Log.Information("Development environment — using Mock AI service");
     builder.Services.AddScoped<IAiService, MockAiService>();
 }
 
