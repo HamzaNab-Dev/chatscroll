@@ -160,7 +160,7 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
         <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200">Knowledge Tree</h2>
         <Badge
           variant="outline"
-          className="ml-auto text-xs border-gray-300 dark:border-slate-700 text-gray-400 dark:text-slate-500"
+          className="ml-auto text-xs border-amber-300 dark:border-amber-700/50 text-amber-600 dark:text-amber-400 font-medium"
         >
           {totalNotes} notes
         </Badge>
@@ -174,7 +174,7 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search notes..."
-            className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-lg pl-8 pr-16 py-2 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/40 transition-colors"
+            className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-lg pl-8 pr-16 py-2 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/40 transition-colors"
           />
           <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-slate-600 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded px-1 py-0.5 hidden sm:block">
             ⌘K

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FolderOpen, Sparkles, Check, X } from "lucide-react";
+import { Folder as FolderIcon, FolderOpen, Sparkles, Check, X } from "lucide-react";
 import type { Folder, FolderSuggestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -122,30 +122,42 @@ export function SaveNoteModal({
         </div>
       )}
 
-      <div className="flex gap-2 pt-1">
+      {(() => {
+        const targetFolder = selectedFolderId
+          ? folders.find((f) => f.id === selectedFolderId)
+          : suggestedFolder;
+        return targetFolder ? (
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 px-1">
+            <FolderIcon className="w-3 h-3 text-amber-500 flex-shrink-0" />
+            <span className="font-medium text-gray-700 dark:text-slate-300">{targetFolder.name}</span>
+            <span className="text-gray-300 dark:text-slate-600">·</span>
+            <span className="text-gray-400 dark:text-slate-500 font-mono text-[10px]">{targetFolder.path}</span>
+          </div>
+        ) : null;
+      })()}
+
+      <div className="flex items-center justify-between pt-1">
         <Button
           onClick={handleSave}
           disabled={saving}
           size="sm"
-          className="bg-amber-600 hover:bg-amber-500 text-white flex-1"
+          className="bg-amber-600 hover:bg-amber-500 text-white rounded-full px-5"
         >
           {saving ? (
             "Saving..."
           ) : (
             <>
-              <Check className="w-3 h-3 mr-1" />
+              <Check className="w-3 h-3 mr-1.5" />
               Save Note
             </>
           )}
         </Button>
-        <Button
+        <button
           onClick={onDismiss}
-          variant="ghost"
-          size="sm"
-          className="text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200"
+          className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
         >
           Skip
-        </Button>
+        </button>
       </div>
     </div>
   );

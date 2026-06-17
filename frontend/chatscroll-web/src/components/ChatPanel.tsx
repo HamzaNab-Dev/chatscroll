@@ -145,7 +145,7 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
         {messages.map((message) => (
           <div
             key={message.id}
-            className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-3 border-b border-gray-100 dark:border-slate-800/50 last:border-0 last:pb-0"
           >
             <div
               className={cn(
@@ -311,7 +311,7 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
           </Button>
         </div>
         <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 text-center">
-          Powered by Amazon Bedrock · Claude Sonnet 4.6
+          Powered by Gemini 2.5 Flash · ChatScroll
         </p>
       </div>
     </div>
