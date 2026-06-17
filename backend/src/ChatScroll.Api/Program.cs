@@ -61,8 +61,18 @@ builder.Services.AddCors(options =>
 // ─────────────────────────────────────────
 
 var awsRegion = builder.Configuration["AWS:Region"] ?? "us-east-1";
+
+// Detect AWS credentials across all provider chain sources:
+//   AWS_ACCESS_KEY_ID                      — static keys (CI, local export)
+//   AWS_CONTAINER_CREDENTIALS_RELATIVE_URI — ECS task role / App Runner instance role
+//   AWS_CONTAINER_CREDENTIALS_FULL_URI     — ECS task role (alternative form)
+//   AWS_WEB_IDENTITY_TOKEN_FILE            — EKS pod identity / IAM Roles Anywhere
+//   ~/.aws/credentials                     — local developer profile
 var hasAwsCredentials =
     !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")) ||
+    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI")) ||
+    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_CONTAINER_CREDENTIALS_FULL_URI")) ||
+    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_WEB_IDENTITY_TOKEN_FILE")) ||
     File.Exists(Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         ".aws", "credentials"));
