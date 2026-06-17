@@ -75,14 +75,13 @@ builder.Services.AddScoped<IDynamoDbChatRepository, MockDynamoDbChatRepository>(
 
 if (isProduction)
 {
-    Log.Information("Production environment — using Bedrock AI service with ECS task role");
-    builder.Services.AddSingleton(_ =>
-        new AmazonBedrockRuntimeClient(Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
+    Log.Information("Production environment detected — registering BedrockAiService");
+    builder.Services.AddSingleton(_ => new AmazonBedrockRuntimeClient(Amazon.RegionEndpoint.USEast1));
     builder.Services.AddScoped<IAiService, BedrockAiService>();
 }
 else
 {
-    Log.Information("Development environment — using Mock AI service");
+    Log.Information("Development environment — registering MockAiService");
     builder.Services.AddScoped<IAiService, MockAiService>();
 }
 
