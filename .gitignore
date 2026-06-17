@@ -22,8 +22,8 @@ next-env.d.ts
 .env.local
 .env*.local
 .env.production
-appsettings.Development.json
-appsettings.Local.json
+*.Development.json
+*.Local.json
 
 # AWS / Secrets
 .aws-sam/

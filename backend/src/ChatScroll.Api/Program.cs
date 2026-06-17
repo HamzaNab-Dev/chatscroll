@@ -1,5 +1,3 @@
-using Amazon.BedrockRuntime;
-using Amazon.Runtime;
 using ChatScroll.Core.Interfaces;
 using ChatScroll.Infrastructure.Repositories.Mock;
 using ChatScroll.Infrastructure.Services;
@@ -63,30 +61,28 @@ builder.Services.AddCors(options =>
 
 var awsRegion = builder.Configuration["AWS:Region"] ?? "us-east-1";
 
-// In Production (ECS Fargate) the task IAM role provides credentials automatically
-// via the instance metadata service — no env vars are set by the platform.
-// Use ASPNETCORE_ENVIRONMENT as the switch: Production → Bedrock, Development → Mock.
-var isProduction = builder.Environment.IsProduction();
-
 builder.Services.AddScoped<IFolderRepository, MockFolderRepository>();
 builder.Services.AddScoped<INoteRepository, MockNoteRepository>();
 builder.Services.AddScoped<IConversationRepository, MockConversationRepository>();
-// DynamoDB chat history — mock locally, real AWSSDK.DynamoDBv2 in production when hasAwsCredentials
 builder.Services.AddScoped<IDynamoDbChatRepository, MockDynamoDbChatRepository>();
 
-if (isProduction)
+var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+var anthropicApiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
+
+if (!string.IsNullOrEmpty(geminiApiKey))
 {
-    Log.Information("Production environment detected — registering BedrockAiService");
-    builder.Services.AddSingleton<AmazonBedrockRuntimeClient>(_ =>
-        new AmazonBedrockRuntimeClient(
-            FallbackCredentialsFactory.GetCredentials(),
-            new AmazonBedrockRuntimeConfig { RegionEndpoint = Amazon.RegionEndpoint.USEast1 }
-        ));
-    builder.Services.AddScoped<IAiService, BedrockAiService>();
+    Log.Information("GEMINI_API_KEY detected — registering GeminiAiService");
+    builder.Services.AddHttpClient<GeminiAiService>();
+    builder.Services.AddScoped<IAiService, GeminiAiService>();
+}
+else if (!string.IsNullOrEmpty(anthropicApiKey))
+{
+    Log.Information("ANTHROPIC_API_KEY detected — registering AnthropicAiService");
+    builder.Services.AddScoped<IAiService, MockAiService>();
 }
 else
 {
-    Log.Information("Development environment — registering MockAiService");
+    Log.Information("No AI API key found — registering MockAiService");
     builder.Services.AddScoped<IAiService, MockAiService>();
 }
 

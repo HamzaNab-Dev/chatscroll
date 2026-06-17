@@ -32,8 +32,13 @@ public class ChatController : ControllerBase
         return Ok(new
         {
             aiService = serviceType,
-            isRealAi = serviceType == "BedrockAiService",
-            model = serviceType == "BedrockAiService" ? "amazon.titan-text-premier-v1:0" : "mock",
+            isRealAi = serviceType is "GeminiAiService" or "AnthropicAiService",
+            model = serviceType switch
+            {
+                "GeminiAiService" => "gemini-2.5-flash",
+                "AnthropicAiService" => "claude-opus-4-8",
+                _ => "mock"
+            },
             status = "ready"
         });
     }
@@ -51,30 +56,30 @@ public class ChatController : ControllerBase
             ["isProduction"]              = env.IsProduction(),
             ["aspnetcoreEnvironmentVar"]  = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "(not set)",
             ["aiServiceRegistered"]       = serviceType,
-            ["isBedrockService"]          = serviceType == "BedrockAiService",
-            ["containerCredentialsUri"]   = Environment.GetEnvironmentVariable("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI") ?? "(not set)",
-            ["awsAccessKeyId"]            = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")) ? "(not set)" : "***set***",
+            ["isRealAiService"]           = serviceType is "GeminiAiService" or "AnthropicAiService",
+            ["geminiApiKey"]              = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GEMINI_API_KEY")) ? "(not set)" : "***set***",
+            ["anthropicApiKey"]           = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY")) ? "(not set)" : "***set***",
         };
 
-        if (serviceType == "BedrockAiService")
+        if (serviceType is "GeminiAiService" or "AnthropicAiService")
         {
             try
             {
                 var response = await aiService.ChatAsync("Reply with exactly the word PONG and nothing else.", "");
-                info["bedrockCallResult"] = "success";
-                info["bedrockResponse"]   = response[..Math.Min(200, response.Length)];
+                info["aiCallResult"] = "success";
+                info["aiResponse"]   = response[..Math.Min(200, response.Length)];
             }
             catch (Exception ex)
             {
-                info["bedrockCallResult"]  = "FAILED";
-                info["bedrockErrorType"]   = ex.GetType().FullName;
-                info["bedrockErrorMessage"] = ex.Message;
-                info["bedrockInnerError"]  = ex.InnerException?.Message;
+                info["aiCallResult"]  = "FAILED";
+                info["aiErrorType"]   = ex.GetType().FullName;
+                info["aiErrorMessage"] = ex.Message;
+                info["aiInnerError"]  = ex.InnerException?.Message;
             }
         }
         else
         {
-            info["bedrockCallResult"] = "skipped — MockAiService is registered";
+            info["aiCallResult"] = "skipped — MockAiService is registered";
         }
 
         return Ok(info);

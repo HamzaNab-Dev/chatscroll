@@ -71,10 +71,14 @@ public class HealthController : ControllerBase
             aiService = new
             {
                 type = aiServiceType,
-                isRealBedrock = aiServiceType == "BedrockAiService",
-                model = aiServiceType == "BedrockAiService" ? "amazon.titan-text-premier-v1:0" : "mock",
-                embeddings = aiServiceType == "BedrockAiService" ? "amazon.titan-embed-text-v2:0 (1024 dims)" : "mock",
-                status = aiServiceType == "BedrockAiService" ? "connected" : "mock"
+                isRealAi = aiServiceType is "GeminiAiService" or "AnthropicAiService",
+                model = aiServiceType switch
+                {
+                    "GeminiAiService" => "gemini-2.5-flash",
+                    "AnthropicAiService" => "claude-opus-4-8",
+                    _ => "mock"
+                },
+                status = aiServiceType is "GeminiAiService" or "AnthropicAiService" ? "connected" : "mock"
             },
             timestamp = DateTime.UtcNow
         });
