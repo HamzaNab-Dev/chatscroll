@@ -64,7 +64,8 @@ public class BedrockAiService : IAiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Bedrock chat failed for message: {Message}", message[..Math.Min(50, message.Length)]);
-            throw;
+            return $"**[Bedrock Debug Error]** `{ex.GetType().Name}`: {ex.Message}" +
+                   (ex.InnerException != null ? $"\n\nInner: {ex.InnerException.Message}" : "");
         }
     }
 
