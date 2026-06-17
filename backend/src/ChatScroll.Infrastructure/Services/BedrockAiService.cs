@@ -12,7 +12,7 @@ public class BedrockAiService : IAiService
     private readonly AmazonBedrockRuntimeClient _bedrockClient;
     private readonly ILogger<BedrockAiService> _logger;
 
-    private const string ClaudeModelId = "anthropic.claude-sonnet-4-20250514-v1:0";
+    private const string ClaudeModelId = "amazon.titan-text-premier-v1:0";
     private const string TitanEmbeddingModelId = "amazon.titan-embed-text-v2:0";
 
     public BedrockAiService(
@@ -225,37 +225,37 @@ public class BedrockAiService : IAiService
     // ─────────────────────────────────────────
     private async Task<string> InvokeClaudeAsync(string userMessage, string systemPrompt = "")
     {
-        var request = new ConverseRequest
+        var inputText = string.IsNullOrEmpty(systemPrompt)
+            ? userMessage
+            : $"{systemPrompt}\n\nUser: {userMessage}";
+
+        var requestBody = new
         {
-            ModelId = ClaudeModelId,
-            Messages = new List<Message>
+            inputText,
+            textGenerationConfig = new
             {
-                new Message
-                {
-                    Role = ConversationRole.User,
-                    Content = new List<ContentBlock>
-                    {
-                        new ContentBlock { Text = userMessage }
-                    }
-                }
-            },
-            InferenceConfig = new InferenceConfiguration
-            {
-                MaxTokens = 2048,
-                Temperature = 0.7F
+                maxTokenCount = 2048,
+                temperature = 0.7
             }
         };
 
-        if (!string.IsNullOrEmpty(systemPrompt))
+        var bodyJson = JsonSerializer.Serialize(requestBody);
+        var request = new InvokeModelRequest
         {
-            request.System = new List<SystemContentBlock>
-            {
-                new SystemContentBlock { Text = systemPrompt }
-            };
-        }
+            ModelId = ClaudeModelId,
+            ContentType = "application/json",
+            Accept = "application/json",
+            Body = new MemoryStream(Encoding.UTF8.GetBytes(bodyJson))
+        };
 
-        var response = await _bedrockClient.ConverseAsync(request);
-        return response.Output.Message.Content[0].Text;
+        var response = await _bedrockClient.InvokeModelAsync(request);
+        var responseBody = await new StreamReader(response.Body).ReadToEndAsync();
+
+        using var doc = JsonDocument.Parse(responseBody);
+        return doc.RootElement
+            .GetProperty("results")[0]
+            .GetProperty("outputText")
+            .GetString() ?? string.Empty;
     }
 
     private static string ExtractJson(string text)
