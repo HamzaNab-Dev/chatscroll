@@ -38,6 +38,48 @@ public class ChatController : ControllerBase
         });
     }
 
+    [HttpGet("ai-debug")]
+    public async Task<IActionResult> AiDebug(
+        [FromServices] IAiService aiService,
+        [FromServices] IWebHostEnvironment env)
+    {
+        var serviceType = aiService.GetType().Name;
+
+        var info = new Dictionary<string, object?>
+        {
+            ["environmentName"]           = env.EnvironmentName,
+            ["isProduction"]              = env.IsProduction(),
+            ["aspnetcoreEnvironmentVar"]  = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "(not set)",
+            ["aiServiceRegistered"]       = serviceType,
+            ["isBedrockService"]          = serviceType == "BedrockAiService",
+            ["containerCredentialsUri"]   = Environment.GetEnvironmentVariable("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI") ?? "(not set)",
+            ["awsAccessKeyId"]            = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")) ? "(not set)" : "***set***",
+        };
+
+        if (serviceType == "BedrockAiService")
+        {
+            try
+            {
+                var response = await aiService.ChatAsync("Reply with exactly the word PONG and nothing else.", "");
+                info["bedrockCallResult"] = "success";
+                info["bedrockResponse"]   = response[..Math.Min(200, response.Length)];
+            }
+            catch (Exception ex)
+            {
+                info["bedrockCallResult"]  = "FAILED";
+                info["bedrockErrorType"]   = ex.GetType().FullName;
+                info["bedrockErrorMessage"] = ex.Message;
+                info["bedrockInnerError"]  = ex.InnerException?.Message;
+            }
+        }
+        else
+        {
+            info["bedrockCallResult"] = "skipped — MockAiService is registered";
+        }
+
+        return Ok(info);
+    }
+
     [HttpPost("message")]
     public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
     {
