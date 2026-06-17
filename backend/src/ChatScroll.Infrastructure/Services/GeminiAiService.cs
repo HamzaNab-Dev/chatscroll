@@ -1,24 +1,19 @@
 using System.Text;
 using System.Text.Json;
 using ChatScroll.Core.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace ChatScroll.Infrastructure.Services;
 
 public class GeminiAiService : IAiService
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<GeminiAiService> _logger;
+    private readonly HttpClient _httpClient = new();
     private readonly string _apiKey;
 
     private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-    public GeminiAiService(HttpClient httpClient, ILogger<GeminiAiService> logger)
+    public GeminiAiService(string apiKey)
     {
-        _httpClient = httpClient;
-        _logger = logger;
-        _apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-            ?? throw new InvalidOperationException("GEMINI_API_KEY environment variable is not set.");
+        _apiKey = apiKey;
     }
 
     public async Task<string> ChatAsync(string message, string conversationHistory)
@@ -44,7 +39,6 @@ public class GeminiAiService : IAiService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Gemini chat failed");
             return $"GEMINI_ERROR: {ex.GetType().Name}: {ex.Message}";
         }
     }
@@ -94,9 +88,8 @@ public class GeminiAiService : IAiService
                 IsNewFolder: root.GetProperty("isNewFolder").GetBoolean()
             );
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Gemini folder suggestion failed");
             return new FolderSuggestion("general", "General", "Could not determine folder", true);
         }
     }
@@ -127,8 +120,7 @@ public class GeminiAiService : IAiService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Gemini note rewrite failed");
-            return $"## {question}\n\n{answer}";
+            return $"## {question}\n\n{answer}\n\n> Note rewrite failed: {ex.Message}";
         }
     }
 
@@ -160,9 +152,8 @@ public class GeminiAiService : IAiService
             using var doc = JsonDocument.Parse(json);
             return doc.RootElement.GetProperty("isAlreadyKnown").GetBoolean();
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "Gemini already known check failed");
             return false;
         }
     }

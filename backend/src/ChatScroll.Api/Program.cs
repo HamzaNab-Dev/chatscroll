@@ -66,23 +66,16 @@ builder.Services.AddScoped<INoteRepository, MockNoteRepository>();
 builder.Services.AddScoped<IConversationRepository, MockConversationRepository>();
 builder.Services.AddScoped<IDynamoDbChatRepository, MockDynamoDbChatRepository>();
 
-var geminiApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
-var anthropicApiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
+var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
-if (!string.IsNullOrEmpty(geminiApiKey))
+if (!string.IsNullOrEmpty(geminiKey))
 {
-    Log.Information("GEMINI_API_KEY detected — registering GeminiAiService");
-    builder.Services.AddHttpClient<GeminiAiService>();
-    builder.Services.AddScoped<IAiService, GeminiAiService>();
-}
-else if (!string.IsNullOrEmpty(anthropicApiKey))
-{
-    Log.Information("ANTHROPIC_API_KEY detected — registering AnthropicAiService");
-    builder.Services.AddScoped<IAiService, MockAiService>();
+    Log.Information("Gemini API key found — registering GeminiAiService");
+    builder.Services.AddSingleton<IAiService>(_ => new GeminiAiService(geminiKey));
 }
 else
 {
-    Log.Information("No AI API key found — registering MockAiService");
+    Log.Information("No AI key found — using MockAiService");
     builder.Services.AddScoped<IAiService, MockAiService>();
 }
 
