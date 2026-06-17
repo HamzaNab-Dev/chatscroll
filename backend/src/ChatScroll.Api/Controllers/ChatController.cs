@@ -33,7 +33,7 @@ public class ChatController : ControllerBase
         {
             aiService = serviceType,
             isRealAi = serviceType == "BedrockAiService",
-            model = serviceType == "BedrockAiService" ? "anthropic.claude-sonnet-4-6" : "mock",
+            model = serviceType == "BedrockAiService" ? "anthropic.claude-sonnet-4-20250514-v1:0" : "mock",
             status = "ready"
         });
     }

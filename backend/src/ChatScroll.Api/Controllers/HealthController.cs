@@ -72,7 +72,7 @@ public class HealthController : ControllerBase
             {
                 type = aiServiceType,
                 isRealBedrock = aiServiceType == "BedrockAiService",
-                model = aiServiceType == "BedrockAiService" ? "anthropic.claude-sonnet-4-6" : "mock",
+                model = aiServiceType == "BedrockAiService" ? "anthropic.claude-sonnet-4-20250514-v1:0" : "mock",
                 embeddings = aiServiceType == "BedrockAiService" ? "amazon.titan-embed-text-v2:0 (1024 dims)" : "mock",
                 status = aiServiceType == "BedrockAiService" ? "connected" : "mock"
             },

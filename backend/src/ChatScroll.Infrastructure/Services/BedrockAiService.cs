@@ -12,7 +12,7 @@ public class BedrockAiService : IAiService
     private readonly AmazonBedrockRuntimeClient _bedrockClient;
     private readonly ILogger<BedrockAiService> _logger;
 
-    private const string ClaudeModelId = "anthropic.claude-sonnet-4-6";
+    private const string ClaudeModelId = "anthropic.claude-sonnet-4-20250514-v1:0";
     private const string TitanEmbeddingModelId = "amazon.titan-embed-text-v2:0";
 
     public BedrockAiService(
