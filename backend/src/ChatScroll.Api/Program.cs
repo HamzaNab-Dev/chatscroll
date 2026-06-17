@@ -1,5 +1,4 @@
 using Amazon.BedrockRuntime;
-using Amazon.Runtime;
 using ChatScroll.Core.Interfaces;
 using ChatScroll.Infrastructure.Repositories.Mock;
 using ChatScroll.Infrastructure.Services;
@@ -77,14 +76,7 @@ builder.Services.AddScoped<IDynamoDbChatRepository, MockDynamoDbChatRepository>(
 if (isProduction)
 {
     Log.Information("Production environment detected — registering BedrockAiService");
-    builder.Services.AddSingleton<AmazonBedrockRuntimeClient>(_ =>
-    {
-        var config = new AmazonBedrockRuntimeConfig
-        {
-            RegionEndpoint = Amazon.RegionEndpoint.USEast1
-        };
-        return new AmazonBedrockRuntimeClient(new ECSTaskCredentials(), config);
-    });
+    builder.Services.AddSingleton(_ => new AmazonBedrockRuntimeClient(Amazon.RegionEndpoint.USEast1));
     builder.Services.AddScoped<IAiService, BedrockAiService>();
 }
 else
