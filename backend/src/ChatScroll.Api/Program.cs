@@ -83,7 +83,7 @@ if (isProduction)
         {
             RegionEndpoint = Amazon.RegionEndpoint.USEast1
         };
-        return new AmazonBedrockRuntimeClient(new InstanceProfileAWSCredentials(), config);
+        return new AmazonBedrockRuntimeClient(new ECSTaskCredentials(), config);
     });
     builder.Services.AddScoped<IAiService, BedrockAiService>();
 }
