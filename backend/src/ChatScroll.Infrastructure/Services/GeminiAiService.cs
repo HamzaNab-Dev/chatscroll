@@ -21,23 +21,25 @@ public class GeminiAiService : IAiService
         try
         {
             var systemPrompt = """
-                You are ChatScroll's AI assistant. Give clear, concise answers.
-                Rules:
-                - Keep answers SHORT and focused (max 200-300 words unless user asks for detail)
-                - Use bullet points instead of long paragraphs
-                - Include ONE brief code example only if directly relevant
-                - Never give examples in multiple programming languages
-                - If the question is conceptual, explain it simply without code
-                - Use markdown formatting: headers, bullets, bold for key terms
-                - End with a one-line summary or key takeaway
-                - If user wants more detail, they will ask
+                You are ChatScroll AI — a concise, smart assistant.
+
+                STRICT RULES:
+                - Maximum 150 words for conceptual questions
+                - Maximum 250 words for technical questions
+                - Give ONE code example maximum, only if essential
+                - NEVER show the same concept in multiple programming languages
+                - Use bullet points, not paragraphs
+                - Be direct — no phrases like 'That's a fantastic question!'
+                - No motivational intros or summaries at the end
+                - If asked about principles/concepts: list them with 1-2 line explanations only
+                - User can ask for more detail if they want it
                 """;
 
-            var fullMessage = string.IsNullOrEmpty(conversationHistory)
-                ? $"{systemPrompt}\n\n{message}"
-                : $"{systemPrompt}\n\nPrevious context:\n{conversationHistory}\n\n{message}";
+            var userContent = string.IsNullOrEmpty(conversationHistory)
+                ? message
+                : $"Previous context:\n{conversationHistory}\n\n{message}";
 
-            return await CallGeminiAsync(fullMessage);
+            return await CallGeminiAsync(userContent, systemPrompt);
         }
         catch (Exception ex)
         {
@@ -165,26 +167,25 @@ public class GeminiAiService : IAiService
         return Task.FromResult(Array.Empty<float>());
     }
 
-    private async Task<string> CallGeminiAsync(string userMessage)
+    private async Task<string> CallGeminiAsync(string userMessage, string systemInstruction = "")
     {
-        var requestBody = new
-        {
-            contents = new[]
-            {
-                new
-                {
-                    role = "user",
-                    parts = new[] { new { text = userMessage } }
-                }
-            },
-            generationConfig = new
-            {
-                maxOutputTokens = 2048,
-                temperature = 0.7
-            }
-        };
+        var contents = new[] { new { role = "user", parts = new[] { new { text = userMessage } } } };
+        var generationConfig = new { maxOutputTokens = 8192, temperature = 0.7 };
 
-        var json = JsonSerializer.Serialize(requestBody);
+        string json;
+        if (!string.IsNullOrEmpty(systemInstruction))
+        {
+            json = JsonSerializer.Serialize(new
+            {
+                systemInstruction = new { parts = new[] { new { text = systemInstruction } } },
+                contents,
+                generationConfig
+            });
+        }
+        else
+        {
+            json = JsonSerializer.Serialize(new { contents, generationConfig });
+        }
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync($"{BaseUrl}?key={_apiKey}", content);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, ScrollText, Lightbulb, Sparkles } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
@@ -34,16 +34,67 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [dismissedSave, setDismissedSave] = useState<Set<string>>(new Set());
+
+  // Typewriter state — which message is animating and how many words are visible
+  const [animatingId, setAnimatingId] = useState<string | null>(null);
+  const [visibleWordCount, setVisibleWordCount] = useState(0);
+  // Refs so interval callback never reads stale state
+  const animationWordsRef = useRef<string[]>([]);
+  const animationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const isFirstMessage = messages.length === 1;
 
+  // Scroll when new messages land
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Follow text as it types out
+  useEffect(() => {
+    if (animatingId) {
+      bottomRef.current?.scrollIntoView({ behavior: "instant" as ScrollBehavior });
+    }
+  }, [visibleWordCount, animatingId]);
+
+  // Typewriter interval — restarts only when animatingId changes
+  useEffect(() => {
+    if (!animatingId) return;
+
+    const words = animationWordsRef.current;
+    if (words.length === 0) return;
+
+    const interval = setInterval(() => {
+      setVisibleWordCount((prev) => {
+        if (prev >= words.length) {
+          clearInterval(interval);
+          animationIntervalRef.current = null;
+          setAnimatingId(null);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 30);
+
+    animationIntervalRef.current = interval;
+    return () => clearInterval(interval);
+  }, [animatingId]);
+
+  // Instantly complete any running animation (called before starting a new send)
+  const flushAnimation = useCallback(() => {
+    if (animationIntervalRef.current) {
+      clearInterval(animationIntervalRef.current);
+      animationIntervalRef.current = null;
+    }
+    setAnimatingId(null);
+  }, []);
+
   const sendMessage = async (text?: string) => {
+    // Complete previous animation so old message shows in full
+    flushAnimation();
+
     const content = (text ?? input).trim();
     if (!content || loading) return;
 
@@ -79,6 +130,13 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
         saved: false,
         timestamp: new Date(),
       };
+
+      // Kick off typewriter for this message
+      if (assistantMessage.content.trim()) {
+        animationWordsRef.current = assistantMessage.content.split(" ");
+        setVisibleWordCount(0);
+        setAnimatingId(assistantMessage.id);
+      }
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
@@ -142,110 +200,121 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-3 border-b border-gray-100 dark:border-slate-800/50 last:border-0 last:pb-0"
-          >
+        {messages.map((message) => {
+          const isAnimating = message.id === animatingId;
+
+          // During animation show partial words + block cursor; after, show full content
+          const displayContent = isAnimating
+            ? animationWordsRef.current.slice(0, visibleWordCount).join(" ") + "▋"
+            : message.content;
+
+          return (
             <div
-              className={cn(
-                "flex gap-3",
-                message.role === "user" ? "flex-row-reverse" : "flex-row"
-              )}
+              key={message.id}
+              className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-3 border-b border-gray-100 dark:border-slate-800/50 last:border-0 last:pb-0"
             >
               <div
                 className={cn(
-                  "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold",
-                  message.role === "user"
-                    ? "bg-amber-600 text-white"
-                    : "bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
+                  "flex gap-3",
+                  message.role === "user" ? "flex-row-reverse" : "flex-row"
                 )}
               >
-                {message.role === "user" ? "H" : "AI"}
-              </div>
-
-              <div
-                className={cn(
-                  "max-w-[85%] rounded-2xl px-4 py-3",
-                  message.role === "user"
-                    ? "bg-amber-50 border border-amber-200 dark:bg-amber-700/30 dark:border-amber-600/30"
-                    : "bg-gray-50 border border-gray-200 dark:bg-slate-800/60 dark:border-slate-700/50"
-                )}
-              >
-                {message.role === "user" ? (
-                  <p className="text-sm text-amber-900 dark:text-amber-100">
-                    {message.content}
-                  </p>
-                ) : (
-                  <Markdown content={message.content} />
-                )}
-
-                <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">
-                  {formatDate(message.timestamp)}
-                </p>
-              </div>
-            </div>
-
-            {/* Enhanced "Already Know This" banner */}
-            {message.isAlreadyKnown && message.role === "assistant" && (
-              <div className="ml-10 mt-2 flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-xl px-3 py-2.5 animate-in fade-in duration-500">
-                <Lightbulb className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <span className="text-amber-700 dark:text-amber-300 font-medium">
-                    You&apos;ve researched this before!
-                  </span>
-                  {message.similarNoteTitle && (
-                    <div className="mt-1 text-amber-600 dark:text-amber-200/70">
-                      📌 &ldquo;{message.similarNoteTitle}&rdquo;
-                      {message.similarNoteDate && (
-                        <span className="text-gray-400 dark:text-slate-500">
-                          {" "}— saved {message.similarNoteDate}
-                        </span>
-                      )}
-                    </div>
+                <div
+                  className={cn(
+                    "w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold",
+                    message.role === "user"
+                      ? "bg-amber-600 text-white"
+                      : "bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
                   )}
-                  <div className="mt-1 text-gray-400 dark:text-slate-500">
-                    Check your Knowledge Tree to review what you saved.
-                  </div>
+                >
+                  {message.role === "user" ? "H" : "AI"}
+                </div>
+
+                <div
+                  className={cn(
+                    "max-w-[85%] rounded-2xl px-4 py-3",
+                    message.role === "user"
+                      ? "bg-amber-50 border border-amber-200 dark:bg-amber-700/30 dark:border-amber-600/30"
+                      : "bg-gray-50 border border-gray-200 dark:bg-slate-800/60 dark:border-slate-700/50"
+                  )}
+                >
+                  {message.role === "user" ? (
+                    <p className="text-sm text-amber-900 dark:text-amber-100">
+                      {message.content}
+                    </p>
+                  ) : (
+                    <Markdown content={displayContent} />
+                  )}
+
+                  <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">
+                    {formatDate(message.timestamp)}
+                  </p>
                 </div>
               </div>
-            )}
 
-            {message.role === "assistant" &&
-              message.folderSuggestion &&
-              message.cleanNote &&
-              !message.saved &&
-              !dismissedSave.has(message.id) && (
-                <div className="ml-10 mt-2">
-                  <SaveNoteModal
-                    question={
-                      (() => {
-                        const idx = messages.findIndex((m) => m.id === message.id);
-                        return idx > 0 ? (messages[idx - 1]?.content ?? "") : "";
-                      })()
-                    }
-                    cleanNote={message.cleanNote}
-                    folderSuggestion={message.folderSuggestion}
-                    folders={folders}
-                    onSave={(folderId, title) =>
-                      handleSaveNote(message.id, folderId, title, message)
-                    }
-                    onDismiss={() =>
-                      setDismissedSave((prev) => new Set([...prev, message.id]))
-                    }
-                  />
+              {/* "Already researched" banner — only after animation finishes */}
+              {!isAnimating && message.isAlreadyKnown && message.role === "assistant" && (
+                <div className="ml-10 mt-2 flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-xl px-3 py-2.5 animate-in fade-in duration-500">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-amber-700 dark:text-amber-300 font-medium">
+                      You&apos;ve researched this before!
+                    </span>
+                    {message.similarNoteTitle && (
+                      <div className="mt-1 text-amber-600 dark:text-amber-200/70">
+                        📌 &ldquo;{message.similarNoteTitle}&rdquo;
+                        {message.similarNoteDate && (
+                          <span className="text-gray-400 dark:text-slate-500">
+                            {" "}— saved {message.similarNoteDate}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="mt-1 text-gray-400 dark:text-slate-500">
+                      Check your Knowledge Tree to review what you saved.
+                    </div>
+                  </div>
                 </div>
               )}
 
-            {message.saved && (
-              <div className="ml-10 mt-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-in fade-in duration-300">
-                ✅ Saved to your knowledge tree
-              </div>
-            )}
-          </div>
-        ))}
+              {/* Save prompt — only after animation finishes */}
+              {!isAnimating &&
+                message.role === "assistant" &&
+                message.folderSuggestion &&
+                message.cleanNote &&
+                !message.saved &&
+                !dismissedSave.has(message.id) && (
+                  <div className="ml-10 mt-2">
+                    <SaveNoteModal
+                      question={
+                        (() => {
+                          const idx = messages.findIndex((m) => m.id === message.id);
+                          return idx > 0 ? (messages[idx - 1]?.content ?? "") : "";
+                        })()
+                      }
+                      cleanNote={message.cleanNote}
+                      folderSuggestion={message.folderSuggestion}
+                      folders={folders}
+                      onSave={(folderId, title) =>
+                        handleSaveNote(message.id, folderId, title, message)
+                      }
+                      onDismiss={() =>
+                        setDismissedSave((prev) => new Set([...prev, message.id]))
+                      }
+                    />
+                  </div>
+                )}
 
-        {/* Animated typing indicator */}
+              {message.saved && (
+                <div className="ml-10 mt-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-in fade-in duration-300">
+                  ✅ Saved to your knowledge tree
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Bouncing dots while waiting for API response */}
         {loading && (
           <div className="flex gap-3 animate-in fade-in duration-200">
             <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-xs text-gray-600 dark:text-slate-300 font-bold flex-shrink-0">
