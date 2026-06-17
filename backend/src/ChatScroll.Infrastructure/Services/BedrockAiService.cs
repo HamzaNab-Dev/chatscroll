@@ -41,25 +41,11 @@ public class BedrockAiService : IAiService
                 - Be friendly and encouraging
                 """;
 
-            var messages = new List<object>();
+            var fullMessage = string.IsNullOrEmpty(conversationHistory)
+                ? message
+                : $"Previous context:\n{conversationHistory}\n\n{message}";
 
-            if (!string.IsNullOrEmpty(conversationHistory))
-            {
-                messages.Add(new { role = "user", content = $"Previous context:\n{conversationHistory}" });
-                messages.Add(new { role = "assistant", content = "I understand the context. How can I help further?" });
-            }
-
-            messages.Add(new { role = "user", content = message });
-
-            var requestBody = new
-            {
-                anthropic_version = "bedrock-2023-05-31",
-                max_tokens = 2048,
-                system = systemPrompt,
-                messages
-            };
-
-            return await InvokeClaudeAsync(requestBody);
+            return await InvokeClaudeAsync(fullMessage, systemPrompt);
         }
         catch (Exception ex)
         {
@@ -104,14 +90,7 @@ public class BedrockAiService : IAiService
                 - isNewFolder = true if you're suggesting a folder that doesn't exist yet
                 """;
 
-            var requestBody = new
-            {
-                anthropic_version = "bedrock-2023-05-31",
-                max_tokens = 256,
-                messages = new[] { new { role = "user", content = prompt } }
-            };
-
-            var responseText = await InvokeClaudeAsync(requestBody);
+            var responseText = await InvokeClaudeAsync(prompt);
             var json = ExtractJson(responseText);
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
@@ -155,14 +134,7 @@ public class BedrockAiService : IAiService
                 Return ONLY the markdown note, no preamble.
                 """;
 
-            var requestBody = new
-            {
-                anthropic_version = "bedrock-2023-05-31",
-                max_tokens = 1024,
-                messages = new[] { new { role = "user", content = prompt } }
-            };
-
-            return await InvokeClaudeAsync(requestBody);
+            return await InvokeClaudeAsync(prompt);
         }
         catch (Exception ex)
         {
@@ -197,14 +169,7 @@ public class BedrockAiService : IAiService
                 {"isAlreadyKnown": false, "matchingTitle": null}
                 """;
 
-            var requestBody = new
-            {
-                anthropic_version = "bedrock-2023-05-31",
-                max_tokens = 128,
-                messages = new[] { new { role = "user", content = prompt } }
-            };
-
-            var responseText = await InvokeClaudeAsync(requestBody);
+            var responseText = await InvokeClaudeAsync(prompt);
             var json = ExtractJson(responseText);
             using var doc = JsonDocument.Parse(json);
             return doc.RootElement.GetProperty("isAlreadyKnown").GetBoolean();
@@ -258,28 +223,39 @@ public class BedrockAiService : IAiService
     // ─────────────────────────────────────────
     // PRIVATE HELPERS
     // ─────────────────────────────────────────
-    private async Task<string> InvokeClaudeAsync(object requestBody)
+    private async Task<string> InvokeClaudeAsync(string userMessage, string systemPrompt = "")
     {
-        var bodyJson = JsonSerializer.Serialize(requestBody);
-
-        var request = new InvokeModelRequest
+        var request = new ConverseRequest
         {
             ModelId = ClaudeModelId,
-            ContentType = "application/json",
-            Accept = "application/json",
-            Body = new MemoryStream(Encoding.UTF8.GetBytes(bodyJson))
+            Messages = new List<Message>
+            {
+                new Message
+                {
+                    Role = ConversationRole.User,
+                    Content = new List<ContentBlock>
+                    {
+                        new ContentBlock { Text = userMessage }
+                    }
+                }
+            },
+            InferenceConfig = new InferenceConfiguration
+            {
+                MaxTokens = 2048,
+                Temperature = 0.7F
+            }
         };
 
-        var response = await _bedrockClient.InvokeModelAsync(request);
-        var responseBody = await new StreamReader(response.Body).ReadToEndAsync();
+        if (!string.IsNullOrEmpty(systemPrompt))
+        {
+            request.System = new List<SystemContentBlock>
+            {
+                new SystemContentBlock { Text = systemPrompt }
+            };
+        }
 
-        using var doc = JsonDocument.Parse(responseBody);
-        var content = doc.RootElement
-            .GetProperty("content")[0]
-            .GetProperty("text")
-            .GetString();
-
-        return content ?? string.Empty;
+        var response = await _bedrockClient.ConverseAsync(request);
+        return response.Output.Message.Content[0].Text;
     }
 
     private static string ExtractJson(string text)
