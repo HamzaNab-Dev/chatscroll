@@ -120,6 +120,21 @@ public class ChatController : ControllerBase
         // Persist assistant turn
         await _dynamoDb.SaveMessageAsync(conversationId, "assistant", answer, MockUserId);
 
+        // If the AI call itself failed, skip all follow-up AI calls — return immediately without save prompt
+        if (answer.StartsWith("GEMINI_ERROR:"))
+        {
+            return Ok(new ChatMessageResponse(
+                Answer: answer,
+                FolderSuggestion: new FolderSuggestion("general", "General", "", false),
+                CleanNote: "",
+                IsAlreadyKnown: false,
+                AlreadyKnownMessage: null,
+                SimilarNoteId: null,
+                SimilarNoteTitle: null,
+                SimilarNoteDate: null
+            ));
+        }
+
         // Semantic duplicate detection — search first 30 chars as heuristic keyword match
         // Production: replace SearchAsync with pgvector cosine similarity on the full question embedding
         var searchTerm = request.Message[..Math.Min(30, request.Message.Length)];

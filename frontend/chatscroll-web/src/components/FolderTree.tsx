@@ -27,6 +27,13 @@ function FolderNode({
   const hasChildren = (folder.children?.length ?? 0) > 0;
   const isSelected = folder.id === selectedId;
 
+  // noteCount on parents is now aggregate (direct + all descendants).
+  // Compute how many notes are stored directly in this folder (not in children).
+  const childSum = hasChildren
+    ? (folder.children ?? []).reduce((s, c) => s + c.noteCount, 0)
+    : 0;
+  const directCount = folder.noteCount - childSum;
+
   return (
     <div>
       <div
@@ -85,8 +92,8 @@ function FolderNode({
 
       {hasChildren && expanded && (
         <div>
-          {/* Virtual "General" node for notes stored directly in this parent folder */}
-          {folder.noteCount > 0 && (
+          {/* Virtual "General" — only shown when this parent has notes stored directly in it */}
+          {directCount > 0 && (
             <div
               className="flex items-center gap-1.5 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-slate-800/60"
               style={{ paddingLeft: `${8 + (depth + 1) * 16}px` }}
@@ -97,13 +104,16 @@ function FolderNode({
                 className="flex-1 flex items-center gap-1.5 py-2 pr-2 text-left min-w-0"
               >
                 <span className="text-base flex-shrink-0">📝</span>
-                <span className="text-sm flex-1 truncate text-gray-700 dark:text-slate-300">General</span>
+                <span className="text-sm flex-1 truncate text-gray-700 dark:text-slate-300">
+                  General
+                </span>
                 <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/40 rounded-full px-1.5 flex-shrink-0">
-                  {folder.noteCount}
+                  {directCount}
                 </span>
               </button>
             </div>
           )}
+
           {folder.children!.map((child) => (
             <FolderNode
               key={child.id}

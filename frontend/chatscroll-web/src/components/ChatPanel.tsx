@@ -344,11 +344,12 @@ export function ChatPanel({
                 </div>
               )}
 
-              {/* Save prompt / auth CTA */}
+              {/* Save prompt / auth CTA — hidden on AI error responses */}
               {!isAnimating &&
                 message.role === "assistant" &&
                 message.folderSuggestion &&
                 message.cleanNote &&
+                !message.content.startsWith("GEMINI_ERROR:") &&
                 !message.saved &&
                 !dismissedSave.has(message.id) && (
                   <div className="ml-10 mt-2">

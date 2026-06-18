@@ -43,8 +43,19 @@ public class MockFolderRepository : IFolderRepository
     public Task<IEnumerable<Folder>> GetByUserIdAsync(Guid userId)
     {
         var result = _folders.Where(f => f.UserId == userId).ToList();
+        var userNotes = MockNoteRepository._notes.Where(n => n.UserId == userId).ToList();
+
+        // Direct counts first
         foreach (var folder in result)
-            folder.NoteCount = MockNoteRepository._notes.Count(n => n.FolderId == folder.Id && n.UserId == userId);
+            folder.NoteCount = userNotes.Count(n => n.FolderId == folder.Id);
+
+        // Propagate child counts up to parents so parent badge shows total (direct + children)
+        foreach (var child in result.Where(f => f.ParentId.HasValue))
+        {
+            var parent = result.FirstOrDefault(p => p.Id == child.ParentId!.Value);
+            if (parent != null) parent.NoteCount += child.NoteCount;
+        }
+
         return Task.FromResult(result.AsEnumerable());
     }
 

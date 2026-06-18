@@ -41,6 +41,10 @@ public class GeminiAiService : IAiService
 
             return await CallGeminiAsync(userContent, systemPrompt);
         }
+        catch (HttpRequestException ex) when (ex.Message.Contains("429"))
+        {
+            return "GEMINI_ERROR: The AI is temporarily rate-limited. Please wait a few seconds and try again.";
+        }
         catch (Exception ex)
         {
             return $"GEMINI_ERROR: {ex.GetType().Name}: {ex.Message}";
@@ -174,34 +178,43 @@ public class GeminiAiService : IAiService
         var contents = new[] { new { role = "user", parts = new[] { new { text = userMessage } } } };
         var generationConfig = new { maxOutputTokens = 8192, temperature = 0.7 };
 
-        string json;
-        if (!string.IsNullOrEmpty(systemInstruction))
-        {
-            json = JsonSerializer.Serialize(new
+        var json = !string.IsNullOrEmpty(systemInstruction)
+            ? JsonSerializer.Serialize(new
             {
                 systemInstruction = new { parts = new[] { new { text = systemInstruction } } },
                 contents,
                 generationConfig
-            });
-        }
-        else
+            })
+            : JsonSerializer.Serialize(new { contents, generationConfig });
+
+        // Retry with exponential backoff on 429 rate-limit responses
+        const int maxAttempts = 3;
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
-            json = JsonSerializer.Serialize(new { contents, generationConfig });
+            var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync($"{BaseUrl}?key={_apiKey}", requestContent);
+
+            if ((int)response.StatusCode == 429 && attempt < maxAttempts - 1)
+            {
+                // 2s then 4s backoff
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt + 1)));
+                continue;
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(responseBody);
+
+            return doc.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString() ?? string.Empty;
         }
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync($"{BaseUrl}?key={_apiKey}", content);
-        response.EnsureSuccessStatusCode();
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(responseBody);
-
-        return doc.RootElement
-            .GetProperty("candidates")[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString() ?? string.Empty;
+        throw new HttpRequestException("429 Too Many Requests — rate limit exceeded after retries.");
     }
 
     private static string ExtractJson(string text)
