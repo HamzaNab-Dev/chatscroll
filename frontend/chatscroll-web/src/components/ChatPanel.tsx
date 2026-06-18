@@ -25,7 +25,7 @@ const WELCOME_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi there! 👋 I'm ChatScroll AI.\n\nAsk me anything and I'll give you a clear, concise answer. The best answers can be saved as **Scrolls** — your personal knowledge library.\n\n**Try asking:**\n- A concept you want to understand\n- A coding question\n- Something you keep forgetting",
+    "Hi there! 👋 I'm ChatScroll AI.\n\nAsk me anything and I'll give you a clear, concise answer. The best answers can be saved as **Scrolls** — your personal knowledge library.",
   timestamp: new Date(),
 };
 
