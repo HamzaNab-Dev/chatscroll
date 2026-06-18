@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Search, LayoutGrid, List, ScrollText, SortAsc, SortDesc } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
@@ -104,9 +104,48 @@ function LibraryContent() {
     load();
   }, [load]);
 
+  // Sort folders into hierarchy: each parent followed immediately by its children
+  const sortedFolders = useMemo((): (Folder & { isChild: boolean })[] => {
+    const parents = folders.filter((f) => !f.parentId);
+    const result: (Folder & { isChild: boolean })[] = [];
+    for (const parent of parents) {
+      result.push({ ...parent, isChild: false });
+      folders
+        .filter((f) => f.parentId === parent.id)
+        .forEach((child) => result.push({ ...child, isChild: true }));
+    }
+    // Orphaned folders (parentId set but parent not in list)
+    const seen = new Set(result.map((f) => f.id));
+    folders
+      .filter((f) => !seen.has(f.id))
+      .forEach((f) => result.push({ ...f, isChild: !!f.parentId }));
+    return result;
+  }, [folders]);
+
+  // Parent tab count = own notes + all direct children's notes combined
+  const getDisplayCount = (folder: Folder, isChild: boolean): number => {
+    if (isChild) return folder.noteCount;
+    const childCount = folders
+      .filter((f) => f.parentId === folder.id)
+      .reduce((sum, f) => sum + f.noteCount, 0);
+    return folder.noteCount + childCount;
+  };
+
+  // When a parent folder is selected, include notes from all its child folders
   const filtered = allNotes
     .filter((n) => {
-      if (selectedFolderId && n.folderId !== selectedFolderId) return false;
+      if (selectedFolderId) {
+        const selectedFolder = folders.find((f) => f.id === selectedFolderId);
+        const selectedIsParent = selectedFolder && !selectedFolder.parentId;
+        if (selectedIsParent) {
+          const childIds = folders
+            .filter((f) => f.parentId === selectedFolderId)
+            .map((f) => f.id);
+          if (n.folderId !== selectedFolderId && !childIds.includes(n.folderId)) return false;
+        } else {
+          if (n.folderId !== selectedFolderId) return false;
+        }
+      }
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
@@ -168,7 +207,7 @@ function LibraryContent() {
           </div>
         </div>
 
-        {/* Search + Sort + Folder filter */}
+        {/* Search + Sort */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" />
@@ -180,7 +219,7 @@ function LibraryContent() {
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 pr-1">
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
@@ -201,7 +240,7 @@ function LibraryContent() {
           </div>
         </div>
 
-        {/* Folder filter tabs */}
+        {/* Folder filter tabs — hierarchical */}
         {folders.length > 0 && (
           <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
             <button
@@ -215,33 +254,43 @@ function LibraryContent() {
             >
               All
             </button>
-            {folders.map((folder) => (
-              <button
-                key={folder.id}
-                onClick={() => setSelectedFolderId(folder.id === selectedFolderId ? null : folder.id)}
-                className={cn(
-                  "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                  selectedFolderId === folder.id
-                    ? "bg-amber-600 text-white"
-                    : "bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40"
-                )}
-              >
-                <span>{folder.icon ?? "📁"}</span>
-                <span>{folder.name}</span>
-                {folder.noteCount > 0 && (
-                  <span
-                    className={cn(
-                      "rounded-full px-1.5",
-                      selectedFolderId === folder.id
-                        ? "bg-white/20"
-                        : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-500"
-                    )}
-                  >
-                    {folder.noteCount}
-                  </span>
-                )}
-              </button>
-            ))}
+
+            {sortedFolders.map((item) => {
+              const displayCount = getDisplayCount(item, item.isChild);
+              return (
+                <button
+                  key={item.id}
+                  onClick={() =>
+                    setSelectedFolderId(item.id === selectedFolderId ? null : item.id)
+                  }
+                  className={cn(
+                    "flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                    item.isChild && "ml-3",
+                    selectedFolderId === item.id
+                      ? "bg-amber-600 text-white"
+                      : "bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40"
+                  )}
+                >
+                  {item.isChild && (
+                    <span className="text-[10px] opacity-50 mr-0.5">↳</span>
+                  )}
+                  <span>{item.icon ?? "📁"}</span>
+                  <span className={item.isChild ? "text-[11px]" : ""}>{item.name}</span>
+                  {displayCount > 0 && (
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 ml-0.5",
+                        selectedFolderId === item.id
+                          ? "bg-white/20"
+                          : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-500"
+                      )}
+                    >
+                      {displayCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
 
