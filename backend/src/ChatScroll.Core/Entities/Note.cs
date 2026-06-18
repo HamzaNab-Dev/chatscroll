@@ -26,5 +26,5 @@ public class Note
     // Navigation
     public User User { get; set; } = null!;
     public Folder Folder { get; set; } = null!;
-    public Conversation? Conversation { get; set; } 
+    public Conversation? Conversation { get; set; }
 }

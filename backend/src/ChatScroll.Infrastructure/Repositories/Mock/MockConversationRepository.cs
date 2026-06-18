@@ -5,7 +5,7 @@ namespace ChatScroll.Infrastructure.Repositories.Mock;
 
 public class MockConversationRepository : IConversationRepository
 {
-    private readonly List<Conversation> _conversations = new();
+    private static readonly List<Conversation> _conversations = new();
 
     public Task<IEnumerable<Conversation>> GetByUserIdAsync(Guid userId) =>
         Task.FromResult(_conversations.Where(c => c.UserId == userId));

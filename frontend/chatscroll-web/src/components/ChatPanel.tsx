@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, ScrollText, Lightbulb, Sparkles } from "lucide-react";
+import { Send, ScrollText, Sparkles } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
 import { SaveNoteModal } from "@/components/SaveNoteModal";
 import { formatDate, generateId } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type { Message, Folder } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Lightbulb } from "lucide-react";
 
 const STARTER_QUESTIONS = [
   "What are SOLID principles in software design?",
@@ -18,40 +19,83 @@ const STARTER_QUESTIONS = [
   "Explain Docker containers vs virtual machines",
 ];
 
+const WELCOME_MESSAGE: Message = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "Hi there! 👋 I'm ChatScroll AI.\n\nAsk me anything and I'll give you a clear, concise answer. The best answers can be saved as **Scrolls** — your personal knowledge library.\n\n**Try asking:**\n- A concept you want to understand\n- A coding question\n- Something you keep forgetting",
+  timestamp: new Date(),
+};
+
 interface ChatPanelProps {
   folders: Folder[];
   onNoteSaved: (folderId: string) => void;
   initialMessage?: string;
+  conversationId?: string;
+  onFirstMessage?: (msg: string, conversationId: string) => void;
 }
 
-export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "👋 **Welcome to ChatScroll!**\n\nAsk me anything — about programming, medicine, history, or any topic you want to learn about. I'll answer your questions and help you save the best answers to your Scroll Library.\n\nWhat would you like to know?",
-      timestamp: new Date(),
-    },
-  ]);
+export function ChatPanel({
+  folders,
+  onNoteSaved,
+  initialMessage,
+  conversationId,
+  onFirstMessage,
+}: ChatPanelProps) {
+  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [dismissedSave, setDismissedSave] = useState<Set<string>>(new Set());
 
-  // Typewriter state — which message is animating and how many words are visible
+  // Typewriter state
   const [animatingId, setAnimatingId] = useState<string | null>(null);
   const [visibleWordCount, setVisibleWordCount] = useState(0);
-  // Refs so interval callback never reads stale state
   const animationWordsRef = useRef<string[]>([]);
   const animationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Ref pattern so the auto-send effect always calls the latest sendMessage
+
+  // Ref pattern so auto-send effect is stale-closure-free
   const sendMessageRef = useRef<((text?: string) => void) | null>(null);
   const autoSentRef = useRef(false);
+  const firstUserMessageSentRef = useRef(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const isFirstMessage = messages.length === 1;
+  // Load saved messages for this conversation on mount
+  useEffect(() => {
+    if (!conversationId) return;
+    try {
+      const raw = sessionStorage.getItem(`chatscroll_msgs_${conversationId}`);
+      if (raw) {
+        const saved = (JSON.parse(raw) as Message[]).map((m) => ({
+          ...m,
+          timestamp: new Date(m.timestamp),
+        }));
+        if (saved.length > 0) {
+          setMessages(saved);
+          firstUserMessageSentRef.current = saved.some((m) => m.role === "user");
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, []); // intentionally empty — only runs on mount (key remount handles conversation switching)
+
+  // Save messages to sessionStorage on every change
+  useEffect(() => {
+    if (!conversationId || messages.length <= 1) return;
+    sessionStorage.setItem(`chatscroll_msgs_${conversationId}`, JSON.stringify(messages));
+  }, [messages, conversationId]);
+
+  // Current conversation title derived from messages (for 5A display)
+  const conversationTitle = useMemo(() => {
+    const firstUser = messages.find((m) => m.role === "user");
+    if (!firstUser) return "New Chat";
+    const t = firstUser.content.trim();
+    return t.length > 40 ? t.slice(0, 40) + "..." : t;
+  }, [messages]);
+
+  const isFirstMessage = messages.length === 1 && messages[0].id === "welcome";
 
   // Scroll when new messages land
   useEffect(() => {
@@ -65,13 +109,11 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
     }
   }, [visibleWordCount, animatingId]);
 
-  // Typewriter interval — restarts only when animatingId changes
+  // Typewriter interval
   useEffect(() => {
     if (!animatingId) return;
-
     const words = animationWordsRef.current;
     if (words.length === 0) return;
-
     const interval = setInterval(() => {
       setVisibleWordCount((prev) => {
         if (prev >= words.length) {
@@ -83,12 +125,10 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
         return prev + 1;
       });
     }, 30);
-
     animationIntervalRef.current = interval;
     return () => clearInterval(interval);
   }, [animatingId]);
 
-  // Instantly complete any running animation (called before starting a new send)
   const flushAnimation = useCallback(() => {
     if (animationIntervalRef.current) {
       clearInterval(animationIntervalRef.current);
@@ -98,11 +138,11 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
   }, []);
 
   const sendMessage = async (text?: string) => {
-    // Complete previous animation so old message shows in full
     flushAnimation();
-
     const content = (text ?? input).trim();
     if (!content || loading) return;
+
+    const isFirst = !firstUserMessageSentRef.current;
 
     const userMessage: Message = {
       id: generateId(),
@@ -114,6 +154,12 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
+
+    // Notify parent on first user message (for conversation title + sidebar)
+    if (isFirst) {
+      firstUserMessageSentRef.current = true;
+      onFirstMessage?.(content, conversationId ?? "");
+    }
 
     try {
       const history = messages
@@ -137,7 +183,6 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
         timestamp: new Date(),
       };
 
-      // Kick off typewriter for this message
       if (assistantMessage.content.trim()) {
         animationWordsRef.current = assistantMessage.content.split(" ");
         setVisibleWordCount(0);
@@ -162,10 +207,9 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
     }
   };
 
-  // Always keep ref pointing to latest sendMessage so the effect below is stale-closure-free
   sendMessageRef.current = sendMessage;
 
-  // Auto-send a pending question from the landing page (stored in sessionStorage before login)
+  // Auto-send pending question from landing page
   useEffect(() => {
     if (!initialMessage || autoSentRef.current) return;
     autoSentRef.current = true;
@@ -210,10 +254,13 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-transparent">
+      {/* Chat header — shows conversation title (5A) */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-800">
         <ScrollText className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-        <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200">Chat</h2>
-        <span className="text-xs text-gray-400 dark:text-slate-600 ml-auto">
+        <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate flex-1">
+          {conversationTitle}
+        </h2>
+        <span className="text-xs text-gray-400 dark:text-slate-600 flex-shrink-0">
           {messages.length - 1} messages
         </span>
       </div>
@@ -253,9 +300,7 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
                   )}
                 >
                   {message.role === "user" ? (
-                    <p className="text-sm text-amber-900 dark:text-amber-100">
-                      {message.content}
-                    </p>
+                    <p className="text-sm text-amber-900 dark:text-amber-100">{message.content}</p>
                   ) : isAnimating ? (
                     <p className="text-sm leading-relaxed text-gray-700 dark:text-slate-300 whitespace-pre-wrap break-words">
                       {animationWordsRef.current.slice(0, visibleWordCount).join(" ")}
@@ -271,7 +316,7 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
                 </div>
               </div>
 
-              {/* "Already researched" banner — only after animation finishes */}
+              {/* Already researched banner */}
               {!isAnimating && message.isAlreadyKnown && message.role === "assistant" && (
                 <div className="ml-10 mt-2 flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-xl px-3 py-2.5 animate-in fade-in duration-500">
                   <Lightbulb className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
@@ -296,7 +341,7 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
                 </div>
               )}
 
-              {/* Save prompt — only after animation finishes */}
+              {/* Save prompt */}
               {!isAnimating &&
                 message.role === "assistant" &&
                 message.folderSuggestion &&
@@ -305,12 +350,10 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
                 !dismissedSave.has(message.id) && (
                   <div className="ml-10 mt-2">
                     <SaveNoteModal
-                      question={
-                        (() => {
-                          const idx = messages.findIndex((m) => m.id === message.id);
-                          return idx > 0 ? (messages[idx - 1]?.content ?? "") : "";
-                        })()
-                      }
+                      question={(() => {
+                        const idx = messages.findIndex((m) => m.id === message.id);
+                        return idx > 0 ? (messages[idx - 1]?.content ?? "") : "";
+                      })()}
                       cleanNote={message.cleanNote}
                       folderSuggestion={message.folderSuggestion}
                       folders={folders}
@@ -333,7 +376,7 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
           );
         })}
 
-        {/* Bouncing dots while waiting for API response */}
+        {/* Loading indicator */}
         {loading && (
           <div className="flex gap-3 animate-in fade-in duration-200">
             <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-xs text-gray-600 dark:text-slate-300 font-bold flex-shrink-0">
@@ -373,6 +416,7 @@ export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelPro
         </div>
       )}
 
+      {/* Input */}
       <div className="px-4 py-3 border-t border-gray-200 dark:border-slate-800">
         <div className="flex gap-2 items-end">
           <textarea

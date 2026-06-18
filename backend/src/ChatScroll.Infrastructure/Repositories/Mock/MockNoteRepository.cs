@@ -11,6 +11,17 @@ public class MockNoteRepository : INoteRepository
         {
             Id = Guid.NewGuid(),
             UserId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            FolderId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Title = "SOLID Principles in Software Design",
+            OriginalQuestion = "What are SOLID principles in software design?",
+            CleanContent = "## SOLID Principles\n\n**S** — Single Responsibility: A class should have one reason to change.\n\n**O** — Open/Closed: Open for extension, closed for modification.\n\n**L** — Liskov Substitution: Subtypes must be substitutable for their base types.\n\n**I** — Interface Segregation: Prefer small, focused interfaces over large ones.\n\n**D** — Dependency Inversion: Depend on abstractions, not concretions.\n\n```csharp\n// Dependency Inversion example\npublic class OrderService\n{\n    private readonly IPaymentProcessor _processor;\n    public OrderService(IPaymentProcessor processor) => _processor = processor;\n}\n```",
+            Tags = new[] { "solid", "oop", "design-patterns", "architecture" },
+            CodeLanguage = "csharp"
+        },
+        new Note
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.Parse("00000000-0000-0000-0000-000000000001"),
             FolderId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
             Title = "LINQ Joins in EF Core",
             OriginalQuestion = "How do I write a LINQ join in Entity Framework Core?",

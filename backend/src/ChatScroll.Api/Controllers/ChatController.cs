@@ -85,6 +85,28 @@ public class ChatController : ControllerBase
         return Ok(info);
     }
 
+    [HttpGet("preview")]
+    public async Task<IActionResult> Preview([FromQuery] string q)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return BadRequest(new { error = "Question is required" });
+
+        var answer = await _aiService.ChatAsync(q, "");
+        var folderSuggestion = await _aiService.SuggestFolderAsync(q, answer, new[] { "general" });
+        var cleanNote = await _aiService.RewriteAsNoteAsync(q, answer);
+
+        return Ok(new ChatMessageResponse(
+            Answer: answer,
+            FolderSuggestion: folderSuggestion,
+            CleanNote: cleanNote,
+            IsAlreadyKnown: false,
+            AlreadyKnownMessage: null,
+            SimilarNoteId: null,
+            SimilarNoteTitle: null,
+            SimilarNoteDate: null
+        ));
+    }
+
     [HttpPost("message")]
     public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
     {

@@ -59,6 +59,13 @@ export type Message = {
   timestamp: Date;
 };
 
+export type Conversation = {
+  id: string;
+  title: string;
+  messageCount: number;
+  updatedAt: string;
+};
+
 export type WeeklyActivity = {
   date: string;
   dayLabel: string;
@@ -121,6 +128,21 @@ export const api = {
     request<ChatResponse>("/api/chat/message", {
       method: "POST",
       body: JSON.stringify({ message, conversationHistory }),
+    }),
+
+  previewChat: (q: string) =>
+    request<ChatResponse>(`/api/chat/preview?q=${encodeURIComponent(q)}`),
+
+  getConversations: () => request<Conversation[]>("/api/conversations"),
+  createConversation: (title?: string) =>
+    request<Conversation>("/api/conversations", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+  updateConversationTitle: (id: string, title: string, messageCount?: number) =>
+    request<void>(`/api/conversations/${id}/title`, {
+      method: "PATCH",
+      body: JSON.stringify({ title, messageCount }),
     }),
 
   getAiStatus: () =>

@@ -6,7 +6,9 @@ import { ScrollText, Sun, Moon } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -18,6 +20,15 @@ export function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { isAuthenticated } = useAuth();
+  const [scrollCount, setScrollCount] = useState<number | null>(null);
+
+  // Fetch total scroll count for the Library badge (5D)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api.getNotesStats()
+      .then((s) => setScrollCount(s.totalNotes))
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   return (
     <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0">
@@ -37,13 +48,25 @@ export function Navigation() {
               key={link.href}
               href={link.href}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-sm transition-colors",
+                "px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5",
                 pathname === link.href
                   ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
                   : "text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
               )}
             >
               {link.label}
+              {link.label === "Library" && scrollCount !== null && scrollCount > 0 && (
+                <span
+                  className={cn(
+                    "text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none",
+                    pathname === link.href
+                      ? "bg-amber-200 dark:bg-amber-700/50 text-amber-800 dark:text-amber-200"
+                      : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                  )}
+                >
+                  {scrollCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

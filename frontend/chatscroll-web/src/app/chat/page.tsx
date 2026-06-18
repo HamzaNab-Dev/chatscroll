@@ -4,22 +4,47 @@ import { useState, useEffect, useCallback } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { KnowledgePanel } from "@/components/KnowledgePanel";
 import { Navigation } from "@/components/Navigation";
+import { ConversationsSidebar, type ConversationItem } from "@/components/ConversationsSidebar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { api } from "@/lib/api";
+import { generateId } from "@/lib/utils";
 import type { Folder } from "@/lib/api";
+
+const STORAGE_KEY = "chatscroll_conversations";
+
+function loadConversations(): ConversationItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return (JSON.parse(raw) as ConversationItem[]).map((c) => ({
+      ...c,
+      updatedAt: new Date(c.updatedAt),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveConversations(convs: ConversationItem[]) {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
+}
 
 function ChatContent() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
+  const [conversationId, setConversationId] = useState<string>(() => generateId());
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
 
-  // Pick up a pending question stored by the landing page before redirecting to login
+  // Load pending question + existing conversations on mount
   useEffect(() => {
     const pending = sessionStorage.getItem("pendingQuestion");
     if (pending) {
       sessionStorage.removeItem("pendingQuestion");
       setInitialMessage(pending);
     }
+    setConversations(loadConversations());
   }, []);
 
   const loadFolders = useCallback(async () => {
@@ -36,22 +61,66 @@ function ChatContent() {
   }, [loadFolders, refreshKey]);
 
   const handleNoteSaved = (folderId: string) => {
-    // Optimistically increment the saved folder's noteCount for instant visual feedback
     setFolders((prev) =>
       prev.map((f) => (f.id === folderId ? { ...f, noteCount: f.noteCount + 1 } : f))
     );
-    // Trigger full refresh to sync with backend (re-fetches folders + notes)
     setRefreshKey((k) => k + 1);
   };
+
+  const handleNewChat = () => {
+    const newId = generateId();
+    setConversationId(newId);
+    setInitialMessage(undefined);
+  };
+
+  const handleSelectConversation = (id: string) => {
+    setConversationId(id);
+    setInitialMessage(undefined);
+  };
+
+  const handleFirstMessage = useCallback((msg: string, convId: string) => {
+    const title = msg.length > 45 ? msg.slice(0, 45) + "..." : msg;
+    setConversations((prev) => {
+      const existing = prev.find((c) => c.id === convId);
+      let updated: ConversationItem[];
+      if (existing) {
+        updated = prev.map((c) =>
+          c.id === convId ? { ...c, title, updatedAt: new Date() } : c
+        );
+      } else {
+        updated = [{ id: convId, title, updatedAt: new Date() }, ...prev];
+      }
+      saveConversations(updated);
+      return updated;
+    });
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-hidden">
       <Navigation />
       <div className="flex flex-1 overflow-hidden">
+        {/* Conversations sidebar */}
+        <ConversationsSidebar
+          conversations={conversations}
+          currentId={conversationId}
+          onNew={handleNewChat}
+          onSelect={handleSelectConversation}
+        />
+
+        {/* Chat area */}
         <main className="flex-1 flex flex-col min-w-0 border-r border-gray-200 dark:border-slate-800">
-          <ChatPanel folders={folders} onNoteSaved={handleNoteSaved} initialMessage={initialMessage} />
+          <ChatPanel
+            key={conversationId}
+            folders={folders}
+            onNoteSaved={handleNoteSaved}
+            initialMessage={initialMessage}
+            conversationId={conversationId}
+            onFirstMessage={handleFirstMessage}
+          />
         </main>
-        <aside className="w-80 flex-shrink-0 hidden lg:flex flex-col">
+
+        {/* Knowledge panel */}
+        <aside className="w-72 flex-shrink-0 hidden lg:flex flex-col">
           <KnowledgePanel folders={folders} refreshKey={refreshKey} />
         </aside>
       </div>
