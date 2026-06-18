@@ -31,6 +31,27 @@ public class NotesController : ControllerBase
         return Ok(note);
     }
 
+    [HttpGet("recent")]
+    public async Task<IActionResult> GetRecent([FromQuery] int limit = 4)
+    {
+        var notes = await _noteRepository.GetRecentAsync(MockUserId, limit);
+        return Ok(notes);
+    }
+
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAll()
+    {
+        var notes = await _noteRepository.GetAllAsync(MockUserId);
+        return Ok(notes);
+    }
+
+    [HttpPut("{id}/view")]
+    public async Task<IActionResult> IncrementView(Guid id)
+    {
+        await _noteRepository.IncrementViewCountAsync(id, MockUserId);
+        return NoContent();
+    }
+
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string q)
     {

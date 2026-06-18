@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, Sparkles, Check } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { Folder, FolderSuggestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,17 @@ interface SaveNoteModalProps {
   folders: Folder[];
   onSave: (folderId: string, title: string) => Promise<void>;
   onDismiss: () => void;
+}
+
+function formatPath(path: string): string {
+  return path
+    .split(".")
+    .map((p) =>
+      p
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    )
+    .join(" → ");
 }
 
 export function SaveNoteModal({
@@ -36,11 +47,8 @@ export function SaveNoteModal({
     : suggestedFolder;
 
   const folderLabel = activeFolder
-    ? `${activeFolder.icon ?? "📁"} ${activeFolder.name}`
-    : folderSuggestion.suggestedPath
-        .split(".")
-        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join(" → ");
+    ? formatPath(activeFolder.path)
+    : formatPath(folderSuggestion.suggestedPath);
 
   const handleSave = async () => {
     const folderId = selectedFolderId || suggestedFolder?.id || folders[0]?.id;
@@ -55,11 +63,11 @@ export function SaveNoteModal({
   };
 
   return (
-    <div className="mt-2 rounded-lg border border-gray-200 dark:border-slate-700/50 bg-white/60 dark:bg-transparent">
-      {/* Single-row main layout */}
-      <div className="flex items-center gap-2.5 px-3 py-2">
-        <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-        <span className="flex-1 text-xs font-medium text-gray-700 dark:text-slate-300 truncate">
+    <div className="mt-2 rounded-xl border border-amber-500/20 bg-transparent dark:bg-amber-950/10">
+      {/* Single compact row */}
+      <div className="flex items-center gap-2.5 px-3 py-2.5 max-h-[52px]">
+        <span className="text-sm flex-shrink-0">📜</span>
+        <span className="flex-1 text-xs font-medium text-amber-600 dark:text-amber-400 truncate">
           {folderLabel}
         </span>
         <Button
@@ -68,32 +76,27 @@ export function SaveNoteModal({
           size="sm"
           className="h-7 text-xs bg-amber-600 hover:bg-amber-500 text-white rounded-full px-4 flex-shrink-0"
         >
-          {saving ? (
-            "Saving..."
-          ) : (
-            <>
-              <Check className="w-3 h-3 mr-1" />
-              Save Note
-            </>
-          )}
+          {saving ? "Saving..." : "Save as Scroll"}
         </Button>
-        <button
+        <span
           onClick={onDismiss}
-          className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors flex-shrink-0"
+          className="text-xs text-slate-500 hover:text-slate-300 cursor-pointer flex-shrink-0"
         >
           Skip
-        </button>
+        </span>
       </div>
 
-      {/* Change folder — tiny toggle, hidden below */}
+      {/* Change folder dropdown */}
       {folders.length > 1 && (
-        <div className="px-3 pb-2 -mt-0.5">
+        <div className="px-3 pb-2">
           <button
             onClick={() => setShowAllFolders(!showAllFolders)}
-            className="text-[10px] text-gray-400 dark:text-slate-600 hover:text-gray-600 dark:hover:text-slate-400 flex items-center gap-1 transition-colors"
+            className="flex items-center gap-0.5 text-[10px] text-amber-600/50 dark:text-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
           >
-            <FolderOpen className="w-3 h-3" />
-            {showAllFolders ? "Hide" : "Change folder"}
+            Change folder
+            <ChevronDown
+              className={cn("w-3 h-3 transition-transform", showAllFolders && "rotate-180")}
+            />
           </button>
 
           {showAllFolders && (
@@ -114,7 +117,7 @@ export function SaveNoteModal({
                   )}
                 >
                   <span>{folder.icon ?? "📁"}</span>
-                  <span>{folder.name}</span>
+                  <span>{formatPath(folder.path)}</span>
                 </button>
               ))}
             </div>

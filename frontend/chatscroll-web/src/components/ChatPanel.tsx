@@ -18,7 +18,7 @@ const STARTER_QUESTIONS = [
 
 interface ChatPanelProps {
   folders: Folder[];
-  onNoteSaved: () => void;
+  onNoteSaved: (folderId: string) => void;
 }
 
 export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
@@ -27,7 +27,7 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
       id: "welcome",
       role: "assistant",
       content:
-        "👋 **Welcome to ChatScroll!**\n\nAsk me anything — about programming, medicine, history, or any topic you want to learn about. I'll answer your questions and help you save the best answers to your personal knowledge tree.\n\nWhat would you like to know?",
+        "👋 **Welcome to ChatScroll!**\n\nAsk me anything — about programming, medicine, history, or any topic you want to learn about. I'll answer your questions and help you save the best answers to your Scroll Library.\n\nWhat would you like to know?",
       timestamp: new Date(),
     },
   ]);
@@ -186,7 +186,7 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
     setMessages((prev) =>
       prev.map((m) => (m.id === messageId ? { ...m, saved: true } : m))
     );
-    onNoteSaved();
+    onNoteSaved(folderId);
   };
 
   return (
@@ -271,7 +271,7 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
                       </div>
                     )}
                     <div className="mt-1 text-gray-400 dark:text-slate-500">
-                      Check your Knowledge Tree to review what you saved.
+                      Check your Scroll Library to review what you saved.
                     </div>
                   </div>
                 </div>
@@ -306,8 +306,8 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
                 )}
 
               {message.saved && (
-                <div className="ml-10 mt-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-in fade-in duration-300">
-                  ✅ Saved to your knowledge tree
+                <div className="ml-10 mt-2 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 animate-in fade-in duration-300">
+                  📜 Saved as a Scroll!
                 </div>
               )}
             </div>

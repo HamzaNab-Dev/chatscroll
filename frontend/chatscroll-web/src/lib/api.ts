@@ -108,6 +108,12 @@ export const api = {
     tags?: string[];
     codeLanguage?: string;
   }) => request<Note>("/api/notes", { method: "POST", body: JSON.stringify(data) }),
+  getAllNotes: () =>
+    request<Note[]>("/api/notes/all"),
+  getRecentNotes: (limit = 4) =>
+    request<Note[]>(`/api/notes/recent?limit=${limit}`),
+  incrementViewCount: (id: string) =>
+    request<void>(`/api/notes/${id}/view`, { method: "PUT" }),
   deleteNote: (id: string) =>
     request<void>(`/api/notes/${id}`, { method: "DELETE" }),
 

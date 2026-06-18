@@ -43,6 +43,19 @@ public class MockNoteRepository : INoteRepository
              n.CleanContent.Contains(query, StringComparison.OrdinalIgnoreCase) ||
              n.Tags.Any(t => t.Contains(query, StringComparison.OrdinalIgnoreCase)))));
 
+    public Task<IEnumerable<Note>> GetRecentAsync(Guid userId, int limit) =>
+        Task.FromResult(_notes
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.CreatedAt)
+            .Take(limit)
+            .AsEnumerable());
+
+    public Task<IEnumerable<Note>> GetAllAsync(Guid userId) =>
+        Task.FromResult(_notes
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.CreatedAt)
+            .AsEnumerable());
+
     public Task<Note> CreateAsync(Note note)
     {
         note.Id = Guid.NewGuid();
@@ -69,6 +82,17 @@ public class MockNoteRepository : INoteRepository
     {
         var note = _notes.FirstOrDefault(n => n.Id == id && n.UserId == userId);
         if (note != null) _notes.Remove(note);
+        return Task.CompletedTask;
+    }
+
+    public Task IncrementViewCountAsync(Guid id, Guid userId)
+    {
+        var note = _notes.FirstOrDefault(n => n.Id == id && n.UserId == userId);
+        if (note != null)
+        {
+            note.ViewCount++;
+            note.LastViewedAt = DateTime.UtcNow;
+        }
         return Task.CompletedTask;
     }
 }

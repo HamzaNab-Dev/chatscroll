@@ -1,0 +1,251 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Tag,
+  Calendar,
+  Eye,
+  Copy,
+  Trash2,
+  Check,
+  ScrollText,
+  Link2,
+} from "lucide-react";
+import { Navigation } from "@/components/Navigation";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Markdown } from "@/components/ui/markdown";
+import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/api";
+import type { Note } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+
+function ScrollDetailContent() {
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const [note, setNote] = useState<Note | null>(null);
+  const [relatedNotes, setRelatedNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!params?.id) return;
+    try {
+      const [noteData, allNotes] = await Promise.all([
+        api.getNoteById(params.id),
+        api.getAllNotes(),
+      ]);
+      setNote(noteData);
+
+      // Increment view count (fire-and-forget)
+      api.incrementViewCount(params.id).catch(() => {});
+
+      // Find related notes by shared tags
+      const related = allNotes
+        .filter((n) => n.id !== params.id)
+        .filter((n) => n.tags.some((t) => noteData.tags.includes(t)))
+        .slice(0, 3);
+      setRelatedNotes(related);
+    } catch {
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [params?.id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleCopy = async () => {
+    if (!note) return;
+    await navigator.clipboard.writeText(note.cleanContent);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDelete = async () => {
+    if (!note || !confirm("Delete this scroll? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await api.deleteNote(note.id);
+      router.push("/library");
+    } catch {
+      setDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+        <Navigation />
+        <main className="max-w-3xl mx-auto px-4 py-8 sm:px-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-24" />
+            <div className="h-7 bg-gray-200 dark:bg-slate-800 rounded w-2/3" />
+            <div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-1/3" />
+            <div className="h-64 bg-gray-100 dark:bg-slate-800 rounded-xl" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (notFound || !note) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+        <Navigation />
+        <main className="max-w-3xl mx-auto px-4 py-16 sm:px-6 text-center">
+          <ScrollText className="w-10 h-10 mx-auto mb-4 text-gray-300 dark:text-slate-600" />
+          <h1 className="text-lg font-semibold text-gray-700 dark:text-slate-300 mb-2">
+            Scroll not found
+          </h1>
+          <p className="text-sm text-gray-400 dark:text-slate-500 mb-6">
+            This scroll may have been deleted or doesn't exist.
+          </p>
+          <Link
+            href="/library"
+            className="text-sm text-amber-600 dark:text-amber-400 hover:text-amber-500 font-medium"
+          >
+            ← Back to Library
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+      <Navigation />
+
+      <main className="max-w-3xl mx-auto px-4 py-8 sm:px-6">
+        {/* Back nav */}
+        <Link
+          href="/library"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors mb-6"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to Library
+        </Link>
+
+        {/* Title + actions */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 leading-snug">
+            {note.title}
+          </h1>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+              title="Copy content"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-red-200 dark:border-red-900/40 text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-800/50 transition-colors disabled:opacity-50"
+              title="Delete scroll"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </div>
+
+        {/* Meta row */}
+        <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-slate-500 mb-4">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            {formatDate(note.createdAt)}
+          </span>
+          <span className="flex items-center gap-1">
+            <Eye className="w-3 h-3" />
+            {note.viewCount} view{note.viewCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {/* Tags */}
+        {note.tags.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap mb-5">
+            <Tag className="w-3 h-3 text-gray-400 dark:text-slate-500" />
+            {note.tags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className="text-xs border-gray-300 dark:border-slate-700 text-gray-500 dark:text-slate-400"
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Original question */}
+        {note.originalQuestion && (
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 p-3 mb-5">
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">Original question</p>
+            <p className="text-sm text-gray-700 dark:text-slate-300">{note.originalQuestion}</p>
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="rounded-xl bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 p-5 mb-8">
+          <Markdown content={note.cleanContent} />
+        </div>
+
+        {/* Related Scrolls */}
+        {relatedNotes.length > 0 && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-3">
+              <Link2 className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" />
+              <h2 className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                Related Scrolls
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {relatedNotes.map((related) => (
+                <Link
+                  key={related.id}
+                  href={`/scroll/${related.id}`}
+                  className="group flex items-start gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/30 hover:border-amber-300 dark:hover:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-slate-800/60 transition-all"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-700 dark:text-slate-300 truncate group-hover:text-amber-700 dark:group-hover:text-amber-200 transition-colors">
+                      {related.title}
+                    </p>
+                    {related.tags.length > 0 && (
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {related.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="text-[10px] text-gray-400 dark:text-slate-600 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded px-1.5 py-0.5"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default function ScrollDetailPage() {
+  return (
+    <ProtectedRoute>
+      <ScrollDetailContent />
+    </ProtectedRoute>
+  );
+}

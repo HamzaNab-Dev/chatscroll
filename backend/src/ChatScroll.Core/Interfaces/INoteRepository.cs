@@ -7,7 +7,10 @@ public interface INoteRepository
     Task<IEnumerable<Note>> GetByFolderIdAsync(Guid folderId, Guid userId);
     Task<Note?> GetByIdAsync(Guid id, Guid userId);
     Task<IEnumerable<Note>> SearchAsync(Guid userId, string query);
+    Task<IEnumerable<Note>> GetRecentAsync(Guid userId, int limit);
+    Task<IEnumerable<Note>> GetAllAsync(Guid userId);
     Task<Note> CreateAsync(Note note);
     Task<Note> UpdateAsync(Note note);
     Task DeleteAsync(Guid id, Guid userId);
+    Task IncrementViewCountAsync(Guid id, Guid userId);
 }

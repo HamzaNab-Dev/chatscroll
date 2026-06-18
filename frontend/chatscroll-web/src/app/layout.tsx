@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ChatScroll — Every question becomes lasting knowledge",
   description:
-    "Your AI knowledge management app that organizes every valuable answer into a searchable personal knowledge tree.",
+    "Your AI knowledge management app that organizes every valuable answer into a searchable personal Scroll Library.",
 };
 
 export default function RootLayout({

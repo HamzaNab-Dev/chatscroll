@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, BookOpen, FolderOpen, Brain, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, ScrollText, FolderOpen, Brain, Zap } from "lucide-react";
 import { FolderTree } from "@/components/FolderTree";
-import { NoteViewer } from "@/components/NoteViewer";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { Folder, Note, WeeklyActivity } from "@/lib/api";
@@ -14,7 +14,7 @@ interface KnowledgePanelProps {
   refreshKey: number;
 }
 
-type PanelView = "tree" | "notes" | "note";
+type PanelView = "tree" | "notes";
 
 function SkeletonNote() {
   return (
@@ -46,7 +46,7 @@ function WeeklyStatsBar({ data }: { data: WeeklyActivity[] }) {
           <Zap className="w-3 h-3 text-amber-600" />
           This week
         </span>
-        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{total} notes</span>
+        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{total} scrolls</span>
       </div>
       <div className="flex items-end gap-1 h-10">
         {data.map((day) => (
@@ -54,7 +54,7 @@ function WeeklyStatsBar({ data }: { data: WeeklyActivity[] }) {
             <div
               className="w-full bg-amber-400/60 dark:bg-amber-500/50 hover:bg-amber-500/80 dark:hover:bg-amber-400/70 rounded-t-sm transition-all duration-500 cursor-default"
               style={{ height: `${Math.max(2, (day.count / max) * 32)}px` }}
-              title={`${day.dayLabel}: ${day.count} note${day.count !== 1 ? "s" : ""}`}
+              title={`${day.dayLabel}: ${day.count} scroll${day.count !== 1 ? "s" : ""}`}
             />
             <span className="text-[10px] text-gray-400 dark:text-slate-600">{day.dayLabel}</span>
           </div>
@@ -65,10 +65,9 @@ function WeeklyStatsBar({ data }: { data: WeeklyActivity[] }) {
 }
 
 export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
+  const router = useRouter();
   const [view, setView] = useState<PanelView>("tree");
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [relatedNotes, setRelatedNotes] = useState<Note[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Note[]>([]);
@@ -141,29 +140,19 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
     setSearchQuery("");
   };
 
-  const handleNoteSelect = (note: Note) => {
-    setSelectedNote(note);
-    setView("note");
-    const related = notes
-      .filter((n) => n.id !== note.id)
-      .filter((n) => n.tags.some((tag) => note.tags.includes(tag)))
-      .slice(0, 3);
-    setRelatedNotes(related);
-  };
-
   const totalNotes = folders.reduce((sum, f) => sum + f.noteCount, 0);
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-transparent">
+      {/* Fix 5: ScrollText icon, "Your Scrolls" title */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-800">
-        <BookOpen className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-        <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200">Knowledge Tree</h2>
-        <Badge
-          variant="outline"
-          className="ml-auto text-xs border-amber-300 dark:border-amber-700/50 text-amber-600 dark:text-amber-400 font-medium"
-        >
-          {totalNotes} notes
-        </Badge>
+        <ScrollText className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+        <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200">Your Scrolls</h2>
+        {/* Fix 4: 📜 + "X Scrolls saved" */}
+        <div className="ml-auto flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+          <span>📜</span>
+          <span>{totalNotes} saved</span>
+        </div>
       </div>
 
       <div className="px-3 py-2 border-b border-gray-200 dark:border-slate-800">
@@ -173,7 +162,7 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
             ref={searchRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search notes..."
+            placeholder="Search scrolls..."
             className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-lg pl-8 pr-16 py-2 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-300 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/40 transition-colors"
           />
           <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-slate-600 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded px-1 py-0.5 hidden sm:block">
@@ -186,23 +175,24 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
         {searchQuery && (
           <div className="p-3 space-y-1">
             <p className="text-xs text-gray-400 dark:text-slate-500 px-1 mb-2">
-              {searching ? "Searching..." : `${searchResults.length} results`}
+              {searching ? "Searching..." : `${searchResults.length} scroll${searchResults.length !== 1 ? "s" : ""} found`}
             </p>
             {searchResults.length === 0 && !searching && (
               <div className="text-center py-6">
                 <Search className="w-6 h-6 mx-auto mb-2 text-gray-300 dark:text-slate-700" />
                 <p className="text-xs text-gray-500 dark:text-slate-600">
-                  No notes found for &ldquo;{searchQuery}&rdquo;
+                  No scrolls found for &ldquo;{searchQuery}&rdquo;
                 </p>
                 <p className="text-xs text-gray-400 dark:text-slate-700 mt-1">
-                  Ask the AI about this topic to create a note
+                  Ask the AI about this topic to create a scroll
                 </p>
               </div>
             )}
+            {/* Fix 1: navigate to /scroll/[id] instead of opening NoteViewer */}
             {searchResults.map((note) => (
               <button
                 key={note.id}
-                onClick={() => handleNoteSelect(note)}
+                onClick={() => router.push(`/scroll/${note.id}`)}
                 className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 hover:border-amber-300 dark:hover:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-slate-800/60 transition-all"
               >
                 <p className="text-sm text-gray-800 dark:text-slate-200 truncate">{note.title}</p>
@@ -212,15 +202,6 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
               </button>
             ))}
           </div>
-        )}
-
-        {!searchQuery && view === "note" && selectedNote && (
-          <NoteViewer
-            note={selectedNote}
-            onBack={() => setView("notes")}
-            relatedNotes={relatedNotes}
-            onViewRelatedNote={handleNoteSelect}
-          />
         )}
 
         {!searchQuery && view === "notes" && selectedFolder && (
@@ -251,7 +232,7 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
                 <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-3">
                   <FolderOpen className="w-6 h-6 text-gray-400 dark:text-slate-600" />
                 </div>
-                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">No notes yet</p>
+                <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">No scrolls yet</p>
                 <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 max-w-[180px] mx-auto">
                   Ask something in the chat and save the answer here
                 </p>
@@ -261,9 +242,10 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
             {!loadingNotes && notes.length > 0 && (
               <div className="space-y-2">
                 {notes.map((note) => (
+                  /* Fix 1: navigate to /scroll/[id] instead of NoteViewer */
                   <button
                     key={note.id}
-                    onClick={() => handleNoteSelect(note)}
+                    onClick={() => router.push(`/scroll/${note.id}`)}
                     className="w-full text-left px-3 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 hover:border-amber-300 dark:hover:border-amber-500/30 hover:bg-amber-50/50 dark:hover:bg-slate-800/60 transition-all group"
                   >
                     <p className="text-sm text-gray-800 dark:text-slate-200 font-medium truncate group-hover:text-amber-700 dark:group-hover:text-amber-200 transition-colors">
@@ -299,7 +281,7 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
                     <Brain className="w-7 h-7 text-amber-500 dark:text-amber-600/70" />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-slate-400 font-medium">
-                    Your knowledge tree is empty
+                    Your Scroll Library is empty
                   </p>
                   <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 max-w-[180px] mx-auto">
                     Ask a question in the chat — AI will suggest where to save the answer

@@ -72,7 +72,7 @@ export function NoteViewer({ note, onBack, relatedNotes, onViewRelatedNote }: No
             <div className="flex items-center gap-1.5 mb-2">
               <Link2 className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" />
               <h3 className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                Related notes
+                Related Scrolls
               </h3>
             </div>
             <div className="space-y-1.5">
