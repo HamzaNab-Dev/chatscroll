@@ -5,7 +5,7 @@ namespace ChatScroll.Infrastructure.Repositories.Mock;
 
 public class MockNoteRepository : INoteRepository
 {
-    private readonly List<Note> _notes = new()
+    internal static readonly List<Note> _notes = new()
     {
         new Note
         {

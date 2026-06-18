@@ -203,11 +203,6 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
         {messages.map((message) => {
           const isAnimating = message.id === animatingId;
 
-          // During animation show partial words + block cursor; after, show full content
-          const displayContent = isAnimating
-            ? animationWordsRef.current.slice(0, visibleWordCount).join(" ") + "▋"
-            : message.content;
-
           return (
             <div
               key={message.id}
@@ -242,8 +237,13 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
                     <p className="text-sm text-amber-900 dark:text-amber-100">
                       {message.content}
                     </p>
+                  ) : isAnimating ? (
+                    <p className="text-sm leading-relaxed text-gray-700 dark:text-slate-300 whitespace-pre-wrap break-words">
+                      {animationWordsRef.current.slice(0, visibleWordCount).join(" ")}
+                      <span className="inline-block w-px h-[0.875rem] bg-amber-500 dark:bg-amber-400 animate-pulse align-baseline ml-0.5" />
+                    </p>
                   ) : (
-                    <Markdown content={displayContent} />
+                    <Markdown content={message.content} />
                   )}
 
                   <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">

@@ -63,13 +63,28 @@ export function SaveNoteModal({
   };
 
   return (
-    <div className="mt-2 rounded-xl border border-amber-500/20 bg-transparent dark:bg-amber-950/10">
-      {/* Single compact row */}
-      <div className="flex items-center gap-2.5 px-3 py-2.5 max-h-[52px]">
-        <span className="text-sm flex-shrink-0">📜</span>
-        <span className="flex-1 text-xs font-medium text-amber-600 dark:text-amber-400 truncate">
-          {folderLabel}
-        </span>
+    <div className="mt-2 rounded-xl border border-amber-500/25 bg-transparent dark:bg-amber-950/10">
+      {/* Single compact row: icon | [path + change-folder link] | [Save as Scroll] [Skip] */}
+      <div className="flex items-center gap-3 px-4 py-2">
+        <span className="text-base flex-shrink-0">📜</span>
+
+        {/* Left column: folder path + optional change-folder toggle */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-amber-600 dark:text-amber-400 truncate">{folderLabel}</p>
+          {folders.length > 1 && (
+            <button
+              onClick={() => setShowAllFolders(!showAllFolders)}
+              className="flex items-center gap-0.5 text-[10px] text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 transition-colors mt-0.5"
+            >
+              Change folder
+              <ChevronDown
+                className={cn("w-2.5 h-2.5 transition-transform", showAllFolders && "rotate-180")}
+              />
+            </button>
+          )}
+        </div>
+
+        {/* Right: save button + skip */}
         <Button
           onClick={handleSave}
           disabled={saving}
@@ -86,42 +101,28 @@ export function SaveNoteModal({
         </span>
       </div>
 
-      {/* Change folder dropdown */}
-      {folders.length > 1 && (
-        <div className="px-3 pb-2">
-          <button
-            onClick={() => setShowAllFolders(!showAllFolders)}
-            className="flex items-center gap-0.5 text-[10px] text-amber-600/50 dark:text-amber-500/50 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-          >
-            Change folder
-            <ChevronDown
-              className={cn("w-3 h-3 transition-transform", showAllFolders && "rotate-180")}
-            />
-          </button>
-
-          {showAllFolders && (
-            <div className="mt-1.5 space-y-0.5 max-h-32 overflow-y-auto">
-              {folders.map((folder) => (
-                <button
-                  key={folder.id}
-                  onClick={() => {
-                    setSelectedFolderId(folder.id);
-                    setShowAllFolders(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-all",
-                    selectedFolderId === folder.id ||
-                      (!selectedFolderId && folder.id === suggestedFolder?.id)
-                      ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
-                      : "text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800/50"
-                  )}
-                >
-                  <span>{folder.icon ?? "📁"}</span>
-                  <span>{formatPath(folder.path)}</span>
-                </button>
-              ))}
-            </div>
-          )}
+      {/* Folder picker — only rendered when open, no height impact when closed */}
+      {showAllFolders && (
+        <div className="border-t border-amber-500/15 px-4 pt-1.5 pb-2 space-y-0.5 max-h-32 overflow-y-auto">
+          {folders.map((folder) => (
+            <button
+              key={folder.id}
+              onClick={() => {
+                setSelectedFolderId(folder.id);
+                setShowAllFolders(false);
+              }}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-all",
+                selectedFolderId === folder.id ||
+                  (!selectedFolderId && folder.id === suggestedFolder?.id)
+                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
+                  : "text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800/50"
+              )}
+            >
+              <span>{folder.icon ?? "📁"}</span>
+              <span>{formatPath(folder.path)}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>

@@ -5,7 +5,7 @@ namespace ChatScroll.Infrastructure.Repositories.Mock;
 
 public class MockFolderRepository : IFolderRepository
 {
-    private readonly List<Folder> _folders = new()
+    internal static readonly List<Folder> _folders = new()
     {
         new Folder
         {
@@ -15,7 +15,7 @@ public class MockFolderRepository : IFolderRepository
             Path = "programming",
             Icon = "💻",
             Color = "#3B82F6",
-            NoteCount = 3
+            NoteCount = 0
         },
         new Folder
         {
@@ -26,7 +26,7 @@ public class MockFolderRepository : IFolderRepository
             Icon = "🔷",
             Color = "#8B5CF6",
             ParentId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            NoteCount = 2
+            NoteCount = 0
         },
         new Folder
         {
@@ -36,12 +36,17 @@ public class MockFolderRepository : IFolderRepository
             Path = "medicine",
             Icon = "🏥",
             Color = "#10B981",
-            NoteCount = 1
+            NoteCount = 0
         }
     };
 
-    public Task<IEnumerable<Folder>> GetByUserIdAsync(Guid userId) =>
-        Task.FromResult(_folders.Where(f => f.UserId == userId));
+    public Task<IEnumerable<Folder>> GetByUserIdAsync(Guid userId)
+    {
+        var result = _folders.Where(f => f.UserId == userId).ToList();
+        foreach (var folder in result)
+            folder.NoteCount = MockNoteRepository._notes.Count(n => n.FolderId == folder.Id && n.UserId == userId);
+        return Task.FromResult(result.AsEnumerable());
+    }
 
     public Task<Folder?> GetByIdAsync(Guid id, Guid userId) =>
         Task.FromResult(_folders.FirstOrDefault(f => f.Id == id && f.UserId == userId));
