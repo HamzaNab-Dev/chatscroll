@@ -133,7 +133,21 @@ public class NotesController : ControllerBase
         await _noteRepository.DeleteAsync(id, MockUserId);
         return NoContent();
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateNoteRequest request)
+    {
+        var note = await _noteRepository.GetByIdAsync(id, MockUserId);
+        if (note is null) return NotFound();
+        if (request.FolderId.HasValue) note.FolderId = request.FolderId.Value;
+        if (request.Title != null) note.Title = request.Title;
+        if (request.Tags != null) note.Tags = request.Tags;
+        var updated = await _noteRepository.UpdateAsync(note);
+        return Ok(updated);
+    }
 }
+
+public record UpdateNoteRequest(Guid? FolderId, string? Title, string[]? Tags);
 
 public record CreateNoteRequest(
     Guid FolderId,

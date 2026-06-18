@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ScrollText, Eye, EyeOff, Loader2, Mail } from "lucide-react";
+import { ScrollText, Eye, EyeOff, Loader2, Mail, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { isCognitoConfigured } from "@/lib/auth-config";
@@ -13,6 +14,7 @@ type Mode = "signin" | "signup" | "verify";
 export default function LoginPage() {
   const router = useRouter();
   const { signIn, signUp, confirmSignUp } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,7 +59,15 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center px-4 relative">
+      {/* Theme toggle — top right */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+        aria-label="Toggle theme"
+      >
+        {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-3">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">

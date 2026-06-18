@@ -73,6 +73,8 @@ public class GeminiAiService : IAiService
                 }
 
                 Rules:
+                - IMPORTANT: Never suggest a parent folder if it has child folders. Always use the most specific leaf folder.
+                - If the topic fits a parent category but no specific child exists, suggest parentPath.general as the path (e.g. "programming.general")
                 - Use lowercase with dots as separators (ltree format)
                 - Use existing folders when they fit
                 - Create a new specific subfolder when needed

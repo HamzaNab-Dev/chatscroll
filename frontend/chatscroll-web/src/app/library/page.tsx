@@ -200,28 +200,50 @@ function FolderSidebar({
               </div>
 
               {/* Children */}
-              {isExpanded &&
-                children.map((child) => (
-                  <button
-                    key={child.id}
-                    onClick={() => onSelect(child.id)}
-                    className={cn(
-                      "w-full flex items-center gap-1.5 pl-7 pr-3 py-2 text-sm text-left transition-colors",
-                      selectedFolderId === child.id
-                        ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
-                        : "text-gray-500 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-slate-800/50"
-                    )}
-                  >
-                    <span className="text-[10px] text-gray-400 dark:text-slate-600">↳</span>
-                    <span className="flex-shrink-0 text-xs">{child.icon ?? "📁"}</span>
-                    <span className="flex-1 truncate text-xs">{child.name}</span>
-                    {child.noteCount > 0 && (
+              {isExpanded && (
+                <>
+                  {/* Virtual "General" node — notes stored directly in this parent folder */}
+                  {parent.noteCount > 0 && (
+                    <button
+                      onClick={() => onSelect("__general__" + parent.id)}
+                      className={cn(
+                        "w-full flex items-center gap-1.5 pl-7 pr-3 py-2 text-sm text-left transition-colors",
+                        selectedFolderId === "__general__" + parent.id
+                          ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
+                          : "text-gray-500 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                      )}
+                    >
+                      <span className="text-[10px] text-gray-400 dark:text-slate-600">↳</span>
+                      <span className="flex-shrink-0 text-xs">📝</span>
+                      <span className="flex-1 truncate text-xs">General</span>
                       <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
-                        {child.noteCount}
+                        {parent.noteCount}
                       </span>
-                    )}
-                  </button>
-                ))}
+                    </button>
+                  )}
+                  {children.map((child) => (
+                    <button
+                      key={child.id}
+                      onClick={() => onSelect(child.id)}
+                      className={cn(
+                        "w-full flex items-center gap-1.5 pl-7 pr-3 py-2 text-sm text-left transition-colors",
+                        selectedFolderId === child.id
+                          ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
+                          : "text-gray-500 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                      )}
+                    >
+                      <span className="text-[10px] text-gray-400 dark:text-slate-600">↳</span>
+                      <span className="flex-shrink-0 text-xs">{child.icon ?? "📁"}</span>
+                      <span className="flex-1 truncate text-xs">{child.name}</span>
+                      {child.noteCount > 0 && (
+                        <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
+                          {child.noteCount}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           );
         })}
@@ -267,15 +289,20 @@ function LibraryContent() {
   const filtered = allNotes
     .filter((n) => {
       if (selectedFolderId) {
-        const selectedFolder = folders.find((f) => f.id === selectedFolderId);
-        const selectedIsParent = selectedFolder && !selectedFolder.parentId;
-        if (selectedIsParent) {
-          const childIds = folders
-            .filter((f) => f.parentId === selectedFolderId)
-            .map((f) => f.id);
-          if (n.folderId !== selectedFolderId && !childIds.includes(n.folderId)) return false;
+        if (selectedFolderId.startsWith("__general__")) {
+          const parentId = selectedFolderId.slice("__general__".length);
+          if (n.folderId !== parentId) return false;
         } else {
-          if (n.folderId !== selectedFolderId) return false;
+          const selFolder = folders.find((f) => f.id === selectedFolderId);
+          const selIsParent = selFolder && !selFolder.parentId;
+          if (selIsParent) {
+            const childIds = folders
+              .filter((f) => f.parentId === selectedFolderId)
+              .map((f) => f.id);
+            if (n.folderId !== selectedFolderId && !childIds.includes(n.folderId)) return false;
+          } else {
+            if (n.folderId !== selectedFolderId) return false;
+          }
         }
       }
       if (!searchQuery.trim()) return true;
@@ -296,9 +323,15 @@ function LibraryContent() {
       return sortAsc ? -cmp : cmp;
     });
 
-  const selectedFolder = selectedFolderId
-    ? folders.find((f) => f.id === selectedFolderId)
-    : null;
+  const selectedFolder = (() => {
+    if (!selectedFolderId) return null;
+    if (selectedFolderId.startsWith("__general__")) {
+      const parentId = selectedFolderId.slice("__general__".length);
+      const parent = folders.find((f) => f.id === parentId);
+      return parent ? ({ ...parent, name: "General", icon: "📝", id: selectedFolderId } as Folder) : null;
+    }
+    return folders.find((f) => f.id === selectedFolderId) ?? null;
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 flex flex-col">

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { ScrollText, Send, Loader2, ArrowRight, ChevronDown } from "lucide-react";
-import { Markdown } from "@/components/ui/markdown";
-import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { ScrollText, Send, ArrowRight, ChevronDown, Sun, Moon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
+import { UserMenu } from "@/components/UserMenu";
+import { cn } from "@/lib/utils";
 
 const SUGGESTIONS = [
   "SOLID principles?",
@@ -13,76 +17,106 @@ const SUGGESTIONS = [
   "What is pgvector?",
 ];
 
+const AWS_STACK = [
+  { icon: "🗄️", name: "Aurora PostgreSQL", desc: "Serverless v2 with pgvector + ltree" },
+  { icon: "⚡", name: "Amazon ECS", desc: "Express Mode auto-scaling" },
+  { icon: "🔐", name: "Cognito", desc: "User auth & JWT" },
+  { icon: "🤖", name: "Gemini 2.5 Flash", desc: "AI responses & knowledge rewriting" },
+  { icon: "📦", name: "Amazon ECR", desc: "Container registry" },
+  { icon: "🌐", name: "Vercel", desc: "Frontend deployment" },
+];
+
+const AUTH_NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/chat", label: "Chat" },
+  { href: "/library", label: "Library" },
+];
+
 export function LandingWithChat() {
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [used, setUsed] = useState(false);
-  const answerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    if (sessionStorage.getItem("previewUsed")) setUsed(true);
-  }, []);
-
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const q = question.trim();
-    if (!q || loading || used) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.previewChat(q);
-      setAnswer(response.answer);
-      setUsed(true);
-      sessionStorage.setItem("previewUsed", "1");
-      setTimeout(
-        () => answerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-        100
-      );
-    } catch {
-      setError("Could not reach the AI. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    if (!q || submitting) return;
+    setSubmitting(true);
+    sessionStorage.setItem("pendingQuestion", q);
+    router.push(isAuthenticated ? "/chat" : "/login");
   };
 
-  const handleSignUp = () => {
-    const q = question.trim();
-    if (q) sessionStorage.setItem("pendingQuestion", q);
-    window.location.href = "/login";
-  };
+  const ThemeToggle = () => (
+    <button
+      onClick={toggleTheme}
+      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+      aria-label="Toggle theme"
+    >
+      {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </button>
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      {/* Navigation */}
+      {/* Navigation — auth-aware */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800/50">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
             <ScrollText className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-slate-100 text-sm tracking-tight">ChatScroll</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
-          <a href="#features" className="hover:text-slate-200 transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-slate-200 transition-colors">How it works</a>
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href="/login"
-            className="px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/login"
-            className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1"
-          >
-            Start Free <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
+        {isAuthenticated ? (
+          /* Authenticated nav: Home / Chat / Library + theme + avatar */
+          <>
+            <nav className="hidden md:flex items-center gap-1 mx-auto">
+              {AUTH_NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-sm transition-colors",
+                    pathname === link.href
+                      ? "bg-amber-600/20 text-amber-300 font-medium"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <UserMenu />
+            </div>
+          </>
+        ) : (
+          /* Unauthenticated nav: Features / How it works + Sign In + Start Free */
+          <>
+            <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400 mx-auto">
+              <a href="#features" className="hover:text-slate-200 transition-colors">Features</a>
+              <a href="#how-it-works" className="hover:text-slate-200 transition-colors">How it works</a>
+            </nav>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Link
+                href="/login"
+                className="px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/login"
+                className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1"
+              >
+                Start Free <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </>
+        )}
       </header>
 
       {/* Hero */}
@@ -94,14 +128,11 @@ export function LandingWithChat() {
         <h1 className="text-4xl sm:text-5xl font-bold text-slate-100 mb-3 tracking-tight">
           ChatScroll
         </h1>
-        <p className="text-lg text-slate-400 mb-8">
-          Every question becomes lasting knowledge
-        </p>
+        <p className="text-lg text-slate-400 mb-8">Every question becomes lasting knowledge</p>
 
-        {/* Chat box */}
+        {/* Chat box — redirects on submit */}
         <div className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
           <textarea
-            ref={textareaRef}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => {
@@ -110,101 +141,57 @@ export function LandingWithChat() {
                 handleSubmit();
               }
             }}
-            placeholder={
-              used
-                ? "Sign up to ask more questions..."
-                : "Ask anything... (no login needed to try)"
-            }
-            disabled={loading || used}
+            placeholder="Ask anything to get started..."
+            disabled={submitting}
             rows={2}
             className="w-full bg-transparent px-5 py-4 text-sm text-slate-200 placeholder-slate-500 focus:outline-none resize-none disabled:opacity-60"
           />
           <div className="flex items-center justify-end px-4 pb-3">
             <button
               onClick={handleSubmit}
-              disabled={!question.trim() || loading || used}
-              className="w-8 h-8 rounded-lg bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center disabled:opacity-40 transition-all"
+              disabled={!question.trim() || submitting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium disabled:opacity-40 transition-all"
             >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+              {submitting ? (
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Send className="w-3.5 h-3.5" />
               )}
+              {submitting ? "Opening..." : "Try it"}
             </button>
           </div>
         </div>
 
-        {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
-
-        {/* Suggestions */}
-        {!answer && !loading && (
-          <div className="flex flex-wrap gap-2 justify-center mt-4">
-            <span className="text-xs text-slate-600 self-center">Try:</span>
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  setQuestion(s);
-                  textareaRef.current?.focus();
-                }}
-                disabled={used}
-                className="text-xs px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:border-amber-500/40 hover:text-amber-400 transition-colors disabled:opacity-40"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* CTAs (shown when no answer yet) */}
-        {!answer && (
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            <Link
-              href="/login"
-              className="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+        {/* Suggestion chips */}
+        <div className="flex flex-wrap gap-2 justify-center mt-4">
+          <span className="text-xs text-slate-600 self-center">Try:</span>
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              onClick={() => setQuestion(s)}
+              disabled={submitting}
+              className="text-xs px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:border-amber-500/40 hover:text-amber-400 transition-colors disabled:opacity-40"
             >
-              Start for Free <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a
-              href="#how-it-works"
-              className="px-6 py-2.5 border border-slate-700 hover:border-slate-600 text-slate-400 hover:text-slate-200 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-            >
-              See How It Works <ChevronDown className="w-4 h-4" />
-            </a>
-          </div>
-        )}
+              {s}
+            </button>
+          ))}
+        </div>
 
-        {/* AI Response */}
-        {answer && (
-          <div ref={answerRef} className="mt-6 text-left">
-            <div className="bg-slate-900 border border-amber-500/20 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
-                  AI
-                </div>
-                <span className="text-xs text-slate-500">ChatScroll AI</span>
-              </div>
-              <div className="text-sm text-slate-300 leading-relaxed">
-                <Markdown content={answer} />
-              </div>
-            </div>
-
-            <div className="mt-4 p-4 bg-amber-950/30 border border-amber-500/20 rounded-xl text-center">
-              <p className="text-sm text-amber-300 font-medium mb-1">
-                💾 Want to save this answer?
-              </p>
-              <p className="text-xs text-slate-500 mb-3">
-                Create a free account to save scrolls to your personal library
-              </p>
-              <button
-                onClick={handleSignUp}
-                className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                Create Free Account →
-              </button>
-            </div>
-          </div>
-        )}
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+          <Link
+            href="/login"
+            className="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            Start for Free <ArrowRight className="w-4 h-4" />
+          </Link>
+          <a
+            href="#how-it-works"
+            className="px-6 py-2.5 border border-slate-700 hover:border-slate-600 text-slate-400 hover:text-slate-200 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            See How It Works <ChevronDown className="w-4 h-4" />
+          </a>
+        </div>
       </section>
 
       {/* Stats bar */}
@@ -238,8 +225,35 @@ export function LandingWithChat() {
         </div>
       </section>
 
+      {/* AWS Infrastructure section */}
+      <section className="border-y border-slate-800 bg-slate-900/40 py-16">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-xl font-bold text-slate-100 text-center mb-2">
+            🏗️ Built on Production-Grade AWS Infrastructure
+          </h2>
+          <p className="text-slate-500 text-sm text-center mb-10">
+            Every layer is production-ready and deployed on AWS
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {AWS_STACK.map(({ icon, name, desc }) => (
+              <div
+                key={name}
+                className="bg-slate-900 border border-slate-800 rounded-xl p-4 hover:border-amber-500/20 transition-colors"
+              >
+                <div className="text-xl mb-2">{icon}</div>
+                <p className="text-sm font-semibold text-slate-200 mb-0.5">{name}</p>
+                <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-600 text-center mt-6">
+            + DynamoDB for chat logs · CloudWatch monitoring · GitHub Actions CI/CD auto-deployment
+          </p>
+        </div>
+      </section>
+
       {/* Features */}
-      <section id="features" className="bg-slate-900/30 py-20">
+      <section id="features" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-2xl font-bold text-slate-100 text-center mb-12">Features</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -249,7 +263,11 @@ export function LandingWithChat() {
               { icon: "🔍", title: "Smart Search", desc: "Find any scroll instantly with semantic search" },
               { icon: "📁", title: "Organized", desc: "Auto-categorized into folders & sub-folders" },
               { icon: "💡", title: "Already Know?", desc: "Detects if you've researched this topic before" },
-              { icon: "⚡", title: "Lightning Fast", desc: "Built on Aurora PostgreSQL + AWS infrastructure" },
+              {
+                icon: "☁️",
+                title: "AWS Native",
+                desc: "Aurora PostgreSQL Serverless v2 with pgvector semantic search, DynamoDB chat logs, ECS Express deployment, and Cognito authentication",
+              },
             ].map(({ icon, title, desc }) => (
               <div
                 key={title}

@@ -27,8 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     // suppressHydrationWarning because ThemeProvider updates className client-side
-    // defaulting to "dark" matches the initial state in ThemeProvider
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>

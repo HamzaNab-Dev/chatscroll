@@ -123,6 +123,8 @@ export const api = {
     request<void>(`/api/notes/${id}/view`, { method: "PUT" }),
   deleteNote: (id: string) =>
     request<void>(`/api/notes/${id}`, { method: "DELETE" }),
+  updateNote: (id: string, data: { folderId?: string; title?: string; tags?: string[] }) =>
+    request<Note>(`/api/notes/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 
   sendMessage: (message: string, conversationHistory: string) =>
     request<ChatResponse>("/api/chat/message", {

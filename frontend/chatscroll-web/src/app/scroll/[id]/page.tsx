@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,13 +13,14 @@ import {
   Check,
   ScrollText,
   Link2,
+  FolderOpen,
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Markdown } from "@/components/ui/markdown";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import type { Note } from "@/lib/api";
+import type { Note, Folder } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
 function ScrollDetailContent() {
@@ -31,15 +32,21 @@ function ScrollDetailContent() {
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [showMoveMenu, setShowMoveMenu] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const moveMenuRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     if (!params?.id) return;
     try {
-      const [noteData, allNotes] = await Promise.all([
+      const [noteData, allNotes, foldersData] = await Promise.all([
         api.getNoteById(params.id),
         api.getAllNotes(),
+        api.getFolders(),
       ]);
       setNote(noteData);
+      setFolders(foldersData);
 
       // Increment view count (fire-and-forget)
       api.incrementViewCount(params.id).catch(() => {});
@@ -76,6 +83,29 @@ function ScrollDetailContent() {
       router.push("/library");
     } catch {
       setDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showMoveMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (moveMenuRef.current && !moveMenuRef.current.contains(e.target as Node)) {
+        setShowMoveMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showMoveMenu]);
+
+  const handleMove = async (folderId: string) => {
+    if (!note || moving) return;
+    setMoving(true);
+    setShowMoveMenu(false);
+    try {
+      const updated = await api.updateNote(note.id, { folderId });
+      setNote(updated);
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -146,6 +176,43 @@ function ScrollDetailContent() {
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? "Copied" : "Copy"}
             </button>
+
+            {/* Move to folder */}
+            <div className="relative" ref={moveMenuRef}>
+              <button
+                onClick={() => setShowMoveMenu((v) => !v)}
+                disabled={moving}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors disabled:opacity-50"
+                title="Move to folder"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                {moving ? "Moving..." : "Move"}
+              </button>
+              {showMoveMenu && (
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[180px] max-h-60 overflow-y-auto">
+                  {folders.map((folder) => (
+                    <button
+                      key={folder.id}
+                      onClick={() => handleMove(folder.id)}
+                      disabled={folder.id === note.folderId}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${
+                        folder.id === note.folderId
+                          ? "text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-900/20"
+                          : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
+                      }`}
+                      style={{ paddingLeft: folder.parentId ? "24px" : undefined }}
+                    >
+                      <span>{folder.icon ?? "📁"}</span>
+                      <span className="flex-1 truncate">{folder.name}</span>
+                      {folder.id === note.folderId && (
+                        <Check className="w-3 h-3 flex-shrink-0 text-amber-500" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={handleDelete}
               disabled={deleting}
