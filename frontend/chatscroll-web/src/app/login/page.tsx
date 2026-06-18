@@ -32,7 +32,7 @@ export default function LoginPage() {
     try {
       if (mode === "signin") {
         await signIn(email, password);
-        router.push("/");
+        router.push("/chat");
 
       } else if (mode === "signup") {
         await signUp(email, password, displayName);
@@ -40,7 +40,7 @@ export default function LoginPage() {
           setMode("verify");
           setSuccess(`Verification code sent to ${email}`);
         } else {
-          router.push("/");
+          router.push("/chat");
         }
 
       } else if (mode === "verify") {

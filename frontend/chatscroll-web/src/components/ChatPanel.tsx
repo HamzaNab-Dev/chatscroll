@@ -12,16 +12,19 @@ import { cn } from "@/lib/utils";
 
 const STARTER_QUESTIONS = [
   "What are SOLID principles in software design?",
-  "Explain how pgvector enables semantic search",
+  "Explain how pgvector enables semantic search in Aurora",
   "What's the difference between REST and GraphQL?",
+  "How does async/await work in C#?",
+  "Explain Docker containers vs virtual machines",
 ];
 
 interface ChatPanelProps {
   folders: Folder[];
   onNoteSaved: (folderId: string) => void;
+  initialMessage?: string;
 }
 
-export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
+export function ChatPanel({ folders, onNoteSaved, initialMessage }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -41,6 +44,9 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
   // Refs so interval callback never reads stale state
   const animationWordsRef = useRef<string[]>([]);
   const animationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref pattern so the auto-send effect always calls the latest sendMessage
+  const sendMessageRef = useRef<((text?: string) => void) | null>(null);
+  const autoSentRef = useRef(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -155,6 +161,19 @@ export function ChatPanel({ folders, onNoteSaved }: ChatPanelProps) {
       inputRef.current?.focus();
     }
   };
+
+  // Always keep ref pointing to latest sendMessage so the effect below is stale-closure-free
+  sendMessageRef.current = sendMessage;
+
+  // Auto-send a pending question from the landing page (stored in sessionStorage before login)
+  useEffect(() => {
+    if (!initialMessage || autoSentRef.current) return;
+    autoSentRef.current = true;
+    const timer = setTimeout(() => {
+      sendMessageRef.current?.(initialMessage);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [initialMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

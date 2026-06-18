@@ -11,6 +11,16 @@ import type { Folder } from "@/lib/api";
 function ChatContent() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
+
+  // Pick up a pending question stored by the landing page before redirecting to login
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pendingQuestion");
+    if (pending) {
+      sessionStorage.removeItem("pendingQuestion");
+      setInitialMessage(pending);
+    }
+  }, []);
 
   const loadFolders = useCallback(async () => {
     try {
@@ -39,7 +49,7 @@ function ChatContent() {
       <Navigation />
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 flex flex-col min-w-0 border-r border-gray-200 dark:border-slate-800">
-          <ChatPanel folders={folders} onNoteSaved={handleNoteSaved} />
+          <ChatPanel folders={folders} onNoteSaved={handleNoteSaved} initialMessage={initialMessage} />
         </main>
         <aside className="w-80 flex-shrink-0 hidden lg:flex flex-col">
           <KnowledgePanel folders={folders} refreshKey={refreshKey} />
