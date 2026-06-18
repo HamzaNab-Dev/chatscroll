@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Send, ScrollText, Sparkles } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
@@ -10,6 +11,7 @@ import { api } from "@/lib/api";
 import type { Message, Folder } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Lightbulb } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const STARTER_QUESTIONS = [
   "What are SOLID principles in software design?",
@@ -58,6 +60,7 @@ export function ChatPanel({
   const autoSentRef = useRef(false);
   const firstUserMessageSentRef = useRef(false);
 
+  const { isAuthenticated } = useAuth();
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -341,7 +344,7 @@ export function ChatPanel({
                 </div>
               )}
 
-              {/* Save prompt */}
+              {/* Save prompt / auth CTA */}
               {!isAnimating &&
                 message.role === "assistant" &&
                 message.folderSuggestion &&
@@ -349,21 +352,49 @@ export function ChatPanel({
                 !message.saved &&
                 !dismissedSave.has(message.id) && (
                   <div className="ml-10 mt-2">
-                    <SaveNoteModal
-                      question={(() => {
-                        const idx = messages.findIndex((m) => m.id === message.id);
-                        return idx > 0 ? (messages[idx - 1]?.content ?? "") : "";
-                      })()}
-                      cleanNote={message.cleanNote}
-                      folderSuggestion={message.folderSuggestion}
-                      folders={folders}
-                      onSave={(folderId, title) =>
-                        handleSaveNote(message.id, folderId, title, message)
-                      }
-                      onDismiss={() =>
-                        setDismissedSave((prev) => new Set([...prev, message.id]))
-                      }
-                    />
+                    {isAuthenticated ? (
+                      <SaveNoteModal
+                        question={(() => {
+                          const idx = messages.findIndex((m) => m.id === message.id);
+                          return idx > 0 ? (messages[idx - 1]?.content ?? "") : "";
+                        })()}
+                        cleanNote={message.cleanNote}
+                        folderSuggestion={message.folderSuggestion}
+                        folders={folders}
+                        onSave={(folderId, title) =>
+                          handleSaveNote(message.id, folderId, title, message)
+                        }
+                        onDismiss={() =>
+                          setDismissedSave((prev) => new Set([...prev, message.id]))
+                        }
+                      />
+                    ) : (
+                      <div className="rounded-xl border border-amber-500/25 bg-transparent px-4 py-2.5 flex items-center gap-3">
+                        <span className="text-base flex-shrink-0">📜</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                            This answer can be saved as a Scroll
+                          </p>
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">
+                            Create a free account to build your knowledge library
+                          </p>
+                        </div>
+                        <Link
+                          href="/login"
+                          className="text-xs px-3 py-1.5 rounded-full bg-amber-600 hover:bg-amber-500 text-white font-medium flex-shrink-0 whitespace-nowrap transition-colors"
+                        >
+                          Sign up free
+                        </Link>
+                        <button
+                          onClick={() =>
+                            setDismissedSave((prev) => new Set([...prev, message.id]))
+                          }
+                          className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 flex-shrink-0"
+                        >
+                          Skip
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 

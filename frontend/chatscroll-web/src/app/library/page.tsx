@@ -12,6 +12,8 @@ import {
   ChevronDown,
   ChevronRight,
   MessageSquare,
+  Plus,
+  X,
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -104,13 +106,19 @@ function FolderSidebar({
   selectedFolderId,
   onSelect,
   totalCount,
+  onFolderCreated,
 }: {
   folders: Folder[];
   selectedFolderId: string | null;
   onSelect: (id: string | null) => void;
   totalCount: number;
+  onFolderCreated?: (folder: Folder) => void;
 }) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderParentId, setNewFolderParentId] = useState<string>("");
+  const [creatingFolder, setCreatingFolder] = useState(false);
 
   const parents = folders.filter((f) => !f.parentId);
   const getChildren = (parentId: string) => folders.filter((f) => f.parentId === parentId);
@@ -124,13 +132,86 @@ function FolderSidebar({
     });
   };
 
+  const parentFolders = folders.filter((f) => !f.parentId);
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    setCreatingFolder(true);
+    try {
+      const slug = newFolderName.trim().toLowerCase().replace(/\s+/g, "_");
+      const parentFolder = newFolderParentId
+        ? folders.find((f) => f.id === newFolderParentId)
+        : null;
+      const path = parentFolder ? `${parentFolder.path}.${slug}` : slug;
+
+      const created = await api.createFolder({
+        name: newFolderName.trim(),
+        path,
+        parentId: newFolderParentId || undefined,
+      });
+
+      onFolderCreated?.(created);
+      onSelect(created.id);
+      setShowNewFolder(false);
+      setNewFolderName("");
+      setNewFolderParentId("");
+    } catch {
+      // silently skip
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
+
   return (
     <aside className="w-48 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col">
-      <div className="px-3 py-3 border-b border-gray-200 dark:border-slate-800">
+      <div className="px-3 py-3 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between">
         <h2 className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
           Folders
         </h2>
+        <button
+          onClick={() => setShowNewFolder((v) => !v)}
+          className="p-0.5 rounded text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+          title="New folder"
+        >
+          {showNewFolder ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+        </button>
       </div>
+
+      {/* New folder form */}
+      {showNewFolder && (
+        <div className="px-3 py-2 border-b border-gray-200 dark:border-slate-800 space-y-1.5">
+          <input
+            autoFocus
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleCreateFolder();
+              if (e.key === "Escape") { setShowNewFolder(false); setNewFolderName(""); setNewFolderParentId(""); }
+            }}
+            placeholder="Folder name..."
+            className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400"
+          />
+          {parentFolders.length > 0 && (
+            <select
+              value={newFolderParentId}
+              onChange={(e) => setNewFolderParentId(e.target.value)}
+              className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 focus:outline-none focus:border-amber-400 appearance-none"
+            >
+              <option value="">No parent (top level)</option>
+              {parentFolders.map((f) => (
+                <option key={f.id} value={f.id}>{f.icon ?? "📁"} {f.name}</option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={handleCreateFolder}
+            disabled={!newFolderName.trim() || creatingFolder}
+            className="w-full py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium disabled:opacity-40 transition-colors"
+          >
+            {creatingFolder ? "Creating..." : "Create folder"}
+          </button>
+        </div>
+      )}
 
       <nav className="flex-1 overflow-y-auto py-1">
         {/* All Scrolls */}
@@ -344,6 +425,7 @@ function LibraryContent() {
           selectedFolderId={selectedFolderId}
           onSelect={setSelectedFolderId}
           totalCount={allNotes.length}
+          onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
         />
 
         {/* Main area */}

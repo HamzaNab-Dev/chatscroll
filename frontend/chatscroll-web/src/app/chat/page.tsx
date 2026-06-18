@@ -5,7 +5,7 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { KnowledgePanel } from "@/components/KnowledgePanel";
 import { Navigation } from "@/components/Navigation";
 import { ConversationsSidebar, type ConversationItem } from "@/components/ConversationsSidebar";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { generateId } from "@/lib/utils";
 import type { Folder } from "@/lib/api";
@@ -31,6 +31,7 @@ function saveConversations(convs: ConversationItem[]) {
 }
 
 function ChatContent() {
+  const { isAuthenticated } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
@@ -48,13 +49,14 @@ function ChatContent() {
   }, []);
 
   const loadFolders = useCallback(async () => {
+    if (!isAuthenticated) return;
     try {
       const data = await api.getFolders();
       setFolders(data);
     } catch {
-      console.error("Failed to load folders");
+      // silently skip
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     loadFolders();
@@ -129,9 +131,5 @@ function ChatContent() {
 }
 
 export default function ChatPage() {
-  return (
-    <ProtectedRoute>
-      <ChatContent />
-    </ProtectedRoute>
-  );
+  return <ChatContent />;
 }

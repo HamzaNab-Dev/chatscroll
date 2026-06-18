@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ScrollText, FolderOpen, Brain, Zap } from "lucide-react";
 import { FolderTree } from "@/components/FolderTree";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { Folder, Note, WeeklyActivity } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 interface KnowledgePanelProps {
   folders: Folder[];
@@ -66,6 +68,7 @@ function WeeklyStatsBar({ data }: { data: WeeklyActivity[] }) {
 
 export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [view, setView] = useState<PanelView>("tree");
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -105,13 +108,14 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
   }, [selectedFolder, refreshKey]);
 
   const loadStats = useCallback(async () => {
+    if (!isAuthenticated) return;
     try {
       const stats = await api.getNotesStats();
       setWeeklyStats(stats.weeklyActivity);
     } catch {
       // silently skip
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     loadStats();
@@ -142,13 +146,37 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
 
   const totalNotes = folders.reduce((sum, f) => sum + f.noteCount, 0);
 
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col h-full bg-white dark:bg-transparent">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-800">
+          <ScrollText className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+          <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200">Your Scrolls</h2>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/30 flex items-center justify-center mb-4">
+            <ScrollText className="w-7 h-7 text-amber-500 dark:text-amber-600/80" />
+          </div>
+          <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Sign in to save Scrolls</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 mb-5 max-w-[160px]">
+            Build your personal knowledge library — save answers as scrolls
+          </p>
+          <Link
+            href="/login"
+            className="text-xs px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors"
+          >
+            Sign up free
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-transparent">
-      {/* Fix 5: ScrollText icon, "Your Scrolls" title */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-800">
         <ScrollText className="w-4 h-4 text-amber-500 dark:text-amber-400" />
         <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200">Your Scrolls</h2>
-        {/* Fix 4: 📜 + "X Scrolls saved" */}
         <div className="ml-auto flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
           <span>📜</span>
           <span>{totalNotes} saved</span>
