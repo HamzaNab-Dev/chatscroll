@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
@@ -8,6 +8,7 @@ import { ScrollText, Send, ArrowRight, ChevronDown, Sun, Moon } from "lucide-rea
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { UserMenu } from "@/components/UserMenu";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const SUGGESTIONS = [
@@ -35,10 +36,18 @@ const AUTH_NAV_LINKS = [
 export function LandingWithChat() {
   const [question, setQuestion] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [scrollCount, setScrollCount] = useState<number | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api.getNotesStats()
+      .then((s) => setScrollCount(s.totalNotes))
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   const handleSubmit = () => {
     const q = question.trim();
@@ -78,13 +87,25 @@ export function LandingWithChat() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm transition-colors",
+                  "px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5",
                   pathname === link.href
                     ? "bg-amber-100 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 font-medium"
                     : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
                 )}
               >
                 {link.label}
+                {link.label === "Library" && scrollCount !== null && scrollCount > 0 && (
+                  <span
+                    className={cn(
+                      "text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none",
+                      pathname === link.href
+                        ? "bg-amber-200 dark:bg-amber-700/50 text-amber-800 dark:text-amber-200"
+                        : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                    )}
+                  >
+                    {scrollCount}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
@@ -246,25 +267,25 @@ export function LandingWithChat() {
       </section>
 
       {/* Stats bar */}
-      <div className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-5">
-        <div className="max-w-3xl mx-auto px-6 flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-amber-600 dark:text-amber-400">∞</span>
-            <span className="text-sm text-gray-500 dark:text-slate-400">Scrolls you can save</span>
+      <div className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-4">
+        <div className="max-w-3xl mx-auto px-6 flex flex-nowrap items-center justify-center gap-4 sm:gap-8">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-base font-bold text-amber-600 dark:text-amber-400">∞</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved</span>
           </div>
-          <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-slate-700" />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-amber-600 dark:text-amber-400">5-Step</span>
-            <span className="text-sm text-gray-500 dark:text-slate-400">AI reasoning</span>
+          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">5-Step</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400">AI reasoning</span>
           </div>
-          <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-slate-700" />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-700 dark:text-slate-300">🤖 Gemini</span>
-            <span className="text-sm text-gray-500 dark:text-slate-400">Powered by Google</span>
+          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">🤖 Gemini</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400">Powered by Google</span>
           </div>
-          <div className="hidden sm:block w-px h-5 bg-gray-200 dark:bg-slate-700" />
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 dark:text-slate-400">🏆 AWS H0 Hackathon</span>
+          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-xs text-gray-500 dark:text-slate-400">🏆 AWS H0 Hackathon</span>
           </div>
         </div>
       </div>
@@ -438,8 +459,8 @@ export function LandingWithChat() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 bg-gray-50/60 dark:bg-slate-900/40">
+      {/* Pricing — only for guests */}
+      {!isAuthenticated && <section id="pricing" className="py-20 bg-gray-50/60 dark:bg-slate-900/40">
         <div className="max-w-2xl mx-auto px-6 text-center">
           <p className="text-xs font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">Pricing</p>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-3">Simple & Free</h2>
@@ -481,7 +502,7 @@ export function LandingWithChat() {
             </Link>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* CTA */}
       <section className="max-w-2xl mx-auto px-6 py-20 text-center">

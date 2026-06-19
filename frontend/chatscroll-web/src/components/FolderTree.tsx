@@ -12,6 +12,12 @@ interface FolderTreeProps {
   selectedFolderId?: string;
 }
 
+// noteCount from the API = notes stored DIRECTLY in that folder.
+// This recursively sums a folder + all its descendants for the badge display.
+function getTotalCount(folder: Folder): number {
+  return folder.noteCount + (folder.children ?? []).reduce((s, c) => s + getTotalCount(c), 0);
+}
+
 function FolderNode({
   folder,
   depth,
@@ -26,13 +32,7 @@ function FolderNode({
   const [expanded, setExpanded] = useState(false);
   const hasChildren = (folder.children?.length ?? 0) > 0;
   const isSelected = folder.id === selectedId;
-
-  // noteCount on parents is now aggregate (direct + all descendants).
-  // Compute how many notes are stored directly in this folder (not in children).
-  const childSum = hasChildren
-    ? (folder.children ?? []).reduce((s, c) => s + c.noteCount, 0)
-    : 0;
-  const directCount = folder.noteCount - childSum;
+  const totalCount = getTotalCount(folder);
 
   return (
     <div>
@@ -82,9 +82,10 @@ function FolderNode({
             {folder.name}
           </span>
 
-          {folder.noteCount > 0 && (
+          {/* Badge shows TOTAL count (direct + all descendants) */}
+          {totalCount > 0 && (
             <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/40 rounded-full px-1.5 flex-shrink-0">
-              {folder.noteCount}
+              {totalCount}
             </span>
           )}
         </button>
@@ -92,8 +93,9 @@ function FolderNode({
 
       {hasChildren && expanded && (
         <div>
-          {/* Virtual "General" — only shown when this parent has notes stored directly in it */}
-          {directCount > 0 && (
+          {/* Virtual "General" — appears when this parent has notes stored directly in it.
+              folder.noteCount = direct count from API, so this is accurate. */}
+          {folder.noteCount > 0 && (
             <div
               className="flex items-center gap-1.5 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-slate-800/60"
               style={{ paddingLeft: `${8 + (depth + 1) * 16}px` }}
@@ -108,7 +110,7 @@ function FolderNode({
                   General
                 </span>
                 <span className="text-[10px] font-medium text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/40 rounded-full px-1.5 flex-shrink-0">
-                  {directCount}
+                  {folder.noteCount}
                 </span>
               </button>
             </div>

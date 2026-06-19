@@ -352,7 +352,7 @@ export function ChatPanel({
                 !message.content.startsWith("GEMINI_ERROR:") &&
                 !message.saved &&
                 !dismissedSave.has(message.id) && (
-                  <div className="ml-10 mt-2">
+                  <div className="ml-10 mt-2 max-w-sm">
                     {isAuthenticated ? (
                       <SaveNoteModal
                         question={(() => {

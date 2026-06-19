@@ -103,21 +103,30 @@ function NoteListItem({ note, folder }: { note: Note; folder?: Folder }) {
 
 function FolderSidebar({
   folders,
+  notes,
   selectedFolderId,
   onSelect,
-  totalCount,
   onFolderCreated,
 }: {
   folders: Folder[];
+  notes: Note[];
   selectedFolderId: string | null;
   onSelect: (id: string | null) => void;
-  totalCount: number;
   onFolderCreated?: (folder: Folder) => void;
 }) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderParentId, setNewFolderParentId] = useState<string>("");
+
+  // Derive all counts from the notes array so badges always match filter results
+  const countDirect = (folderId: string) =>
+    notes.filter((n) => n.folderId === folderId).length;
+
+  const countTotal = (parentId: string) => {
+    const childIds = folders.filter((f) => f.parentId === parentId).map((f) => f.id);
+    return notes.filter((n) => n.folderId === parentId || childIds.includes(n.folderId)).length;
+  };
   const [creatingFolder, setCreatingFolder] = useState(false);
 
   const parents = folders.filter((f) => !f.parentId);
@@ -226,7 +235,7 @@ function FolderSidebar({
         >
           <ScrollText className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="flex-1 truncate">All Scrolls</span>
-          <span className="text-[10px] text-gray-400 dark:text-slate-600">{totalCount}</span>
+          <span className="text-[10px] text-gray-400 dark:text-slate-600">{notes.length}</span>
         </button>
 
         {/* Parent folders */}
@@ -234,8 +243,8 @@ function FolderSidebar({
           const children = getChildren(parent.id);
           const isExpanded = expandedIds.has(parent.id);
           const isSelected = selectedFolderId === parent.id;
-          const childCount = children.reduce((s, c) => s + c.noteCount, 0);
-          const displayCount = parent.noteCount + childCount;
+          const directCount = countDirect(parent.id);
+          const displayCount = countTotal(parent.id);
 
           return (
             <div key={parent.id}>
@@ -284,7 +293,7 @@ function FolderSidebar({
               {isExpanded && (
                 <>
                   {/* Virtual "General" node — notes stored directly in this parent folder */}
-                  {parent.noteCount > 0 && (
+                  {directCount > 0 && (
                     <button
                       onClick={() => onSelect("__general__" + parent.id)}
                       className={cn(
@@ -298,11 +307,13 @@ function FolderSidebar({
                       <span className="flex-shrink-0 text-xs">📝</span>
                       <span className="flex-1 truncate text-xs">General</span>
                       <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
-                        {parent.noteCount}
+                        {directCount}
                       </span>
                     </button>
                   )}
-                  {children.map((child) => (
+                  {children.map((child) => {
+                    const childCount = countDirect(child.id);
+                    return (
                     <button
                       key={child.id}
                       onClick={() => onSelect(child.id)}
@@ -316,13 +327,14 @@ function FolderSidebar({
                       <span className="text-[10px] text-gray-400 dark:text-slate-600">↳</span>
                       <span className="flex-shrink-0 text-xs">{child.icon ?? "📁"}</span>
                       <span className="flex-1 truncate text-xs">{child.name}</span>
-                      {child.noteCount > 0 && (
+                      {childCount > 0 && (
                         <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
-                          {child.noteCount}
+                          {childCount}
                         </span>
                       )}
                     </button>
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </div>
@@ -422,9 +434,9 @@ function LibraryContent() {
         {/* Folder sidebar */}
         <FolderSidebar
           folders={folders}
+          notes={allNotes}
           selectedFolderId={selectedFolderId}
           onSelect={setSelectedFolderId}
-          totalCount={allNotes.length}
           onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
         />
 
