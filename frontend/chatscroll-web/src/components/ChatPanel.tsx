@@ -68,7 +68,7 @@ export function ChatPanel({
   useEffect(() => {
     if (!conversationId) return;
     try {
-      const raw = sessionStorage.getItem(`chatscroll_msgs_${conversationId}`);
+      const raw = localStorage.getItem(`chatscroll_msgs_${conversationId}`);
       if (raw) {
         const saved = (JSON.parse(raw) as Message[]).map((m) => ({
           ...m,
@@ -84,10 +84,10 @@ export function ChatPanel({
     }
   }, []); // intentionally empty — only runs on mount (key remount handles conversation switching)
 
-  // Save messages to sessionStorage on every change
+  // Save messages to localStorage on every change
   useEffect(() => {
     if (!conversationId || messages.length <= 1) return;
-    sessionStorage.setItem(`chatscroll_msgs_${conversationId}`, JSON.stringify(messages));
+    localStorage.setItem(`chatscroll_msgs_${conversationId}`, JSON.stringify(messages));
   }, [messages, conversationId]);
 
   // Current conversation title derived from messages (for 5A display)
@@ -139,6 +139,15 @@ export function ChatPanel({
     }
     setAnimatingId(null);
   }, []);
+
+  // Finish the animation immediately when user switches to another tab
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden && animatingId) flushAnimation();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [animatingId, flushAnimation]);
 
   const sendMessage = async (text?: string) => {
     flushAnimation();

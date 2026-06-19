@@ -15,7 +15,7 @@ const STORAGE_KEY = "chatscroll_conversations";
 function loadConversations(): ConversationItem[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     return (JSON.parse(raw) as ConversationItem[]).map((c) => ({
       ...c,
@@ -27,7 +27,7 @@ function loadConversations(): ConversationItem[] {
 }
 
 function saveConversations(convs: ConversationItem[]) {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
 }
 
 function ChatContent() {

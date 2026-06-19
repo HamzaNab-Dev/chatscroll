@@ -78,6 +78,18 @@ export type NotesStats = {
   storageType: string;
 };
 
+export type SharedNote = {
+  id: string;
+  title: string;
+  cleanContent: string;
+  tags: string[];
+  createdAt: string;
+  viewCount: number;
+  folderName?: string;
+  folderIcon?: string;
+  folderPath?: string;
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -146,6 +158,9 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ title, messageCount }),
     }),
+
+  getSharedNote: (id: string) =>
+    request<SharedNote>(`/api/notes/shared/${id}`),
 
   getAiStatus: () =>
     request<{ aiService: string; isRealAi: boolean; model: string; status: string }>("/api/chat/ai-status"),

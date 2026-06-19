@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ScrollText, Sun, Moon } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -33,9 +34,7 @@ export function Navigation() {
   return (
     <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0">
       <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-          <ScrollText className="w-4 h-4 text-white" />
-        </div>
+        <Image src="/logo.png" alt="ChatScroll" width={28} height={28} className="rounded-lg" />
         <span className="font-bold text-gray-900 dark:text-slate-100 text-sm tracking-tight hidden sm:block">
           ChatScroll
         </span>

@@ -9,11 +9,13 @@ namespace ChatScroll.Api.Controllers;
 public class NotesController : ControllerBase
 {
     private readonly INoteRepository _noteRepository;
+    private readonly IFolderRepository _folderRepository;
     private static readonly Guid MockUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    public NotesController(INoteRepository noteRepository)
+    public NotesController(INoteRepository noteRepository, IFolderRepository folderRepository)
     {
         _noteRepository = noteRepository;
+        _folderRepository = folderRepository;
     }
 
     [HttpGet("folder/{folderId}")]
@@ -105,6 +107,30 @@ public class NotesController : ControllerBase
             totalNotes = allNotes.Count,
             weeklyActivity,
             storageType = "aurora_pgvector"
+        });
+    }
+
+    /// <summary>
+    /// Public endpoint — anyone with the scroll's ID can view it via /shared/[id].
+    /// Production: note would need a separate isPublic flag or share token.
+    /// </summary>
+    [HttpGet("shared/{id}")]
+    public async Task<IActionResult> GetShared(Guid id)
+    {
+        var note = await _noteRepository.GetByIdAsync(id, MockUserId);
+        if (note is null) return NotFound();
+        var folder = await _folderRepository.GetByIdAsync(note.FolderId, MockUserId);
+        return Ok(new
+        {
+            id = note.Id,
+            title = note.Title,
+            cleanContent = note.CleanContent,
+            tags = note.Tags,
+            createdAt = note.CreatedAt,
+            viewCount = note.ViewCount,
+            folderName = folder?.Name,
+            folderIcon = folder?.Icon,
+            folderPath = folder?.Path,
         });
     }
 

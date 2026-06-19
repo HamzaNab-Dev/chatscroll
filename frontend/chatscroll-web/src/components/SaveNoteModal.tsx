@@ -6,6 +6,9 @@ import type { Folder, FolderSuggestion } from "@/lib/api";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+const FOLDER_ICONS = ["📁","💻","🔷","🏥","📚","🎓","🔬","💡","🎯","🚀","💼","🎮","🍕","🎵","📝","🌐","🔧","⚡","🧪","📊","🏋️","🌱","🎨","🐍","🦀","☁️"];
+
+
 interface SaveNoteModalProps {
   question: string;
   cleanNote: string;
@@ -50,6 +53,7 @@ export function SaveNoteModal({
   const [showPicker, setShowPicker] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderIcon, setNewFolderIcon] = useState("📁");
   const [newFolderParentId, setNewFolderParentId] = useState<string>("");
   const [creatingFolder, setCreatingFolder] = useState(false);
 
@@ -98,6 +102,7 @@ export function SaveNoteModal({
       const created = await api.createFolder({
         name: newFolderName.trim(),
         path,
+        icon: newFolderIcon,
         parentId: newFolderParentId || undefined,
       });
       setLocalFolders((prev) => [...prev, created]);
@@ -105,6 +110,7 @@ export function SaveNoteModal({
       setShowNewFolder(false);
       setShowPicker(false);
       setNewFolderName("");
+      setNewFolderIcon("📁");
       setNewFolderParentId("");
     } catch {
       // silently skip
@@ -190,17 +196,37 @@ export function SaveNoteModal({
             </button>
           ) : (
             <div className="mt-1 p-2 rounded-lg border border-amber-200 dark:border-amber-700/30 bg-white dark:bg-slate-800/60 space-y-1.5">
-              <input
-                autoFocus
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateFolder();
-                  if (e.key === "Escape") setShowNewFolder(false);
-                }}
-                placeholder="Folder name..."
-                className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-400"
-              />
+              <div className="flex gap-1.5">
+                <span className="text-lg leading-none pt-0.5">{newFolderIcon}</span>
+                <input
+                  autoFocus
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateFolder();
+                    if (e.key === "Escape") setShowNewFolder(false);
+                  }}
+                  placeholder="Folder name..."
+                  className="flex-1 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+              {/* Icon picker */}
+              <div className="flex flex-wrap gap-1">
+                {FOLDER_ICONS.map((icon) => (
+                  <button
+                    key={icon}
+                    onClick={() => setNewFolderIcon(icon)}
+                    className={cn(
+                      "text-sm w-7 h-7 rounded flex items-center justify-center transition-all",
+                      newFolderIcon === icon
+                        ? "bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-400 dark:ring-amber-600"
+                        : "hover:bg-gray-100 dark:hover:bg-slate-700"
+                    )}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
               {parentFolders.length > 0 && (
                 <select
                   value={newFolderParentId}
@@ -222,7 +248,7 @@ export function SaveNoteModal({
                   {creatingFolder ? "Creating…" : "Create"}
                 </button>
                 <button
-                  onClick={() => { setShowNewFolder(false); setNewFolderName(""); setNewFolderParentId(""); }}
+                  onClick={() => { setShowNewFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNewFolderParentId(""); }}
                   className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   <X className="w-3 h-3" />

@@ -14,10 +14,13 @@ import {
   ScrollText,
   Link2,
   FolderOpen,
+  Download,
+  Share2,
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Markdown } from "@/components/ui/markdown";
+import { ExportScrollModal } from "@/components/ExportScrollModal";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { Note, Folder } from "@/lib/api";
@@ -35,6 +38,8 @@ function ScrollDetailContent() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [shared, setShared] = useState(false);
   const moveMenuRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -177,6 +182,29 @@ function ScrollDetailContent() {
               {copied ? "Copied" : "Copy"}
             </button>
 
+            <button
+              onClick={() => setShowExport(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+              title="Export scroll"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </button>
+
+            <button
+              onClick={async () => {
+                const url = `${window.location.origin}/shared/${note.id}`;
+                await navigator.clipboard.writeText(url);
+                setShared(true);
+                setTimeout(() => setShared(false), 2500);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+              title="Copy share link"
+            >
+              {shared ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+              {shared ? "Copied!" : "Share"}
+            </button>
+
             {/* Move to folder */}
             <div className="relative" ref={moveMenuRef}>
               <button
@@ -265,6 +293,14 @@ function ScrollDetailContent() {
         <div className="rounded-xl bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-slate-800 p-5 mb-8">
           <Markdown content={note.cleanContent} />
         </div>
+
+        {showExport && note && (
+          <ExportScrollModal
+            note={note}
+            folder={folders.find((f) => f.id === note.folderId)}
+            onClose={() => setShowExport(false)}
+          />
+        )}
 
         {/* Related Scrolls */}
         {relatedNotes.length > 0 && (

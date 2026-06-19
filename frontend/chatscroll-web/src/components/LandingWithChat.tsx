@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { ScrollText, Send, ArrowRight, ChevronDown, Sun, Moon } from "lucide-react";
@@ -73,9 +74,7 @@ export function LandingWithChat() {
       <header className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-slate-800/50">
         {/* Logo — left */}
         <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-            <ScrollText className="w-4 h-4 text-white" />
-          </div>
+          <Image src="/logo.png" alt="ChatScroll" width={32} height={32} className="rounded-lg" />
           <span className="font-bold text-gray-900 dark:text-slate-100 text-sm tracking-tight">ChatScroll</span>
         </Link>
 
@@ -173,15 +172,23 @@ export function LandingWithChat() {
           {[
             { icon: "📜", label: "Save Scrolls" },
             { icon: "📂", label: "Auto-organized" },
-            { icon: "🔍", label: "Instant search" },
+            { icon: "🔍", label: "Semantic Search" },
             { icon: "🤖", label: "Gemini AI" },
+            { icon: "📤", label: "Share Scrolls", isNew: true },
+            { icon: "🎓", label: "Study Mode", isNew: true },
             { icon: "🧠", label: "Never re-Google" },
-          ].map(({ icon, label }) => (
+          ].map(({ icon, label, isNew }) => (
             <span
               key={label}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 shadow-sm"
+              className={cn(
+                "inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border shadow-sm",
+                isNew
+                  ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-400"
+                  : "bg-white dark:bg-slate-800/80 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400"
+              )}
             >
               {icon} {label}
+              {isNew && <span className="text-[9px] font-bold bg-amber-500 text-white rounded-full px-1 py-px leading-none ml-0.5">NEW</span>}
             </span>
           ))}
         </div>
@@ -402,6 +409,89 @@ export function LandingWithChat() {
         </div>
       </section>
 
+      {/* New Features showcase */}
+      <section className="py-20 bg-gradient-to-b from-white to-amber-50/40 dark:from-slate-950 dark:to-amber-950/5">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-full px-3 py-1 mb-4">
+              ✨ New Features
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-3">
+              More than just a chat history
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 max-w-md mx-auto">
+              ChatScroll turns your AI conversations into a living knowledge system you can search, share, and study.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-5">
+            {/* Semantic Search */}
+            <div className="group relative bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 hover:border-amber-400/50 dark:hover:border-amber-600/40 hover:shadow-lg hover:shadow-amber-500/5 transition-all">
+              <div className="absolute top-4 right-4">
+                <span className="text-[9px] font-bold bg-amber-500 text-white rounded-full px-1.5 py-0.5 leading-none">NEW</span>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center mb-4 text-xl">
+                🔍
+              </div>
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-2">Semantic Search</h3>
+              <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed mb-4">
+                Find scrolls by meaning, not just keywords. Type a concept and AI surfaces the most relevant results — even when the words don&apos;t match.
+              </p>
+              <div className="rounded-lg bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/50 px-3 py-2 text-[10px] text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                Powered by Aurora pgvector
+              </div>
+            </div>
+
+            {/* Share Scrolls */}
+            <div className="group relative bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 hover:border-amber-400/50 dark:hover:border-amber-600/40 hover:shadow-lg hover:shadow-amber-500/5 transition-all">
+              <div className="absolute top-4 right-4">
+                <span className="text-[9px] font-bold bg-amber-500 text-white rounded-full px-1.5 py-0.5 leading-none">NEW</span>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 flex items-center justify-center mb-4 text-xl">
+                📤
+              </div>
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-2">Share Scrolls</h3>
+              <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed mb-4">
+                One click generates a public link anyone can open — no account needed. Share your best explanations with teammates, students, or the world.
+              </p>
+              <div className="rounded-lg bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/50 px-3 py-2 text-[10px] text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                Public links · No login required
+              </div>
+            </div>
+
+            {/* Study Mode */}
+            <div className="group relative bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 hover:border-amber-400/50 dark:hover:border-amber-600/40 hover:shadow-lg hover:shadow-amber-500/5 transition-all">
+              <div className="absolute top-4 right-4">
+                <span className="text-[9px] font-bold bg-amber-500 text-white rounded-full px-1.5 py-0.5 leading-none">NEW</span>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900/40 flex items-center justify-center mb-4 text-xl">
+                🎓
+              </div>
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-2">Study Mode</h3>
+              <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed mb-4">
+                Flip through your scroll library like flashcards. See the title, reveal the full answer, navigate with keyboard shortcuts — built to make knowledge stick.
+              </p>
+              <div className="rounded-lg bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/50 px-3 py-2 text-[10px] text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 flex-shrink-0" />
+                Space reveal · ← → navigate · Esc exit
+              </div>
+            </div>
+          </div>
+
+          {/* Export callout — horizontal strip below the 3 cards */}
+          <div className="mt-5 flex flex-col sm:flex-row items-center gap-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 hover:border-amber-400/40 dark:hover:border-amber-600/30 transition-all">
+            <div className="text-2xl flex-shrink-0">📄</div>
+            <div className="flex-1 text-center sm:text-left">
+              <p className="text-sm font-bold text-gray-900 dark:text-slate-100 mb-0.5">Export to PDF & Markdown</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Download any scroll as a beautifully formatted PDF or a portable Markdown file with YAML frontmatter — your notes, in any format you need.</p>
+            </div>
+            <span className="flex-shrink-0 text-[9px] font-bold bg-amber-500 text-white rounded-full px-2 py-0.5 leading-none">NEW</span>
+          </div>
+        </div>
+      </section>
+
       {/* AWS Infrastructure section */}
       <section className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/40 py-16">
         <div className="max-w-3xl mx-auto px-6">
@@ -432,18 +522,21 @@ export function LandingWithChat() {
       {/* Features */}
       <section id="features" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 text-center mb-12">Features</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 text-center mb-12">Everything you need</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: "🧠", title: "AI-Powered", desc: "Ask anything, get smart answers powered by Gemini 2.5 Flash" },
-              { icon: "📚", title: "Scroll Library", desc: "All your saved knowledge in one searchable place" },
-              { icon: "🔍", title: "Smart Search", desc: "Find any scroll instantly with semantic search" },
-              { icon: "📁", title: "Organized", desc: "Auto-categorized into folders & sub-folders" },
-              { icon: "💡", title: "Already Know?", desc: "Detects if you've researched this topic before" },
+              { icon: "🧠", title: "AI-Powered Chat", desc: "Ask anything, get concise answers powered by Gemini 2.5 Flash with 5-step reasoning" },
+              { icon: "📚", title: "Scroll Library", desc: "All your saved knowledge in one searchable, organized place — never lose an insight again" },
+              { icon: "🔍", title: "Semantic Search", desc: "pgvector cosine similarity finds scrolls by meaning, not just keywords. Toggle between keyword and AI search modes" },
+              { icon: "📁", title: "Smart Folders", desc: "AI auto-suggests the right folder with emoji icon picker and nested sub-folder support" },
+              { icon: "💡", title: "Duplicate Detection", desc: "ChatScroll detects when you've researched a topic before and links you to your existing scroll" },
+              { icon: "📤", title: "Share Scrolls", desc: "Generate a public link for any scroll — no login required for viewers. Share knowledge with teammates or students" },
+              { icon: "🎓", title: "Study Mode", desc: "Flashcard-style review of your library — reveal answers on demand, navigate with keyboard shortcuts, track progress" },
+              { icon: "📄", title: "Export PDF & MD", desc: "Download any scroll as a formatted PDF or Markdown file with YAML frontmatter for portability" },
               {
                 icon: "☁️",
                 title: "AWS Native",
-                desc: "Aurora PostgreSQL Serverless v2 with pgvector semantic search, DynamoDB chat logs, ECS Express deployment, and Cognito authentication",
+                desc: "Aurora PostgreSQL Serverless v2 with pgvector · DynamoDB chat logs · ECS Express · ECR · Cognito auth · GitHub Actions CI/CD",
               },
             ].map(({ icon, title, desc }) => (
               <div
@@ -504,21 +597,23 @@ export function LandingWithChat() {
         </div>
       </section>}
 
-      {/* CTA */}
-      <section className="max-w-2xl mx-auto px-6 py-20 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-3">
-          Start building your knowledge library today
-        </h2>
-        <p className="text-gray-500 dark:text-slate-500 mb-8 text-sm">
-          Join ChatScroll and never forget what you learned
-        </p>
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium transition-colors"
-        >
-          Create Free Account <ArrowRight className="w-4 h-4" />
-        </Link>
-      </section>
+      {/* CTA — only for guests */}
+      {!isAuthenticated && (
+        <section className="max-w-2xl mx-auto px-6 py-20 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-3">
+            Start building your knowledge library today
+          </h2>
+          <p className="text-gray-500 dark:text-slate-500 mb-8 text-sm">
+            Join ChatScroll and never forget what you learned
+          </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium transition-colors"
+          >
+            Create Free Account <ArrowRight className="w-4 h-4" />
+          </Link>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-slate-800 py-6 text-center text-xs text-gray-400 dark:text-slate-600">
