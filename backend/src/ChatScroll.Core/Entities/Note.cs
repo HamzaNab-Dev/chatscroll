@@ -28,3 +28,4 @@ public class Note
     public Folder Folder { get; set; } = null!;
     public Conversation? Conversation { get; set; }
 }
+
