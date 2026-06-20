@@ -78,7 +78,11 @@ export function SaveNoteModal({
 
   const handleSave = async () => {
     const folderId = selectedFolderId || suggestedFolder?.id || localFolders[0]?.id;
-    if (!folderId) return;
+    console.log("Save button clicked", { folderId, selectedFolderId, suggestedFolderId: suggestedFolder?.id, localFoldersCount: localFolders.length, title: question.slice(0, 60) });
+    if (!folderId) {
+      console.warn("SaveNoteModal: no folderId — localFolders is empty or suggestedFolder not found. folders prop:", localFolders);
+      return;
+    }
     setSaving(true);
     try {
       const title = question.length > 60 ? question.slice(0, 60) + "..." : question;
