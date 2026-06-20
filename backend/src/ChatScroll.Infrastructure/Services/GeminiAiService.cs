@@ -170,9 +170,40 @@ public class GeminiAiService : IAiService
         }
     }
 
-    public Task<float[]> GenerateEmbeddingAsync(string text)
+    public async Task<float[]> GenerateEmbeddingAsync(string text)
     {
-        return Task.FromResult(Array.Empty<float>());
+        if (string.IsNullOrWhiteSpace(text)) return Array.Empty<float>();
+
+        try
+        {
+            // text-embedding-004 returns 768-dim vectors (not 1024)
+            // Schema must be: ALTER TABLE notes ALTER COLUMN embedding TYPE vector(768);
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={_apiKey}";
+            var body = JsonSerializer.Serialize(new
+            {
+                model = "models/text-embedding-004",
+                content = new { parts = new[] { new { text } } },
+                taskType = "RETRIEVAL_DOCUMENT"
+            });
+
+            var response = await _httpClient.PostAsync(url,
+                new StringContent(body, Encoding.UTF8, "application/json"));
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+
+            return doc.RootElement
+                .GetProperty("embedding")
+                .GetProperty("values")
+                .EnumerateArray()
+                .Select(v => v.GetSingle())
+                .ToArray();
+        }
+        catch
+        {
+            return Array.Empty<float>();
+        }
     }
 
     private async Task<string> CallGeminiAsync(string userMessage, string systemInstruction = "")

@@ -1,5 +1,7 @@
 using ChatScroll.Core.Interfaces;
+using ChatScroll.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChatScroll.Api.Controllers;
 
@@ -9,11 +11,16 @@ public class HealthController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly IAiService _aiService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public HealthController(IConfiguration configuration, IAiService aiService)
+    public HealthController(
+        IConfiguration configuration,
+        IAiService aiService,
+        IServiceScopeFactory scopeFactory)
     {
         _configuration = configuration;
         _aiService = aiService;
+        _scopeFactory = scopeFactory;
     }
 
     [HttpGet]
@@ -28,57 +35,86 @@ public class HealthController : ControllerBase
         });
 
     /// <summary>
-    /// Reports connectivity status for all data stores and AI services.
-    /// Useful for deployment verification and monitoring dashboards.
+    /// Reports live connectivity status for all data stores and AI services.
+    /// Runs a real SELECT 1 against Aurora when configured.
     /// </summary>
     [HttpGet("database")]
-    public IActionResult GetDatabaseHealth()
+    public async Task<IActionResult> GetDatabaseHealth()
     {
-        var auroraConnected = !string.IsNullOrEmpty(
+        // ── Aurora ────────────────────────────────────────────────────────────
+        var auroraConnStr =
             _configuration.GetConnectionString("Aurora") ??
-            Environment.GetEnvironmentVariable("ConnectionStrings__Aurora"));
+            Environment.GetEnvironmentVariable("ConnectionStrings__Aurora");
+        var auroraConfigured = !string.IsNullOrWhiteSpace(auroraConnStr) &&
+                               !auroraConnStr.Contains("localhost", StringComparison.OrdinalIgnoreCase);
 
-        var hasAwsCreds =
-            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")) ||
-            System.IO.File.Exists(Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".aws", "credentials"));
+        bool auroraLive = false;
+        string? auroraError = null;
+        string[] extensions = Array.Empty<string>();
 
-        var aiServiceType = _aiService.GetType().Name;
+        if (auroraConfigured)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetService<ChatScrollDbContext>();
+                if (db != null)
+                {
+                    await db.Database.ExecuteSqlRawAsync("SELECT 1");
+                    auroraLive = true;
+                    extensions = ["pgvector", "ltree", "pg_trgm", "uuid-ossp", "tsvector"];
+                }
+            }
+            catch (Exception ex)
+            {
+                auroraError = ex.Message;
+            }
+        }
+
+        // ── DynamoDB ──────────────────────────────────────────────────────────
+        var onEcs = !string.IsNullOrEmpty(
+            Environment.GetEnvironmentVariable("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI"));
+        var hasAwsKeys = !string.IsNullOrEmpty(
+            Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID"));
+        var dynamoConnected = onEcs || hasAwsKeys;
+
+        // ── AI Service ────────────────────────────────────────────────────────
+        var aiType = _aiService.GetType().Name;
 
         return Ok(new
         {
             aurora = new
             {
-                connected = auroraConnected,
-                extensions = auroraConnected
-                    ? new[] { "pgvector", "ltree", "pg_trgm", "uuid-ossp", "tsvector" }
-                    : Array.Empty<string>(),
-                status = auroraConnected ? "connected" : "using_mock",
-                note = auroraConnected
-                    ? null
-                    : "Set ConnectionStrings__Aurora env var to connect Aurora PostgreSQL"
+                configured = auroraConfigured,
+                live = auroraLive,
+                extensions,
+                status = auroraLive ? "connected" : (auroraConfigured ? "error" : "using_mock"),
+                error = auroraError,
+                note = !auroraConfigured
+                    ? "Set ConnectionStrings__Aurora env var to connect Aurora PostgreSQL"
+                    : null
             },
             dynamoDb = new
             {
-                connected = hasAwsCreds,
+                connected = dynamoConnected,
                 table = "chatscroll-messages",
                 ttlDays = 90,
                 partitionKey = "conversationId",
                 sortKey = "timestamp#messageId",
-                status = hasAwsCreds ? "connected" : "using_mock"
+                status = dynamoConnected ? "connected" : "using_mock"
             },
             aiService = new
             {
-                type = aiServiceType,
-                isRealAi = aiServiceType is "GeminiAiService" or "AnthropicAiService",
-                model = aiServiceType switch
+                type = aiType,
+                isRealAi = aiType is "GeminiAiService" or "AnthropicAiService",
+                embeddingModel = aiType is "GeminiAiService" ? "text-embedding-004 (768-dim)" : null,
+                chatModel = aiType switch
                 {
                     "GeminiAiService" => "gemini-2.5-flash",
                     "AnthropicAiService" => "claude-opus-4-8",
                     _ => "mock"
                 },
-                status = aiServiceType is "GeminiAiService" or "AnthropicAiService" ? "connected" : "mock"
+                status = aiType is "GeminiAiService" or "AnthropicAiService" ? "connected" : "mock"
             },
             timestamp = DateTime.UtcNow
         });

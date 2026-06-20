@@ -196,6 +196,75 @@ setAuthState({ status: 'authenticated', user });
 
 ---
 
+## Step 3b: Apply pgvector Dimension Fix (768 → replaces 1024)
+
+`text-embedding-004` (Gemini) produces **768-dimensional** vectors, not 1024.
+Run this against your Aurora cluster **once** after the initial schema is applied:
+
+```sql
+-- Change embedding column to 768-dim (matches Gemini text-embedding-004)
+ALTER TABLE notes ALTER COLUMN embedding TYPE vector(768);
+
+-- Drop and recreate the IVFFlat index for the new dimension
+DROP INDEX IF EXISTS notes_embedding_idx;
+CREATE INDEX notes_embedding_idx ON notes USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+```
+
+---
+
+## Step 3c: Create DynamoDB Table (chatscroll-messages)
+
+Run once with a user/role that has DynamoDB full access:
+
+```bash
+aws dynamodb create-table \
+  --table-name chatscroll-messages \
+  --attribute-definitions \
+      AttributeName=conversationId,AttributeType=S \
+      AttributeName=timestamp,AttributeType=S \
+  --key-schema \
+      AttributeName=conversationId,KeyType=HASH \
+      AttributeName=timestamp,KeyType=RANGE \
+  --billing-mode PAY_PER_REQUEST \
+  --region us-east-1
+
+# Enable TTL (90-day auto-expiry on the 'ttl' attribute)
+aws dynamodb update-time-to-live \
+  --table-name chatscroll-messages \
+  --time-to-live-specification Enabled=true,AttributeName=ttl \
+  --region us-east-1
+```
+
+Verify:
+```bash
+aws dynamodb describe-table --table-name chatscroll-messages --region us-east-1 \
+  --query 'Table.{Status:TableStatus,TTL:TimeToLiveDescription}'
+```
+
+---
+
+## Step 7b: ECS Environment Variables (real Aurora + DynamoDB)
+
+When deploying via ECS (GitHub Actions → ECR → ECS), set these environment variables
+on the ECS task definition in addition to what's in Step 7:
+
+| Key | Value |
+|-----|-------|
+| `ConnectionStrings__Aurora` | `Host=chatscroll-aurora.cluster-xxx.us-east-1.rds.amazonaws.com;Port=5432;Database=chatscroll;Username=chatscroll_admin;Password=YOUR_PASSWORD;SSL Mode=Require;Trust Server Certificate=true` |
+| `GEMINI_API_KEY` | your Gemini API key |
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+
+The ECS task role needs:
+- `AmazonDynamoDBFullAccess` — lets the container call DynamoDB without explicit credentials
+- `SecretsManagerReadWrite` — optional, for fetching secrets at runtime
+
+Smart-switch behaviour (no code change needed):
+- `ConnectionStrings__Aurora` set → Aurora PostgreSQL repos registered
+- `AWS_CONTAINER_CREDENTIALS_RELATIVE_URI` set (automatic on ECS) → real DynamoDB registered
+- Neither set → all Mock repos (safe for local `dotnet run`)
+
+---
+
 ## Step 10: Screenshots for Submission
 
 1. ✅ RDS → your Aurora cluster
