@@ -1,5 +1,8 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# Accepts commit SHA from CI — printed in build log for traceability
+ARG COMMIT_SHA=dev
+RUN echo "Building commit: $COMMIT_SHA"
 WORKDIR /src
 
 # Copy solution and project files
@@ -18,9 +21,10 @@ RUN dotnet restore
 COPY src/ src/
 COPY tests/ tests/
 
-# Build and publish
+# Build and publish — --no-restore uses the packages from the explicit restore above
 RUN dotnet publish src/ChatScroll.Api/ChatScroll.Api.csproj \
     -c Release \
+    --no-restore \
     -o /app/publish
 
 # Runtime stage
