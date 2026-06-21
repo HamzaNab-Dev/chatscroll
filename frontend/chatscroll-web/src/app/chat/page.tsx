@@ -10,6 +10,9 @@ import { api } from "@/lib/api";
 import type { Folder } from "@/lib/api";
 import { Menu, ScrollText } from "lucide-react";
 
+const LAST_CONV_KEY = "cs_last_conv";
+const CONV_CACHE_KEY = "cs_convs";
+
 function ChatContent() {
   const { isAuthenticated } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -32,6 +35,8 @@ function ChatContent() {
     }
 
     const initConversations = async () => {
+      const lastId = (() => { try { return localStorage.getItem(LAST_CONV_KEY); } catch { return null; } })();
+
       try {
         const convs = await api.getConversations();
         const mapped: ConversationItem[] = convs.map((c) => ({
@@ -41,9 +46,10 @@ function ChatContent() {
         }));
         setConversations(mapped);
 
-        // If there are existing conversations and no pending question, resume the most recent one
         if (mapped.length > 0 && !pending) {
-          setConversationId(mapped[0].id);
+          // Resume the exact conversation the user was on before the refresh
+          const resume = lastId ? mapped.find((c) => c.id === lastId) : null;
+          setConversationId(resume ? resume.id : mapped[0].id);
         } else {
           // No conversations yet, or a pending question needs a fresh chat — create one
           const newConv = await api.createConversation();
@@ -53,8 +59,19 @@ function ChatContent() {
           setConversations((prev) => [newItem, ...prev]);
         }
       } catch (err) {
-        console.warn("Failed to load conversations from API, using local ID:", err);
-        // Fallback: just use the locally-generated ID already in state
+        console.warn("Failed to load conversations from API, restoring from cache:", err);
+        // Restore from localStorage cache so the user doesn't see "No conversations yet"
+        try {
+          const cached = localStorage.getItem(CONV_CACHE_KEY);
+          if (cached) {
+            const parsed = JSON.parse(cached) as Array<{ id: string; title: string; updatedAt: string }>;
+            const restored = parsed.map((c) => ({ ...c, updatedAt: new Date(c.updatedAt) }));
+            setConversations(restored);
+            const target = lastId ? restored.find((c) => c.id === lastId) : null;
+            const fallback = target ?? restored[0];
+            if (fallback) setConversationId(fallback.id);
+          }
+        } catch {}
       } finally {
         setLoadingConversations(false);
       }
@@ -63,6 +80,20 @@ function ChatContent() {
     initConversations();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Persist the active conversation so we can restore it on next page load
+  useEffect(() => {
+    if (conversationId) {
+      try { localStorage.setItem(LAST_CONV_KEY, conversationId); } catch {}
+    }
+  }, [conversationId]);
+
+  // Cache the conversation list so it can be shown if the API call fails on next load
+  useEffect(() => {
+    if (conversations.length > 0) {
+      try { localStorage.setItem(CONV_CACHE_KEY, JSON.stringify(conversations)); } catch {}
+    }
+  }, [conversations]);
 
   const loadFolders = useCallback(async () => {
     if (!isAuthenticated) return;

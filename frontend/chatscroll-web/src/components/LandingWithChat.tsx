@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
-import { ScrollText, Send, ArrowRight, ChevronDown, Sun, Moon } from "lucide-react";
+import { Send, ArrowRight, ChevronDown, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { UserMenu } from "@/components/UserMenu";
@@ -80,7 +80,7 @@ export function LandingWithChat() {
 
         {/* Center nav — flex-1 + justify-center keeps it truly centered */}
         {isAuthenticated ? (
-          <nav className="flex-1 hidden md:flex items-center justify-center gap-1">
+          <nav className="flex-1 flex items-center justify-center gap-1">
             {AUTH_NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -147,12 +147,10 @@ export function LandingWithChat() {
         {/* Ambient glow behind icon */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[420px] bg-amber-300/10 dark:bg-amber-500/5 blur-3xl rounded-full pointer-events-none -z-10" />
 
-        {/* Icon with pulse ring */}
+        {/* Logo with pulse ring */}
         <div className="relative inline-flex items-center justify-center mb-7">
           <div className="absolute w-24 h-24 rounded-3xl bg-amber-400/15 dark:bg-amber-500/10 animate-pulse" />
-          <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-xl shadow-amber-500/30 dark:shadow-amber-600/20">
-            <ScrollText className="w-8 h-8 text-white" />
-          </div>
+          <Image src="/logo.png" alt="ChatScroll" width={64} height={64} className="relative rounded-2xl shadow-xl shadow-amber-500/30 dark:shadow-amber-600/20" />
         </div>
 
         {/* Headline */}
