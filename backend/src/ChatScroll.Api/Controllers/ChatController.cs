@@ -1,5 +1,7 @@
+using ChatScroll.Core.Entities;
 using ChatScroll.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace ChatScroll.Api.Controllers;
 
@@ -11,18 +13,21 @@ public class ChatController : ControllerBase
     private readonly INoteRepository _noteRepository;
     private readonly IFolderRepository _folderRepository;
     private readonly IDynamoDbChatRepository _dynamoDb;
+    private readonly IConversationRepository _conversationRepository;
     private static readonly Guid MockUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     public ChatController(
         IAiService aiService,
         INoteRepository noteRepository,
         IFolderRepository folderRepository,
-        IDynamoDbChatRepository dynamoDb)
+        IDynamoDbChatRepository dynamoDb,
+        IConversationRepository conversationRepository)
     {
         _aiService = aiService;
         _noteRepository = noteRepository;
         _folderRepository = folderRepository;
         _dynamoDb = dynamoDb;
+        _conversationRepository = conversationRepository;
     }
 
     [HttpGet("ai-status")]
@@ -119,6 +124,39 @@ public class ChatController : ControllerBase
 
         // Persist assistant turn
         await _dynamoDb.SaveMessageAsync(conversationId, "assistant", answer, MockUserId);
+
+        // Update conversation in Aurora: create if missing, bump updatedAt, auto-set title
+        try
+        {
+            var conversation = await _conversationRepository.GetByIdAsync(conversationId, MockUserId);
+            if (conversation is null)
+            {
+                conversation = await _conversationRepository.CreateAsync(new Conversation
+                {
+                    Id = conversationId,
+                    UserId = MockUserId,
+                    Title = request.Message.Length > 45
+                        ? request.Message[..45] + "..."
+                        : request.Message,
+                    MessageCount = 2
+                });
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(conversation.Title) || conversation.Title == "New Chat")
+                {
+                    conversation.Title = request.Message.Length > 45
+                        ? request.Message[..45] + "..."
+                        : request.Message;
+                }
+                conversation.MessageCount += 2;
+                await _conversationRepository.UpdateAsync(conversation);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning("Failed to update conversation {Id} in Aurora: {Error}", conversationId, ex.Message);
+        }
 
         // If the AI call itself failed, skip all follow-up AI calls — return immediately without save prompt
         if (answer.StartsWith("GEMINI_ERROR:"))

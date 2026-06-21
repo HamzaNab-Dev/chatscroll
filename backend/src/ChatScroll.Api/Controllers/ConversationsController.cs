@@ -9,11 +9,13 @@ namespace ChatScroll.Api.Controllers;
 public class ConversationsController : ControllerBase
 {
     private readonly IConversationRepository _repository;
+    private readonly IDynamoDbChatRepository _dynamoDb;
     private static readonly Guid MockUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
-    public ConversationsController(IConversationRepository repository)
+    public ConversationsController(IConversationRepository repository, IDynamoDbChatRepository dynamoDb)
     {
         _repository = repository;
+        _dynamoDb = dynamoDb;
     }
 
     [HttpGet]
@@ -60,10 +62,15 @@ public class ConversationsController : ControllerBase
     }
 
     [HttpGet("{id}/messages")]
-    public IActionResult GetMessages(Guid id)
+    public async Task<IActionResult> GetMessages(Guid id)
     {
-        // Messages are stored client-side in sessionStorage for the mock implementation
-        return Ok(Array.Empty<object>());
+        var messages = await _dynamoDb.GetConversationAsync(id, MockUserId);
+        return Ok(messages.Select(m => new
+        {
+            role = m.Role,
+            content = m.Content,
+            timestamp = m.Timestamp
+        }));
     }
 }
 

@@ -64,31 +64,28 @@ export function ChatPanel({
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load saved messages for this conversation on mount
+  // Load messages from DynamoDB (via backend) when the panel mounts for a conversation
   useEffect(() => {
     if (!conversationId) return;
-    try {
-      const raw = localStorage.getItem(`chatscroll_msgs_${conversationId}`);
-      if (raw) {
-        const saved = (JSON.parse(raw) as Message[]).map((m) => ({
-          ...m,
-          timestamp: new Date(m.timestamp),
-        }));
-        if (saved.length > 0) {
-          setMessages(saved);
-          firstUserMessageSentRef.current = saved.some((m) => m.role === "user");
-        }
-      }
-    } catch {
-      // ignore parse errors
-    }
-  }, []); // intentionally empty — only runs on mount (key remount handles conversation switching)
 
-  // Save messages to localStorage on every change
-  useEffect(() => {
-    if (!conversationId || messages.length <= 1) return;
-    localStorage.setItem(`chatscroll_msgs_${conversationId}`, JSON.stringify(messages));
-  }, [messages, conversationId]);
+    api.getConversationMessages(conversationId)
+      .then((fetched) => {
+        if (fetched.length === 0) return; // keep welcome message
+        const mapped: Message[] = fetched.map((m) => ({
+          id: generateId(),
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          timestamp: new Date(m.timestamp),
+          saved: m.role === "assistant" ? true : undefined, // don't re-prompt save on history load
+        }));
+        setMessages(mapped);
+        firstUserMessageSentRef.current = mapped.some((m) => m.role === "user");
+      })
+      .catch((err) => {
+        console.warn("Failed to load conversation messages from API:", err);
+        // Keep welcome message — app still works, just no history loaded
+      });
+  }, []); // intentionally empty — only runs on mount (key remount handles conversation switching)
 
   // Current conversation title derived from messages (for 5A display)
   const conversationTitle = useMemo(() => {
@@ -179,7 +176,7 @@ export function ChatPanel({
         .map((m) => `${m.role}: ${m.content}`)
         .join("\n");
 
-      const response = await api.sendMessage(content, history);
+      const response = await api.sendMessage(content, history, conversationId);
 
       const assistantMessage: Message = {
         id: generateId(),

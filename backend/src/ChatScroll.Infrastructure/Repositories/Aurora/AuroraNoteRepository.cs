@@ -119,6 +119,43 @@ public class AuroraNoteRepository : INoteRepository
         return merged;
     }
 
+    public async Task<IEnumerable<Note>> SearchExactAsync(Guid userId, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return await GetAllAsync(userId);
+
+        var tsResults = await _db.Notes
+            .FromSqlInterpolated($"""
+                SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
+                       clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
+                FROM notes
+                WHERE user_id = {userId}
+                  AND search_vector @@ plainto_tsquery('english', {query})
+                ORDER BY ts_rank(search_vector, plainto_tsquery('english', {query})) DESC
+                """)
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (tsResults.Count >= 3)
+            return tsResults;
+
+        var likePattern = $"%{query}%";
+        var likeResults = await _db.Notes
+            .Where(n => n.UserId == userId &&
+                   (EF.Functions.ILike(n.Title, likePattern) ||
+                    EF.Functions.ILike(n.CleanContent, likePattern)))
+            .AsNoTracking()
+            .OrderByDescending(n => n.UpdatedAt)
+            .ToListAsync();
+
+        var merged = tsResults.ToList();
+        foreach (var r in likeResults)
+            if (!merged.Any(n => n.Id == r.Id))
+                merged.Add(r);
+
+        return merged;
+    }
+
     public async Task<Note> CreateAsync(Note note)
     {
         note.Id = Guid.NewGuid();

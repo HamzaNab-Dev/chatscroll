@@ -14,6 +14,7 @@ interface ConversationsSidebarProps {
   currentId: string | undefined;
   onNew: () => void;
   onSelect: (id: string) => void;
+  loading?: boolean;
 }
 
 function groupByDate(conversations: ConversationItem[]) {
@@ -48,11 +49,12 @@ export function ConversationsSidebar({
   currentId,
   onNew,
   onSelect,
+  loading = false,
 }: ConversationsSidebarProps) {
   const groups = groupByDate(conversations);
 
   return (
-    <aside className="w-56 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full hidden md:flex">
+    <aside className="w-56 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full">
       {/* New Chat button */}
       <div className="p-3 border-b border-gray-200 dark:border-slate-800">
         <button
@@ -66,7 +68,13 @@ export function ConversationsSidebar({
 
       {/* Conversation list */}
       <div className="flex-1 overflow-y-auto py-2">
-        {groups.length === 0 ? (
+        {loading ? (
+          <div className="space-y-1 px-3 py-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-7 bg-gray-100 dark:bg-slate-800 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : groups.length === 0 ? (
           <p className="text-xs text-gray-400 dark:text-slate-600 text-center py-8 px-3">
             No conversations yet
           </p>

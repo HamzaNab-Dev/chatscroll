@@ -54,6 +54,14 @@ public class MockNoteRepository : INoteRepository
              n.CleanContent.Contains(query, StringComparison.OrdinalIgnoreCase) ||
              n.Tags.Any(t => t.Contains(query, StringComparison.OrdinalIgnoreCase)))));
 
+    public Task<IEnumerable<Note>> SearchExactAsync(Guid userId, string query) =>
+        Task.FromResult(_notes.Where(n =>
+            n.UserId == userId &&
+            (string.IsNullOrWhiteSpace(query) ||
+             n.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+             n.CleanContent.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+             n.Tags.Any(t => t.Contains(query, StringComparison.OrdinalIgnoreCase)))));
+
     public Task<IEnumerable<Note>> GetRecentAsync(Guid userId, int limit) =>
         Task.FromResult(_notes
             .Where(n => n.UserId == userId)

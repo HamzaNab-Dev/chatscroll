@@ -112,8 +112,8 @@ export const api = {
     request<Note[]>(`/api/notes/folder/${folderId}`),
   getNoteById: (id: string) =>
     request<Note>(`/api/notes/${id}`),
-  searchNotes: (query: string) =>
-    request<Note[]>(`/api/notes/search?q=${encodeURIComponent(query)}`),
+  searchNotes: (query: string, mode: "smart" | "exact" = "exact") =>
+    request<Note[]>(`/api/notes/search?q=${encodeURIComponent(query)}&mode=${mode}`),
   semanticSearch: (query: string) =>
     request<{ query: string; results: Note[]; searchType: string }>(`/api/notes/semantic-search?q=${encodeURIComponent(query)}`),
   getNotesStats: () =>
@@ -138,10 +138,10 @@ export const api = {
   updateNote: (id: string, data: { folderId?: string; title?: string; tags?: string[] }) =>
     request<Note>(`/api/notes/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 
-  sendMessage: (message: string, conversationHistory: string) =>
+  sendMessage: (message: string, conversationHistory: string, conversationId?: string) =>
     request<ChatResponse>("/api/chat/message", {
       method: "POST",
-      body: JSON.stringify({ message, conversationHistory }),
+      body: JSON.stringify({ message, conversationHistory, conversationId }),
     }),
 
   previewChat: (q: string) =>
@@ -158,6 +158,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ title, messageCount }),
     }),
+  getConversationMessages: (id: string) =>
+    request<Array<{ role: string; content: string; timestamp: string }>>(`/api/conversations/${id}/messages`),
 
   getSharedNote: (id: string) =>
     request<SharedNote>(`/api/notes/shared/${id}`),

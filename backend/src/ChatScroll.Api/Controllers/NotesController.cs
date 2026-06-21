@@ -54,32 +54,29 @@ public class NotesController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// mode=exact  → tsvector full-text + ILIKE (no pgvector)
+    /// mode=smart  → tsvector + ILIKE, then pgvector cosine similarity if results are sparse
+    /// </summary>
     [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string q)
+    public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] string mode = "smart")
     {
-        if (string.IsNullOrWhiteSpace(q)) return BadRequest("Query is required");
-        var notes = await _noteRepository.SearchAsync(MockUserId, q);
+        if (string.IsNullOrWhiteSpace(q)) return Ok(Array.Empty<Note>());
+        var notes = mode == "exact"
+            ? await _noteRepository.SearchExactAsync(MockUserId, q)
+            : await _noteRepository.SearchAsync(MockUserId, q);
         return Ok(notes);
     }
 
     /// <summary>
-    /// Semantic vector search using pgvector cosine similarity.
-    /// Production: generates Titan Embeddings v2 (1024 dims) for query, then
-    ///   SELECT * FROM notes WHERE user_id = ? ORDER BY embedding &lt;=&gt; query_embedding LIMIT 10
-    /// Falls back to keyword search until Aurora is connected.
+    /// Kept for backwards compatibility — delegates to Search with mode=smart.
     /// </summary>
     [HttpGet("semantic-search")]
     public async Task<IActionResult> SemanticSearch([FromQuery] string q)
     {
-        if (string.IsNullOrWhiteSpace(q)) return BadRequest("Query is required");
+        if (string.IsNullOrWhiteSpace(q)) return Ok(new { query = q, results = Array.Empty<Note>(), searchType = "smart" });
         var notes = await _noteRepository.SearchAsync(MockUserId, q);
-        return Ok(new
-        {
-            query = q,
-            results = notes,
-            searchType = "keyword_fallback",
-            productionNote = "Semantic pgvector search (embedding <=> query_embedding) activates when Aurora is connected"
-        });
+        return Ok(new { query = q, results = notes, searchType = "smart" });
     }
 
     /// <summary>

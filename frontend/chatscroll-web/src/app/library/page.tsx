@@ -34,7 +34,26 @@ const FOLDER_ICONS = ["📁","💻","🔷","🏥","📚","🎓","🔬","💡","�
 type SortKey = "newest" | "oldest" | "title";
 type ViewMode = "grid" | "list";
 
-function NoteGridItem({ note, folder, onExport }: { note: Note; folder?: Folder; onExport: (n: Note) => void }) {
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={i} className="bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 rounded px-0.5 not-italic">
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
+function NoteGridItem({ note, folder, onExport, query, isAiResult }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean }) {
   const borderColor = folder?.color ?? "#d97706";
   return (
     <div className="relative group">
@@ -43,16 +62,25 @@ function NoteGridItem({ note, folder, onExport }: { note: Note; folder?: Folder;
         className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-4 hover:border-amber-300 dark:hover:border-amber-700/40 hover:shadow-sm transition-all block overflow-hidden cursor-pointer"
         style={{ borderLeftWidth: "3px", borderLeftColor: borderColor }}
       >
-        {folder && (
-          <p className="text-[10px] font-medium mb-1.5 truncate pr-7" style={{ color: borderColor }}>
-            {folder.icon} {folder.name}
-          </p>
-        )}
+        <div className="flex items-center justify-between mb-1.5">
+          {folder ? (
+            <p className="text-[10px] font-medium truncate" style={{ color: borderColor }}>
+              {folder.icon} {folder.name}
+            </p>
+          ) : <span />}
+          {isAiResult && (
+            <span className="flex-shrink-0 text-[9px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full px-1.5 py-0.5 leading-none ml-1">
+              🧠 AI
+            </span>
+          )}
+        </div>
         <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors mb-2 pr-7">
-          {note.title}
+          {query ? <HighlightText text={note.title} query={query} /> : note.title}
         </p>
         <p className="text-xs text-gray-400 dark:text-slate-500 line-clamp-2 mb-3">
-          {note.cleanContent.replace(/[#*`]/g, "").slice(0, 120)}
+          {query
+            ? <HighlightText text={note.cleanContent.replace(/[#*`]/g, "").slice(0, 120)} query={query} />
+            : note.cleanContent.replace(/[#*`]/g, "").slice(0, 120)}
         </p>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-[10px] text-gray-400 dark:text-slate-600">
@@ -81,7 +109,7 @@ function NoteGridItem({ note, folder, onExport }: { note: Note; folder?: Folder;
   );
 }
 
-function NoteListItem({ note, folder, onExport }: { note: Note; folder?: Folder; onExport: (n: Note) => void }) {
+function NoteListItem({ note, folder, onExport, query, isAiResult }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean }) {
   const borderColor = folder?.color ?? "#d97706";
   return (
     <div className="relative group flex items-start border-b border-gray-100 dark:border-slate-800/60 last:border-0" style={{ borderLeftWidth: "3px", borderLeftColor: borderColor }}>
@@ -90,16 +118,25 @@ function NoteListItem({ note, folder, onExport }: { note: Note; folder?: Folder;
         className="flex-1 flex items-start gap-4 px-4 py-3 hover:bg-amber-50/40 dark:hover:bg-slate-800/30 transition-colors min-w-0"
       >
         <div className="flex-1 min-w-0">
-          {folder && (
-            <p className="text-[10px] font-medium mb-0.5 truncate" style={{ color: borderColor }}>
-              {folder.icon} {folder.name}
-            </p>
-          )}
+          <div className="flex items-center gap-1.5 mb-0.5">
+            {folder && (
+              <p className="text-[10px] font-medium truncate" style={{ color: borderColor }}>
+                {folder.icon} {folder.name}
+              </p>
+            )}
+            {isAiResult && (
+              <span className="flex-shrink-0 text-[9px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full px-1.5 py-0.5 leading-none">
+                🧠 AI
+              </span>
+            )}
+          </div>
           <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
-            {note.title}
+            {query ? <HighlightText text={note.title} query={query} /> : note.title}
           </p>
           <p className="text-xs text-gray-400 dark:text-slate-500 truncate mt-0.5">
-            {note.cleanContent.replace(/[#*`]/g, "").slice(0, 80)}
+            {query
+              ? <HighlightText text={note.cleanContent.replace(/[#*`]/g, "").slice(0, 80)} query={query} />
+              : note.cleanContent.replace(/[#*`]/g, "").slice(0, 80)}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 pr-8">
@@ -543,11 +580,11 @@ function LibraryContent() {
   const [exportCollection, setExportCollection] = useState(false);
   const [studyMode, setStudyMode] = useState(false);
 
-  // Semantic search
-  const [searchMode, setSearchMode] = useState<"keyword" | "semantic">("keyword");
-  const [semanticResults, setSemanticResults] = useState<Note[] | null>(null);
-  const [semanticLoading, setSemanticLoading] = useState(false);
-  const semanticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Search mode: "exact" = tsvector+ILIKE via backend, "smart" = exact + pgvector via backend
+  const [searchMode, setSearchMode] = useState<"exact" | "smart">("exact");
+  const [searchResults, setSearchResults] = useState<Note[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -568,26 +605,25 @@ function LibraryContent() {
     load();
   }, [load]);
 
-  // Debounced semantic search — fires 500ms after the query stops changing
+  // Debounced API search — fires 400ms after the query stops changing, for both modes
   useEffect(() => {
-    if (searchMode !== "semantic") { setSemanticResults(null); return; }
-    if (!searchQuery.trim()) { setSemanticResults(null); return; }
+    if (!searchQuery.trim()) { setSearchResults(null); return; }
 
-    if (semanticTimerRef.current) clearTimeout(semanticTimerRef.current);
-    setSemanticLoading(true);
-    semanticTimerRef.current = setTimeout(async () => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    setSearchLoading(true);
+    searchTimerRef.current = setTimeout(async () => {
       try {
-        const res = await api.semanticSearch(searchQuery);
-        setSemanticResults(res.results);
+        const results = await api.searchNotes(searchQuery, searchMode);
+        setSearchResults(results);
       } catch {
-        setSemanticResults([]);
+        setSearchResults([]);
       } finally {
-        setSemanticLoading(false);
+        setSearchLoading(false);
       }
-    }, 500);
+    }, 400);
 
     return () => {
-      if (semanticTimerRef.current) clearTimeout(semanticTimerRef.current);
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
   }, [searchQuery, searchMode]);
 
@@ -659,11 +695,8 @@ function LibraryContent() {
     return folders.find((f) => f.id === selectedFolderId) ?? null;
   })();
 
-  // In semantic mode with a query, use server results; otherwise use local filtered list
-  const displayNotes =
-    searchMode === "semantic" && searchQuery.trim()
-      ? (semanticResults ?? [])
-      : filtered;
+  // When there is a query, use API results (both modes); otherwise use local folder-filtered list
+  const displayNotes = searchQuery.trim() ? (searchResults ?? []) : filtered;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 flex flex-col">
@@ -693,9 +726,9 @@ function LibraryContent() {
               <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                 {loading
                   ? "Loading..."
-                  : semanticLoading
+                  : searchLoading
                   ? "Searching..."
-                  : `${displayNotes.length} scroll${displayNotes.length !== 1 ? "s" : ""}${searchMode === "semantic" && searchQuery.trim() ? " · semantic" : ""}`}
+                  : `${displayNotes.length} scroll${displayNotes.length !== 1 ? "s" : ""}${searchQuery.trim() ? ` · ${searchMode}` : ""}`}
               </p>
             </div>
 
@@ -759,26 +792,26 @@ function LibraryContent() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={searchMode === "semantic" ? "Semantic search..." : "Search scrolls..."}
+                  placeholder={searchMode === "smart" ? "Smart AI search..." : "Search scrolls..."}
                   className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/50 transition-colors"
                 />
               </div>
               {/* Keyword / Semantic toggle */}
               <button
                 onClick={() => {
-                  setSearchMode((m) => m === "keyword" ? "semantic" : "keyword");
-                  setSemanticResults(null);
+                  setSearchMode((m) => m === "exact" ? "smart" : "exact");
+                  setSearchResults(null);
                 }}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0",
-                  searchMode === "semantic"
+                  searchMode === "smart"
                     ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-600/50 text-amber-700 dark:text-amber-400"
                     : "bg-white dark:bg-slate-900/60 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40"
                 )}
-                title={searchMode === "semantic" ? "Switch to keyword search" : "Switch to semantic (AI) search"}
+                title={searchMode === "smart" ? "Switch to exact text search" : "Switch to Smart AI search (pgvector)"}
               >
                 <Zap className="w-3.5 h-3.5" />
-                {searchMode === "semantic" ? "Semantic" : "Keyword"}
+                {searchMode === "smart" ? "Smart" : "Exact"}
               </button>
             </div>
 
@@ -853,6 +886,8 @@ function LibraryContent() {
                   note={note}
                   folder={folderMap.get(note.folderId)}
                   onExport={setExportNote}
+                  query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
+                  isAiResult={searchMode === "smart" && !!searchQuery.trim()}
                 />
               ))}
             </div>
@@ -864,6 +899,8 @@ function LibraryContent() {
                   note={note}
                   folder={folderMap.get(note.folderId)}
                   onExport={setExportNote}
+                  query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
+                  isAiResult={searchMode === "smart" && !!searchQuery.trim()}
                 />
               ))}
             </div>

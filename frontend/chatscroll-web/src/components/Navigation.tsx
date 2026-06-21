@@ -34,7 +34,7 @@ export function Navigation() {
   return (
     <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0">
       <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-        <Image src="/logo.png" alt="ChatScroll" width={28} height={28} className="rounded-lg" />
+        <Image src="/logo.png" alt="ChatScroll" width={32} height={32} className="rounded-lg" />
         <span className="font-bold text-gray-900 dark:text-slate-100 text-sm tracking-tight hidden sm:block">
           ChatScroll
         </span>

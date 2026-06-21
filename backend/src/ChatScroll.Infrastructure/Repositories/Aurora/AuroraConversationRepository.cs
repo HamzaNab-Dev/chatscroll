@@ -32,7 +32,8 @@ public class AuroraConversationRepository : IConversationRepository
 
     public async Task<Conversation> CreateAsync(Conversation conversation)
     {
-        conversation.Id = Guid.NewGuid();
+        if (conversation.Id == Guid.Empty)
+            conversation.Id = Guid.NewGuid();
         conversation.CreatedAt = DateTime.UtcNow;
         conversation.UpdatedAt = DateTime.UtcNow;
 
