@@ -31,9 +31,6 @@ jobs:
         env:
           ECR_REPO: 294699501138.dkr.ecr.us-east-1.amazonaws.com/chatscroll-api
         run: |
-          # Build with no-cache to guarantee every layer runs fresh.
-          # Tag with both :latest (ECS pulls this) and :<sha> (lets you verify
-          # exactly which commit is running by checking ECS task details in console).
           docker build \
             --build-arg COMMIT_SHA=${{ github.sha }} \
             -t $ECR_REPO:latest \
@@ -55,38 +52,3 @@ jobs:
             --force-new-deployment \
             --region us-east-1
 
-      - name: Wait for ECS deployment to stabilise
-        env:
-          AWS_MAX_ATTEMPTS: "80"
-        run: |
-          echo "Waiting for ECS service to reach steady state (up to 20 min)..."
-          aws ecs wait services-stable \
-            --cluster default \
-            --services chatscroll-api \
-            --region us-east-1
-          echo "Deployment stable."
-
-      - name: Show running task image
-        if: always()
-        run: |
-          # Print the image digest the running task is actually using.
-          # Compare this against the ECR image you just pushed to confirm
-          # ECS is running the new code, not a cached/rolled-back version.
-          TASK_ARN=$(aws ecs list-tasks \
-            --cluster default \
-            --service-name chatscroll-api \
-            --desired-status RUNNING \
-            --region us-east-1 \
-            --query 'taskArns[0]' \
-            --output text)
-
-          if [ "$TASK_ARN" != "None" ] && [ -n "$TASK_ARN" ]; then
-            aws ecs describe-tasks \
-              --cluster default \
-              --tasks $TASK_ARN \
-              --region us-east-1 \
-              --query 'tasks[0].containers[0].{image:image,imageDigest:imageDigest}' \
-              --output table
-          else
-            echo "No running tasks found (deployment may still be in progress)"
-          fi

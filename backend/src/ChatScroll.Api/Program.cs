@@ -166,33 +166,39 @@ else
 
 var app = builder.Build();
 
-// Auto-seed the mock user in Aurora so folder/note creation works without real auth
+// Auto-seed the mock user in Aurora so folder/note creation works without real auth.
+// Retries up to 5 times with delay because Aurora Serverless may be paused (0 ACUs) at startup.
 if (useAurora)
 {
     using var scope = app.Services.CreateScope();
-    try
+    var db = scope.ServiceProvider.GetRequiredService<ChatScrollDbContext>();
+    var mockId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    for (var attempt = 1; attempt <= 5; attempt++)
     {
-        var db = scope.ServiceProvider.GetRequiredService<ChatScrollDbContext>();
-        var mockId = Guid.Parse("00000000-0000-0000-0000-000000000001");
-        if (!await db.Users.AnyAsync(u => u.Id == mockId))
+        try
         {
-            db.Users.Add(new ChatScroll.Core.Entities.User
+            if (!await db.Users.AnyAsync(u => u.Id == mockId))
             {
-                Id = mockId,
-                CognitoSub = "dev-user",
-                Email = "dev@chatscroll.local",
-                DisplayName = "Dev User",
-                Plan = "pro",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            });
-            await db.SaveChangesAsync();
-            Log.Information("Seeded mock user {Id}", mockId);
+                db.Users.Add(new ChatScroll.Core.Entities.User
+                {
+                    Id = mockId,
+                    CognitoSub = "dev-user",
+                    Email = "dev@chatscroll.local",
+                    DisplayName = "Dev User",
+                    Plan = "pro",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+                await db.SaveChangesAsync();
+                Log.Information("Seeded mock user {Id}", mockId);
+            }
+            break;
         }
-    }
-    catch (Exception ex)
-    {
-        Log.Warning("Could not seed mock user: {Error}", ex.Message);
+        catch (Exception ex)
+        {
+            Log.Warning("Seed attempt {Attempt}/5 failed: {Error}", attempt, ex.Message);
+            if (attempt < 5) await Task.Delay(TimeSpan.FromSeconds(attempt * 3));
+        }
     }
 }
 
