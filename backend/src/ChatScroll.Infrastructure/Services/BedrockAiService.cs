@@ -184,7 +184,7 @@ public class BedrockAiService : IAiService
     // ─────────────────────────────────────────
     // TITAN EMBEDDINGS
     // ─────────────────────────────────────────
-    public async Task<float[]> GenerateEmbeddingAsync(string text)
+    public async Task<float[]> GenerateEmbeddingAsync(string text, string taskType = "RETRIEVAL_DOCUMENT")
     {
         try
         {

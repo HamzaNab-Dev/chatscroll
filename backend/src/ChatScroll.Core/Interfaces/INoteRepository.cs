@@ -14,4 +14,5 @@ public interface INoteRepository
     Task<Note> UpdateAsync(Note note);
     Task DeleteAsync(Guid id, Guid userId);
     Task IncrementViewCountAsync(Guid id, Guid userId);
+    Task<(int success, int failed, int total)> BackfillEmbeddingsAsync();
 }

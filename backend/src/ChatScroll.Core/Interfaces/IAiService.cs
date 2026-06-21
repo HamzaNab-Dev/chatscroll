@@ -6,7 +6,7 @@ public interface IAiService
     Task<FolderSuggestion> SuggestFolderAsync(string question, string answer, IEnumerable<string> existingFolders);
     Task<string> RewriteAsNoteAsync(string question, string answer);
     Task<bool> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles);
-    Task<float[]> GenerateEmbeddingAsync(string text);
+    Task<float[]> GenerateEmbeddingAsync(string text, string taskType = "RETRIEVAL_DOCUMENT");
 }
 
 public record FolderSuggestion(

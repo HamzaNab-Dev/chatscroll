@@ -3,6 +3,7 @@ using ChatScroll.Core.Entities;
 using ChatScroll.Core.Interfaces;
 using ChatScroll.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ChatScroll.Infrastructure.Repositories.Aurora;
 
@@ -10,11 +11,13 @@ public class AuroraNoteRepository : INoteRepository
 {
     private readonly ChatScrollDbContext _db;
     private readonly IAiService _aiService;
+    private readonly ILogger<AuroraNoteRepository> _logger;
 
-    public AuroraNoteRepository(ChatScrollDbContext db, IAiService aiService)
+    public AuroraNoteRepository(ChatScrollDbContext db, IAiService aiService, ILogger<AuroraNoteRepository> logger)
     {
         _db = db;
         _aiService = aiService;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<Note>> GetAllAsync(Guid userId)
@@ -57,49 +60,19 @@ public class AuroraNoteRepository : INoteRepository
         if (string.IsNullOrWhiteSpace(query))
             return await GetAllAsync(userId);
 
-        // Mode 1: tsvector full-text search (DB trigger keeps search_vector current)
-        var tsResults = await _db.Notes
-            .FromSqlInterpolated($"""
-                SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
-                       clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
-                FROM notes
-                WHERE user_id = {userId}
-                  AND search_vector @@ plainto_tsquery('english', {query})
-                ORDER BY ts_rank(search_vector, plainto_tsquery('english', {query})) DESC
-                """)
-            .AsNoTracking()
-            .ToListAsync();
+        // Run text search and embedding generation in parallel
+        var textTask = SearchExactAsync(userId, query);
+        var embeddingTask = _aiService.GenerateEmbeddingAsync(query, "RETRIEVAL_QUERY");
 
-        if (tsResults.Count >= 3)
-            return tsResults;
+        var textResults = await textTask;
+        var embedding = await embeddingTask;
 
-        // Fallback: ILIKE on title + content (handles unindexed or new notes)
-        var likePattern = $"%{query}%";
-        var likeResults = await _db.Notes
-            .Where(n => n.UserId == userId &&
-                   (EF.Functions.ILike(n.Title, likePattern) ||
-                    EF.Functions.ILike(n.CleanContent, likePattern)))
-            .AsNoTracking()
-            .OrderByDescending(n => n.UpdatedAt)
-            .ToListAsync();
-
-        var merged = tsResults.ToList();
-        foreach (var r in likeResults)
-            if (!merged.Any(n => n.Id == r.Id))
-                merged.Add(r);
-
-        if (merged.Count >= 3)
-            return merged;
-
-        // Mode 2: pgvector cosine similarity — pads results when text search is weak
-        var embedding = await _aiService.GenerateEmbeddingAsync(query);
         if (embedding.Length == 0)
-            return merged;
+            return textResults;
 
         var vecStr = '[' + string.Join(",",
             embedding.Select(f => f.ToString("G6", CultureInfo.InvariantCulture))) + ']';
 
-        // vecStr is built from a float[] so no injection risk; cast handled by PostgreSQL
         var vectorResults = await _db.Notes
             .FromSqlInterpolated($"""
                 SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
@@ -112,11 +85,11 @@ public class AuroraNoteRepository : INoteRepository
             .AsNoTracking()
             .ToListAsync();
 
-        foreach (var vr in vectorResults)
-            if (!merged.Any(n => n.Id == vr.Id))
-                merged.Add(vr);
-
-        return merged;
+        var textIds = textResults.Select(n => n.Id).ToHashSet();
+        return textResults
+            .Concat(vectorResults.Where(n => !textIds.Contains(n.Id)))
+            .Take(20)
+            .ToList();
     }
 
     public async Task<IEnumerable<Note>> SearchExactAsync(Guid userId, string query)
@@ -135,9 +108,6 @@ public class AuroraNoteRepository : INoteRepository
                 """)
             .AsNoTracking()
             .ToListAsync();
-
-        if (tsResults.Count >= 3)
-            return tsResults;
 
         var likePattern = $"%{query}%";
         var likeResults = await _db.Notes
@@ -194,11 +164,58 @@ public class AuroraNoteRepository : INoteRepository
             $"UPDATE notes SET view_count = view_count + 1, last_viewed_at = NOW() WHERE id = {id} AND user_id = {userId}");
     }
 
+    public async Task<(int success, int failed, int total)> BackfillEmbeddingsAsync()
+    {
+        // Note entity has no Embedding property — use raw SQL to find notes without one
+        var notesWithoutEmbeddings = await _db.Notes
+            .FromSqlInterpolated($"""
+                SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
+                       clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
+                FROM notes
+                WHERE embedding IS NULL
+                """)
+            .AsNoTracking()
+            .ToListAsync();
+
+        int success = 0, failed = 0;
+
+        foreach (var note in notesWithoutEmbeddings)
+        {
+            try
+            {
+                var text = $"{note.Title} {note.CleanContent}";
+                var embedding = await _aiService.GenerateEmbeddingAsync(text, "RETRIEVAL_DOCUMENT");
+
+                if (embedding.Length == 0)
+                {
+                    failed++;
+                    continue;
+                }
+
+                var vecStr = '[' + string.Join(",",
+                    embedding.Select(f => f.ToString("G6", CultureInfo.InvariantCulture))) + ']';
+
+                await _db.Database.ExecuteSqlInterpolatedAsync(
+                    $"UPDATE notes SET embedding = {vecStr}::vector WHERE id = {note.Id}");
+
+                success++;
+                _logger.LogInformation("Backfilled embedding for note {NoteId} ({Title})", note.Id, note.Title);
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                _logger.LogError(ex, "Failed to backfill embedding for note {NoteId}", note.Id);
+            }
+        }
+
+        return (success, failed, notesWithoutEmbeddings.Count);
+    }
+
     private async Task TrySaveEmbeddingAsync(Guid noteId, string text)
     {
         try
         {
-            var embedding = await _aiService.GenerateEmbeddingAsync(text);
+            var embedding = await _aiService.GenerateEmbeddingAsync(text, "RETRIEVAL_DOCUMENT");
             if (embedding.Length == 0) return;
 
             var vecStr = '[' + string.Join(",",
@@ -207,9 +224,9 @@ public class AuroraNoteRepository : INoteRepository
             await _db.Database.ExecuteSqlInterpolatedAsync(
                 $"UPDATE notes SET embedding = {vecStr}::vector WHERE id = {noteId}");
         }
-        catch
+        catch (Exception ex)
         {
-            // Embedding is optional — don't fail note creation
+            _logger.LogError(ex, "Failed to save embedding for note {NoteId}", noteId);
         }
     }
 }

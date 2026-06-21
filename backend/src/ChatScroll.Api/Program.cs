@@ -70,7 +70,8 @@ var geminiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 if (!string.IsNullOrEmpty(geminiKey))
 {
     Log.Information("Gemini API key found — registering GeminiAiService");
-    builder.Services.AddSingleton<IAiService>(_ => new GeminiAiService(geminiKey));
+    builder.Services.AddSingleton<IAiService>(sp =>
+        new GeminiAiService(geminiKey, sp.GetRequiredService<ILogger<GeminiAiService>>()));
 }
 else
 {

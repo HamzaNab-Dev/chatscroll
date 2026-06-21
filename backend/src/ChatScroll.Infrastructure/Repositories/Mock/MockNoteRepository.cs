@@ -114,4 +114,7 @@ public class MockNoteRepository : INoteRepository
         }
         return Task.CompletedTask;
     }
+
+    public Task<(int success, int failed, int total)> BackfillEmbeddingsAsync() =>
+        Task.FromResult((0, 0, 0));
 }

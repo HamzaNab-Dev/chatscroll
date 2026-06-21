@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using ChatScroll.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ChatScroll.Infrastructure.Services;
 
@@ -8,12 +9,14 @@ public class GeminiAiService : IAiService
 {
     private readonly HttpClient _httpClient = new();
     private readonly string _apiKey;
+    private readonly ILogger<GeminiAiService> _logger;
 
     private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-    public GeminiAiService(string apiKey)
+    public GeminiAiService(string apiKey, ILogger<GeminiAiService> logger)
     {
         _apiKey = apiKey;
+        _logger = logger;
     }
 
     public async Task<string> ChatAsync(string message, string conversationHistory)
@@ -170,20 +173,19 @@ public class GeminiAiService : IAiService
         }
     }
 
-    public async Task<float[]> GenerateEmbeddingAsync(string text)
+    public async Task<float[]> GenerateEmbeddingAsync(string text, string taskType = "RETRIEVAL_DOCUMENT")
     {
         if (string.IsNullOrWhiteSpace(text)) return Array.Empty<float>();
 
         try
         {
             // text-embedding-004 returns 768-dim vectors (not 1024)
-            // Schema must be: ALTER TABLE notes ALTER COLUMN embedding TYPE vector(768);
             var url = $"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={_apiKey}";
             var body = JsonSerializer.Serialize(new
             {
                 model = "models/text-embedding-004",
                 content = new { parts = new[] { new { text } } },
-                taskType = "RETRIEVAL_DOCUMENT"
+                taskType
             });
 
             var response = await _httpClient.PostAsync(url,
@@ -200,8 +202,10 @@ public class GeminiAiService : IAiService
                 .Select(v => v.GetSingle())
                 .ToArray();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to generate embedding for text: {TextPreview}",
+                text.Length > 50 ? text[..50] : text);
             return Array.Empty<float>();
         }
     }

@@ -168,6 +168,17 @@ public class NotesController : ControllerBase
         var updated = await _noteRepository.UpdateAsync(note);
         return Ok(updated);
     }
+
+    /// <summary>
+    /// Backfills embeddings for all notes that currently have embedding = NULL.
+    /// Call once after fixing the embedding pipeline to populate existing notes.
+    /// </summary>
+    [HttpPost("admin/backfill-embeddings")]
+    public async Task<IActionResult> BackfillEmbeddings()
+    {
+        var (success, failed, total) = await _noteRepository.BackfillEmbeddingsAsync();
+        return Ok(new { total, success, failed });
+    }
 }
 
 public record UpdateNoteRequest(Guid? FolderId, string? Title, string[]? Tags);
