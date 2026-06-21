@@ -51,7 +51,7 @@ jobs:
         run: |
           # Fetch the current task definition JSON
           TASK_DEF=$(aws ecs describe-task-definition \
-            --task-definition chatscroll-api \
+            --task-definition default-chatscroll-api \
             --query 'taskDefinition' \
             --output json)
 
