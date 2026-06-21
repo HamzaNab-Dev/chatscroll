@@ -179,8 +179,11 @@ public class GeminiAiService : IAiService
 
         try
         {
-            // text-embedding-004 returns 768-dim vectors (not 1024)
+            // text-embedding-004 produces 768-dim vectors; Aurora column must be vector(768)
             var url = $"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={_apiKey}";
+            _logger.LogInformation("Gemini embedding request: {Url} taskType={TaskType}",
+                url.Replace(_apiKey, "[REDACTED]"), taskType);
+
             var body = JsonSerializer.Serialize(new
             {
                 model = "models/text-embedding-004",
@@ -190,7 +193,14 @@ public class GeminiAiService : IAiService
 
             var response = await _httpClient.PostAsync(url,
                 new StringContent(body, Encoding.UTF8, "application/json"));
-            response.EnsureSuccessStatusCode();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Gemini embedding API returned {StatusCode}: {ErrorBody}",
+                    (int)response.StatusCode, errorBody);
+                return Array.Empty<float>();
+            }
 
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
