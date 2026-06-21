@@ -26,7 +26,7 @@ function formatPath(path: string): string {
 }
 
 // Walk from deepest segment to shallowest looking for a real folder match.
-// Falls back to the first leaf folder, then to folders[0].
+// Returns null when nothing matches — caller auto-creates from the suggestion.
 function findBestFolder(folders: Folder[], suggestedPath: string): Folder | null {
   const segments = suggestedPath.split(".");
   for (let i = segments.length; i >= 1; i--) {
@@ -34,9 +34,7 @@ function findBestFolder(folders: Folder[], suggestedPath: string): Folder | null
     const match = folders.find((f) => f.path === partial);
     if (match) return match;
   }
-  // Prefer a leaf folder (no children) so the label doesn't gain "→ General"
-  const leaf = folders.find((f) => !folders.some((c) => c.parentId === f.id));
-  return leaf ?? folders[0] ?? null;
+  return null;
 }
 
 export function SaveNoteModal({
@@ -70,6 +68,9 @@ export function SaveNoteModal({
 
   const activeFolderHasChildren = localFolders.some((f) => f.parentId === activeFolder?.id);
 
+  // True when the AI's suggested folder doesn't exist yet and the user hasn't picked one manually
+  const willCreateFolder = !selectedFolderId && !suggestedFolder;
+
   const folderLabel = activeFolder
     ? activeFolderHasChildren
       ? formatPath(activeFolder.path) + " → General"
@@ -77,14 +78,19 @@ export function SaveNoteModal({
     : formatPath(folderSuggestion.suggestedPath);
 
   const handleSave = async () => {
-    let folderId = selectedFolderId || suggestedFolder?.id || localFolders[0]?.id;
+    // No fallback to localFolders[0] — if nothing matches, auto-create the AI's suggestion
+    let folderId = selectedFolderId || suggestedFolder?.id;
     setSaving(true);
     try {
       if (!folderId) {
-        // No folders yet — auto-create one from the AI's suggestion
-        const topSegment = folderSuggestion.suggestedPath.split(".")[0];
+        // Suggested folder doesn't exist yet — create the top-level segment
+        const segments = folderSuggestion.suggestedPath.split(".");
+        const topSegment = segments[0];
         const slug = topSegment.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "general";
-        const name = folderSuggestion.suggestedName || slug.replace(/_/g, " ");
+        // Use suggestedName only when the path is a single segment (it refers to the leaf)
+        const name = segments.length === 1
+          ? (folderSuggestion.suggestedName || slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
+          : slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
         const created = await api.createFolder({ name, path: slug, icon: "📁" });
         setLocalFolders((prev) => [...prev, created]);
         folderId = created.id;
@@ -143,6 +149,11 @@ export function SaveNoteModal({
             <span className="text-xs font-medium text-amber-700 dark:text-amber-400 truncate group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
               {folderLabel}
             </span>
+            {willCreateFolder && (
+              <span className="text-[9px] font-bold bg-emerald-500 text-white rounded-full px-1.5 py-px leading-none flex-shrink-0">
+                New
+              </span>
+            )}
             <ChevronDown
               className={cn(
                 "w-3 h-3 flex-shrink-0 text-amber-500 dark:text-amber-500 transition-transform",

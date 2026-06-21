@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ScrollText, Eye, EyeOff, Loader2, Mail, Sun, Moon } from "lucide-react";
+import { ScrollText, Eye, EyeOff, Loader2, Mail, Sun, Moon, ArrowLeft } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -60,6 +61,15 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center px-4 relative">
+      {/* Back to home — top left */}
+      <Link
+        href="/"
+        className="absolute top-4 left-4 flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors px-2.5 py-1.5 rounded-lg"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Home
+      </Link>
+
       {/* Theme toggle — top right */}
       <button
         onClick={toggleTheme}

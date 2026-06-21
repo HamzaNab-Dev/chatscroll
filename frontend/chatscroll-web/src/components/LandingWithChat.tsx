@@ -36,7 +36,7 @@ export function LandingWithChat() {
     if (!q || submitting) return;
     setSubmitting(true);
     sessionStorage.setItem("pendingQuestion", q);
-    router.push(isAuthenticated ? "/chat" : "/login");
+    router.push("/chat");
   };
 
   return (
@@ -497,24 +497,6 @@ export function LandingWithChat() {
           </div>
         </div>
       </section>}
-
-      {/* CTA — only for guests */}
-      {!isAuthenticated && (
-        <section className="max-w-2xl mx-auto px-6 py-20 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-3">
-            Start building your knowledge library today
-          </h2>
-          <p className="text-gray-500 dark:text-slate-500 mb-8 text-sm">
-            Join ChatScroll and never forget what you learned
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium transition-colors"
-          >
-            Create Free Account <ArrowRight className="w-4 h-4" />
-          </Link>
-        </section>
-      )}
 
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-slate-800 py-6 text-center text-xs text-gray-400 dark:text-slate-600">
