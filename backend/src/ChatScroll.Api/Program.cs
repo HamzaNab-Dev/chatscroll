@@ -166,6 +166,36 @@ else
 
 var app = builder.Build();
 
+// Auto-seed the mock user in Aurora so folder/note creation works without real auth
+if (useAurora)
+{
+    using var scope = app.Services.CreateScope();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ChatScrollDbContext>();
+        var mockId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        if (!await db.Users.AnyAsync(u => u.Id == mockId))
+        {
+            db.Users.Add(new ChatScroll.Core.Entities.User
+            {
+                Id = mockId,
+                CognitoSub = "dev-user",
+                Email = "dev@chatscroll.local",
+                DisplayName = "Dev User",
+                Plan = "pro",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+            Log.Information("Seeded mock user {Id}", mockId);
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Warning("Could not seed mock user: {Error}", ex.Message);
+    }
+}
+
 // Pipeline
 if (app.Environment.IsDevelopment())
 {
