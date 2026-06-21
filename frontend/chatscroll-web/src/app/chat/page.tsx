@@ -41,14 +41,16 @@ function ChatContent() {
         }));
         setConversations(mapped);
 
-        // If there are existing conversations, start on the most recent one
+        // If there are existing conversations and no pending question, resume the most recent one
         if (mapped.length > 0 && !pending) {
           setConversationId(mapped[0].id);
         } else {
-          // No conversations yet — create one in Aurora so it appears in the sidebar
+          // No conversations yet, or a pending question needs a fresh chat — create one
           const newConv = await api.createConversation();
+          const newItem: ConversationItem = { id: newConv.id, title: "New Chat", updatedAt: new Date(newConv.updatedAt) };
           setConversationId(newConv.id);
-          setConversations([{ id: newConv.id, title: "New Chat", updatedAt: new Date(newConv.updatedAt) }]);
+          // Prepend — never replace existing conversations
+          setConversations((prev) => [newItem, ...prev]);
         }
       } catch (err) {
         console.warn("Failed to load conversations from API, using local ID:", err);

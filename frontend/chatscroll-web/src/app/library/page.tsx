@@ -74,7 +74,7 @@ function NoteGridItem({ note, folder, onExport, query, isAiResult }: { note: Not
             </span>
           )}
         </div>
-        <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors mb-2 pr-7">
+        <p className="text-sm font-medium text-gray-800 dark:text-slate-200 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors mb-2 pr-7">
           {query ? <HighlightText text={note.title} query={query} /> : note.title}
         </p>
         <p className="text-xs text-gray-400 dark:text-slate-500 line-clamp-2 mb-3">
@@ -130,7 +130,7 @@ function NoteListItem({ note, folder, onExport, query, isAiResult }: { note: Not
               </span>
             )}
           </div>
-          <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
+          <p className="text-sm font-medium text-gray-800 dark:text-slate-200 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
             {query ? <HighlightText text={note.title} query={query} /> : note.title}
           </p>
           <p className="text-xs text-gray-400 dark:text-slate-500 truncate mt-0.5">
@@ -183,7 +183,6 @@ function FolderSidebar({
   const [newFolderIcon, setNewFolderIcon] = useState("📁");
   const [newFolderParentId, setNewFolderParentId] = useState<string>("");
 
-  // Derive all counts from the notes array so badges always match filter results
   const countDirect = (folderId: string) =>
     notes.filter((n) => n.folderId === folderId).length;
 
@@ -238,7 +237,7 @@ function FolderSidebar({
   };
 
   return (
-    <aside className="w-48 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col">
+    <aside className="w-48 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full">
       <div className="px-3 py-3 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between">
         <h2 className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
           Folders
@@ -252,7 +251,6 @@ function FolderSidebar({
         </button>
       </div>
 
-      {/* New folder form */}
       {showNewFolder && (
         <div className="px-3 py-2 border-b border-gray-200 dark:border-slate-800 space-y-1.5">
           <div className="flex gap-1.5">
@@ -269,7 +267,6 @@ function FolderSidebar({
               className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400"
             />
           </div>
-          {/* Icon picker */}
           <div className="flex flex-wrap gap-1">
             {FOLDER_ICONS.map((icon) => (
               <button
@@ -309,7 +306,6 @@ function FolderSidebar({
       )}
 
       <nav className="flex-1 overflow-y-auto py-1">
-        {/* All Scrolls */}
         <button
           onClick={() => onSelect(null)}
           className={cn(
@@ -324,7 +320,6 @@ function FolderSidebar({
           <span className="text-[10px] text-gray-400 dark:text-slate-600">{notes.length}</span>
         </button>
 
-        {/* Parent folders */}
         {parents.map((parent) => {
           const children = getChildren(parent.id);
           const isExpanded = expandedIds.has(parent.id);
@@ -375,10 +370,8 @@ function FolderSidebar({
                 </button>
               </div>
 
-              {/* Children */}
               {isExpanded && (
                 <>
-                  {/* Virtual "General" node — notes stored directly in this parent folder */}
                   {directCount > 0 && (
                     <button
                       onClick={() => onSelect("__general__" + parent.id)}
@@ -457,7 +450,6 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-amber-500" />
@@ -481,7 +473,6 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="h-0.5 bg-slate-800">
         <div
           className="h-full bg-amber-500 transition-all duration-300"
@@ -489,7 +480,6 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
         />
       </div>
 
-      {/* Card */}
       <div className="flex-1 flex items-center justify-center px-6 py-8 overflow-hidden">
         <div className="w-full max-w-2xl">
           {folder && (
@@ -502,7 +492,6 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
             className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden cursor-pointer select-none"
             onClick={() => setRevealed((v) => !v)}
           >
-            {/* Front — always visible */}
             <div className="px-8 py-7 border-b border-slate-800">
               <h2 className="text-xl sm:text-2xl font-bold text-slate-100 text-center leading-snug">
                 {note.title}
@@ -518,7 +507,6 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
               )}
             </div>
 
-            {/* Back — toggle on click */}
             {!revealed ? (
               <div className="px-8 py-6 text-center">
                 <p className="text-sm text-slate-500">Click to reveal answer</p>
@@ -536,7 +524,6 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex items-center justify-center gap-4 px-6 py-5 border-t border-slate-800">
         <button
           onClick={prev}
@@ -579,8 +566,8 @@ function LibraryContent() {
   const [exportNote, setExportNote] = useState<Note | null>(null);
   const [exportCollection, setExportCollection] = useState(false);
   const [studyMode, setStudyMode] = useState(false);
+  const [showFolderPanel, setShowFolderPanel] = useState(false);
 
-  // Search mode: "exact" = tsvector+ILIKE via backend, "smart" = exact + pgvector via backend
   const [searchMode, setSearchMode] = useState<"exact" | "smart">("exact");
   const [searchResults, setSearchResults] = useState<Note[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -605,7 +592,6 @@ function LibraryContent() {
     load();
   }, [load]);
 
-  // Debounced API search — fires 400ms after the query stops changing, for both modes
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults(null); return; }
 
@@ -632,8 +618,6 @@ function LibraryContent() {
     [folders]
   );
 
-  // Notes for collection export — folder-filtered but NOT search-filtered, so
-  // exporting "Programming" always includes every scroll inside it and its children.
   const folderExportNotes = useMemo(() => {
     if (!selectedFolderId) return allNotes;
     if (selectedFolderId.startsWith("__general__")) {
@@ -695,30 +679,73 @@ function LibraryContent() {
     return folders.find((f) => f.id === selectedFolderId) ?? null;
   })();
 
-  // When there is a query, use API results (both modes); otherwise use local folder-filtered list
   const displayNotes = searchQuery.trim() ? (searchResults ?? []) : filtered;
 
+  const modeToggleClass = cn(
+    "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0",
+    searchMode === "smart"
+      ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-600/50 text-amber-700 dark:text-amber-400"
+      : "bg-white dark:bg-slate-900/60 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40"
+  );
+  const handleModeToggle = () => {
+    setSearchMode((m) => m === "exact" ? "smart" : "exact");
+    setSearchResults(null);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 flex flex-col overflow-x-hidden">
       <Navigation />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Folder sidebar */}
-        <FolderSidebar
-          folders={folders}
-          notes={allNotes}
-          selectedFolderId={selectedFolderId}
-          onSelect={setSelectedFolderId}
-          onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
-        />
+        {/* Desktop folder sidebar — always visible on md+ */}
+        <div className="hidden md:flex flex-shrink-0">
+          <FolderSidebar
+            folders={folders}
+            notes={allNotes}
+            selectedFolderId={selectedFolderId}
+            onSelect={setSelectedFolderId}
+            onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
+          />
+        </div>
 
-        {/* Main area */}
-        <main className="flex-1 min-w-0 px-5 py-6 overflow-y-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-5">
+        {/* Mobile folder overlay */}
+        {showFolderPanel && (
+          <div className="fixed inset-0 z-40 md:hidden">
+            <div
+              className="absolute inset-0 bg-black/30"
+              onClick={() => setShowFolderPanel(false)}
+            />
+            <div className="absolute inset-y-0 left-0 w-72 bg-white dark:bg-slate-950 shadow-xl">
+              <FolderSidebar
+                folders={folders}
+                notes={allNotes}
+                selectedFolderId={selectedFolderId}
+                onSelect={(id) => { setSelectedFolderId(id); setShowFolderPanel(false); }}
+                onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Main content area */}
+        <main className="flex-1 min-w-0 px-4 sm:px-5 py-5 overflow-y-auto overflow-x-hidden">
+
+          {/* Mobile folder picker — full-width chip, hidden on md+ */}
+          <button
+            onClick={() => setShowFolderPanel(true)}
+            className="md:hidden w-full flex items-center gap-2 px-3 py-2.5 mb-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-gray-700 dark:text-slate-300 hover:border-amber-300 dark:hover:border-amber-600/40 transition-colors min-h-[44px]"
+          >
+            <span className="flex-1 text-left">
+              {selectedFolder ? `${selectedFolder.icon ?? "📁"} ${selectedFolder.name}` : "📁 All Scrolls"}
+            </span>
+            <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          </button>
+
+          {/* Header — stacks on mobile, side-by-side on sm+ */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
             <div>
               <h1 className="text-lg font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
-                <ScrollText className="w-5 h-5 text-amber-500" />
+                <ScrollText className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 {selectedFolder
                   ? `${selectedFolder.icon ?? "📁"} ${selectedFolder.name}`
                   : "Scroll Library"}
@@ -732,27 +759,25 @@ function LibraryContent() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Study Mode */}
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setStudyMode(true)}
                 disabled={displayNotes.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[36px]"
                 title="Enter study / flashcard mode"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 Study
               </button>
 
-              {/* Export folder / library */}
               <button
                 onClick={() => setExportCollection(true)}
                 disabled={folderExportNotes.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[36px]"
                 title={selectedFolder ? `Export ${selectedFolder.name} folder` : "Export full library"}
               >
                 <Download className="w-3.5 h-3.5" />
-                {selectedFolder ? "Export Folder" : "Export Library"}
+                <span className="hidden sm:inline">{selectedFolder ? "Folder" : "Library"}</span>
               </button>
 
               <div className="w-px h-5 bg-gray-200 dark:bg-slate-700" />
@@ -760,7 +785,7 @@ function LibraryContent() {
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "p-1.5 rounded-lg transition-colors",
+                  "p-1.5 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center",
                   viewMode === "grid"
                     ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
                     : "text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
@@ -772,7 +797,7 @@ function LibraryContent() {
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
-                  "p-1.5 rounded-lg transition-colors",
+                  "p-1.5 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center",
                   viewMode === "list"
                     ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
                     : "text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
@@ -784,9 +809,10 @@ function LibraryContent() {
             </div>
           </div>
 
-          {/* Search + Sort */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-5">
-            <div className="relative flex-1 flex items-center gap-2">
+          {/* Search + Sort — two rows on mobile, one row on sm+ */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-5">
+            {/* Search input + mode toggle (mode toggle only shown inline on sm+) */}
+            <div className="flex items-center gap-2 sm:flex-1">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" />
                 <input
@@ -796,18 +822,10 @@ function LibraryContent() {
                   className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/50 transition-colors"
                 />
               </div>
-              {/* Keyword / Semantic toggle */}
+              {/* Mode toggle — sm+ only, sits right of search */}
               <button
-                onClick={() => {
-                  setSearchMode((m) => m === "exact" ? "smart" : "exact");
-                  setSearchResults(null);
-                }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0",
-                  searchMode === "smart"
-                    ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-600/50 text-amber-700 dark:text-amber-400"
-                    : "bg-white dark:bg-slate-900/60 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40"
-                )}
+                onClick={handleModeToggle}
+                className={cn(modeToggleClass, "hidden sm:flex")}
                 title={searchMode === "smart" ? "Switch to exact text search" : "Switch to Smart AI search (pgvector)"}
               >
                 <Zap className="w-3.5 h-3.5" />
@@ -815,33 +833,46 @@ function LibraryContent() {
               </button>
             </div>
 
-            <div className="flex gap-2">
-              <div className="relative">
-                <select
-                  value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value as SortKey)}
-                  className="appearance-none pl-3 pr-8 py-2 bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-700 dark:text-slate-300 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/50 transition-colors cursor-pointer"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="oldest">Oldest</option>
-                  <option value="title">Title</option>
-                </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-slate-500 pointer-events-none" />
-              </div>
-
+            {/* Controls row: mode toggle (mobile only) + sort dropdown + sort direction */}
+            <div className="flex items-center gap-2">
+              {/* Mode toggle — mobile only */}
               <button
-                onClick={() => setSortAsc(!sortAsc)}
-                className="p-2 bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 transition-colors"
-                aria-label="Toggle sort direction"
+                onClick={handleModeToggle}
+                className={cn(modeToggleClass, "sm:hidden")}
+                title={searchMode === "smart" ? "Switch to exact text search" : "Switch to Smart AI search (pgvector)"}
               >
-                {sortAsc ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                <Zap className="w-3.5 h-3.5" />
+                {searchMode === "smart" ? "Smart" : "Exact"}
               </button>
+
+              <div className="ml-auto sm:ml-0 flex gap-2">
+                <div className="relative">
+                  <select
+                    value={sortKey}
+                    onChange={(e) => setSortKey(e.target.value as SortKey)}
+                    className="appearance-none pl-3 pr-8 py-2 bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-gray-700 dark:text-slate-300 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/50 transition-colors cursor-pointer"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="title">Title</option>
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-slate-500 pointer-events-none" />
+                </div>
+
+                <button
+                  onClick={() => setSortAsc(!sortAsc)}
+                  className="p-2 bg-white dark:bg-slate-900/60 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                  aria-label="Toggle sort direction"
+                >
+                  {sortAsc ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Content */}
           {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
@@ -879,7 +910,7 @@ function LibraryContent() {
               </Link>
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {displayNotes.map((note) => (
                 <NoteGridItem
                   key={note.id}

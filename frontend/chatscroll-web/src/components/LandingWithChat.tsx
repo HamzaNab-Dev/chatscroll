@@ -69,7 +69,7 @@ export function LandingWithChat() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-x-hidden">
       {/* Navigation — auth-aware */}
       <header className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-slate-800/50">
         {/* Logo — left */}
@@ -125,15 +125,17 @@ export function LandingWithChat() {
             <>
               <Link
                 href="/login"
-                className="px-3 py-1.5 text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors"
+                className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors whitespace-nowrap"
               >
                 Sign In
               </Link>
               <Link
                 href="/login"
-                className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1"
+                className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
               >
-                Start Free <ArrowRight className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Start Free</span>
+                <span className="sm:hidden">Sign Up</span>
+                <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 hidden sm:inline" />
               </Link>
             </>
           )}
