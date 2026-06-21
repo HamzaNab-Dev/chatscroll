@@ -44,11 +44,41 @@ jobs:
           echo "  $ECR_REPO:latest"
           echo "  $ECR_REPO:${{ github.sha }}"
 
-      - name: Force ECS service redeployment
+      - name: Register new ECS task definition revision
+        env:
+          ECR_REPO: 294699501138.dkr.ecr.us-east-1.amazonaws.com/chatscroll-api
         run: |
+          # Fetch the current task definition JSON
+          TASK_DEF=$(aws ecs describe-task-definition \
+            --task-definition chatscroll-api \
+            --query 'taskDefinition' \
+            --output json)
+
+          # Point the first container at the new SHA-tagged image and strip ECS read-only fields
+          NEW_TASK_DEF=$(echo "$TASK_DEF" | jq \
+            --arg IMAGE "$ECR_REPO:${{ github.sha }}" \
+            '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)')
+
+          # Register the updated definition and capture the new ARN
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json "$NEW_TASK_DEF" \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "Registered: $NEW_TASK_DEF_ARN"
+
+          # Deploy the new revision — explicit --task-definition ensures ECS uses the new image,
+          # not whatever digest the old revision was pinned to
           aws ecs update-service \
             --cluster default \
             --service chatscroll-api \
+            --task-definition "$NEW_TASK_DEF_ARN" \
             --force-new-deployment \
             --region us-east-1
 
+      - name: Wait for ECS service to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster default \
+            --services chatscroll-api \
+            --region us-east-1
