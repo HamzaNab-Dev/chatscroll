@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -29,6 +29,9 @@ import { formatDate } from "@/lib/utils";
 function ScrollDetailContent() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const backHref = searchParams.get("from") === "chat" ? "/chat" : "/library";
+  const backLabel = searchParams.get("from") === "chat" ? "Back to Chat" : "Back to Library";
   const [note, setNote] = useState<Note | null>(null);
   const [relatedNotes, setRelatedNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,11 +163,11 @@ function ScrollDetailContent() {
       <main className="max-w-3xl mx-auto px-4 py-8 sm:px-6">
         {/* Back nav */}
         <Link
-          href="/library"
+          href={backHref}
           className="inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors mb-6"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Library
+          {backLabel}
         </Link>
 
         {/* Title + actions */}

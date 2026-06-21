@@ -169,7 +169,7 @@ export function SaveNoteModal({
 
       {/* Folder picker */}
       {showPicker && (
-        <div className="border-t border-amber-200/60 dark:border-amber-700/20 px-3 pt-1 pb-2 space-y-0.5 max-h-48 overflow-y-auto">
+        <div className={cn("border-t border-amber-200/60 dark:border-amber-700/20 px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto", showNewFolder ? "max-h-96" : "max-h-48")}>
           {localFolders.map((folder) => {
             const hasChildren = localFolders.some((f) => f.parentId === folder.id);
             const label = hasChildren
@@ -220,6 +220,18 @@ export function SaveNoteModal({
                   className="flex-1 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-400"
                 />
               </div>
+              {parentFolders.length > 0 && (
+                <select
+                  value={newFolderParentId}
+                  onChange={(e) => setNewFolderParentId(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 focus:outline-none focus:border-amber-400 appearance-none"
+                >
+                  <option value="">Top level (no parent)</option>
+                  {parentFolders.map((f) => (
+                    <option key={f.id} value={f.id}>{f.icon ?? "📁"} {f.name}</option>
+                  ))}
+                </select>
+              )}
               {/* Icon picker */}
               <div className="flex flex-wrap gap-1">
                 {FOLDER_ICONS.map((icon) => (
@@ -237,18 +249,6 @@ export function SaveNoteModal({
                   </button>
                 ))}
               </div>
-              {parentFolders.length > 0 && (
-                <select
-                  value={newFolderParentId}
-                  onChange={(e) => setNewFolderParentId(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 focus:outline-none focus:border-amber-400 appearance-none"
-                >
-                  <option value="">Top level (no parent)</option>
-                  {parentFolders.map((f) => (
-                    <option key={f.id} value={f.id}>{f.icon ?? "📁"} {f.name}</option>
-                  ))}
-                </select>
-              )}
               <div className="flex gap-1">
                 <button
                   onClick={handleCreateFolder}

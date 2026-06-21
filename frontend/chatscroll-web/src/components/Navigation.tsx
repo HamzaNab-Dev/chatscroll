@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, ArrowRight } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -23,7 +23,6 @@ export function Navigation() {
   const { isAuthenticated } = useAuth();
   const [scrollCount, setScrollCount] = useState<number | null>(null);
 
-  // Fetch total scroll count for the Library badge (5D)
   useEffect(() => {
     if (!isAuthenticated) return;
     api.getNotesStats()
@@ -32,7 +31,8 @@ export function Navigation() {
   }, [isAuthenticated]);
 
   return (
-    <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0">
+    <header className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0">
+      {/* Logo */}
       <Link href="/" className="flex items-center gap-2 flex-shrink-0">
         <Image src="/logo.png" alt="ChatScroll" width={32} height={32} className="rounded-lg" />
         <span className="font-bold text-gray-900 dark:text-slate-100 text-sm tracking-tight hidden sm:block">
@@ -40,8 +40,9 @@ export function Navigation() {
         </span>
       </Link>
 
+      {/* Center nav */}
       {isAuthenticated ? (
-        <nav className="flex items-center gap-1 mx-auto">
+        <nav className="flex-1 flex items-center justify-center gap-1">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -49,8 +50,8 @@ export function Navigation() {
               className={cn(
                 "px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5",
                 pathname === link.href
-                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
+                  ? "bg-amber-100 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 font-medium"
+                  : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
               )}
             >
               {link.label}
@@ -70,35 +71,41 @@ export function Navigation() {
           ))}
         </nav>
       ) : (
-        <div className="flex-1" />
+        <nav className="flex-1 hidden md:flex items-center justify-center gap-6 text-sm text-gray-500 dark:text-slate-400">
+          <a href="#features" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Features</a>
+          <a href="#how-it-works" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">How it works</a>
+          <a href="#pricing" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Pricing</a>
+        </nav>
       )}
 
+      {/* Right controls — always show theme toggle */}
       <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={toggleTheme}
+          className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+          aria-label="Toggle theme"
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+
         {isAuthenticated ? (
-          <>
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Toggle theme"
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-            <UserMenu />
-          </>
+          <UserMenu />
         ) : (
           <>
             <Link
               href="/login"
-              className="px-3 py-1.5 text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors"
+              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors whitespace-nowrap"
             >
               Sign In
             </Link>
             <Link
               href="/login"
-              className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors"
+              className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
             >
-              Sign Up
+              <span className="hidden sm:inline">Start Free</span>
+              <span className="sm:hidden">Sign Up</span>
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 hidden sm:inline" />
             </Link>
           </>
         )}

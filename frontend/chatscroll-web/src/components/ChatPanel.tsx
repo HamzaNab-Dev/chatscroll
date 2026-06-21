@@ -325,37 +325,43 @@ export function ChatPanel({
                 </div>
               </div>
 
-              {/* Already researched banner */}
+              {/* Already researched banner — no Save/Skip when this shows */}
               {!isAnimating && message.isAlreadyKnown && message.role === "assistant" && (
                 <div className="ml-10 mt-2 flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-xl px-3 py-2.5 animate-in fade-in duration-500">
                   <Lightbulb className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-amber-700 dark:text-amber-300 font-medium">
                       You&apos;ve researched this before!
                     </span>
-                    {message.similarNoteTitle && (
-                      <div className="mt-1 text-amber-600 dark:text-amber-200/70">
-                        📌 &ldquo;{message.similarNoteTitle}&rdquo;
-                        {message.similarNoteDate && (
-                          <span className="text-gray-400 dark:text-slate-500">
-                            {" "}— saved {message.similarNoteDate}
-                          </span>
-                        )}
+                    {message.similarNoteId && message.similarNoteTitle && (
+                      <div className="mt-1">
+                        <Link
+                          href={`/scroll/${message.similarNoteId}?from=chat`}
+                          className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 hover:text-amber-500 dark:hover:text-amber-300 underline underline-offset-2 transition-colors break-all"
+                        >
+                          📌 {message.similarNoteTitle}
+                          {message.similarNoteDate && (
+                            <span className="text-gray-400 dark:text-slate-500 no-underline">
+                              {" "}— saved {message.similarNoteDate}
+                            </span>
+                          )}
+                        </Link>
                       </div>
                     )}
                     <div className="mt-1 text-gray-400 dark:text-slate-500">
-                      Check your Scroll Library to review what you saved.
+                      Open the link above to review what you saved.
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Save prompt / auth CTA — hidden on AI error responses */}
+              {/* Save prompt / auth CTA — hidden on AI error responses and duplicate detections */}
               {!isAnimating &&
                 message.role === "assistant" &&
                 message.folderSuggestion &&
                 message.cleanNote &&
                 !message.content.startsWith("GEMINI_ERROR:") &&
+                !message.isAlreadyKnown &&
                 !message.saved &&
                 !dismissedSave.has(message.id) && (
                   <div className="ml-10 mt-2 max-w-sm">

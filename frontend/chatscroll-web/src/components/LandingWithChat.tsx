@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { usePathname } from "next/navigation";
-import { Send, ArrowRight, ChevronDown, Sun, Moon } from "lucide-react";
+import { Send, ArrowRight, ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/context/ThemeContext";
-import { UserMenu } from "@/components/UserMenu";
-import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { Navigation } from "@/components/Navigation";
 
 const SUGGESTIONS = [
   "SOLID principles?",
@@ -28,27 +25,11 @@ const AWS_STACK = [
   { icon: "🌐", name: "Vercel", desc: "Frontend deployment" },
 ];
 
-const AUTH_NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/chat", label: "Chat" },
-  { href: "/library", label: "Library" },
-];
-
 export function LandingWithChat() {
   const [question, setQuestion] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [scrollCount, setScrollCount] = useState<number | null>(null);
   const router = useRouter();
-  const pathname = usePathname();
   const { isAuthenticated } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    api.getNotesStats()
-      .then((s) => setScrollCount(s.totalNotes))
-      .catch(() => {});
-  }, [isAuthenticated]);
 
   const handleSubmit = () => {
     const q = question.trim();
@@ -58,89 +39,9 @@ export function LandingWithChat() {
     router.push(isAuthenticated ? "/chat" : "/login");
   };
 
-  const ThemeToggle = () => (
-    <button
-      onClick={toggleTheme}
-      className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-      aria-label="Toggle theme"
-    >
-      {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-    </button>
-  );
-
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-x-hidden">
-      {/* Navigation — auth-aware */}
-      <header className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-slate-800/50">
-        {/* Logo — left */}
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <Image src="/logo.png" alt="ChatScroll" width={32} height={32} className="rounded-lg" />
-          <span className="font-bold text-gray-900 dark:text-slate-100 text-sm tracking-tight">ChatScroll</span>
-        </Link>
-
-        {/* Center nav — flex-1 + justify-center keeps it truly centered */}
-        {isAuthenticated ? (
-          <nav className="flex-1 flex items-center justify-center gap-1">
-            {AUTH_NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5",
-                  pathname === link.href
-                    ? "bg-amber-100 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 font-medium"
-                    : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
-                )}
-              >
-                {link.label}
-                {link.label === "Library" && scrollCount !== null && scrollCount > 0 && (
-                  <span
-                    className={cn(
-                      "text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none",
-                      pathname === link.href
-                        ? "bg-amber-200 dark:bg-amber-700/50 text-amber-800 dark:text-amber-200"
-                        : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                    )}
-                  >
-                    {scrollCount}
-                  </span>
-                )}
-              </Link>
-            ))}
-          </nav>
-        ) : (
-          <nav className="flex-1 hidden md:flex items-center justify-center gap-6 text-sm text-gray-500 dark:text-slate-400">
-            <a href="#features" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">How it works</a>
-            <a href="#pricing" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Pricing</a>
-          </nav>
-        )}
-
-        {/* Right controls */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <ThemeToggle />
-          {isAuthenticated ? (
-            <UserMenu />
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors whitespace-nowrap"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/login"
-                className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
-              >
-                <span className="hidden sm:inline">Start Free</span>
-                <span className="sm:hidden">Sign Up</span>
-                <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 hidden sm:inline" />
-              </Link>
-            </>
-          )}
-        </div>
-      </header>
+      <Navigation />
 
       {/* Hero */}
       <section className="relative max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
@@ -149,8 +50,8 @@ export function LandingWithChat() {
 
         {/* Logo with pulse ring */}
         <div className="relative inline-flex items-center justify-center mb-7">
-          <div className="absolute w-24 h-24 rounded-3xl bg-amber-400/15 dark:bg-amber-500/10 animate-pulse" />
-          <Image src="/logo.png" alt="ChatScroll" width={64} height={64} className="relative rounded-2xl shadow-xl shadow-amber-500/30 dark:shadow-amber-600/20" />
+          <div className="absolute w-32 h-32 rounded-3xl bg-amber-400/15 dark:bg-amber-500/10 animate-pulse" />
+          <Image src="/logo.png" alt="ChatScroll" width={96} height={96} className="relative rounded-2xl shadow-xl shadow-amber-500/30 dark:shadow-amber-600/20" />
         </div>
 
         {/* Headline */}
@@ -275,23 +176,23 @@ export function LandingWithChat() {
 
       {/* Stats bar */}
       <div className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-4">
-        <div className="max-w-3xl mx-auto px-6 flex flex-nowrap items-center justify-center gap-4 sm:gap-8">
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
+        <div className="max-w-3xl mx-auto px-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-center gap-y-3 gap-x-4 sm:gap-8">
+          <div className="flex items-center gap-1.5 justify-center">
             <span className="text-base font-bold text-amber-600 dark:text-amber-400">∞</span>
             <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved</span>
           </div>
-          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 justify-center">
             <span className="text-xs font-bold text-amber-600 dark:text-amber-400">5-Step</span>
             <span className="text-xs text-gray-500 dark:text-slate-400">AI reasoning</span>
           </div>
-          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 justify-center">
             <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">🤖 Gemini</span>
             <span className="text-xs text-gray-500 dark:text-slate-400">Powered by Google</span>
           </div>
-          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 justify-center">
             <span className="text-xs text-gray-500 dark:text-slate-400">🏆 AWS H0 Hackathon</span>
           </div>
         </div>
