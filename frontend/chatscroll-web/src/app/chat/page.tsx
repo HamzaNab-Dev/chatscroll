@@ -53,8 +53,8 @@ function ChatContent() {
     try {
       const data = await api.getFolders();
       setFolders(data);
-    } catch {
-      // silently skip
+    } catch (err) {
+      console.error("Failed to load folders:", err);
     }
   }, [isAuthenticated]);
 

@@ -77,16 +77,22 @@ export function SaveNoteModal({
     : formatPath(folderSuggestion.suggestedPath);
 
   const handleSave = async () => {
-    const folderId = selectedFolderId || suggestedFolder?.id || localFolders[0]?.id;
-    console.log("Save button clicked", { folderId, selectedFolderId, suggestedFolderId: suggestedFolder?.id, localFoldersCount: localFolders.length, title: question.slice(0, 60) });
-    if (!folderId) {
-      console.warn("SaveNoteModal: no folderId — localFolders is empty or suggestedFolder not found. folders prop:", localFolders);
-      return;
-    }
+    let folderId = selectedFolderId || suggestedFolder?.id || localFolders[0]?.id;
     setSaving(true);
     try {
+      if (!folderId) {
+        // No folders yet — auto-create one from the AI's suggestion
+        const topSegment = folderSuggestion.suggestedPath.split(".")[0];
+        const slug = topSegment.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "general";
+        const name = folderSuggestion.suggestedName || slug.replace(/_/g, " ");
+        const created = await api.createFolder({ name, path: slug, icon: "📁" });
+        setLocalFolders((prev) => [...prev, created]);
+        folderId = created.id;
+      }
       const title = question.length > 60 ? question.slice(0, 60) + "..." : question;
       await onSave(folderId, title);
+    } catch (err) {
+      console.error("Failed to save scroll:", err);
     } finally {
       setSaving(false);
     }
