@@ -46,13 +46,13 @@ builder.Services.AddCors(options =>
         {
             "http://localhost:3000",
             "https://localhost:3000",
+            "https://chatscroll.vercel.app",
         };
 
         var vercelUrl = Environment.GetEnvironmentVariable("VERCEL_FRONTEND_URL");
-        if (!string.IsNullOrEmpty(vercelUrl))
+        if (!string.IsNullOrEmpty(vercelUrl) && vercelUrl != "https://chatscroll.vercel.app")
         {
             allowedOrigins.Add(vercelUrl);
-            allowedOrigins.Add("https://chatscroll.vercel.app");
         }
 
         policy.WithOrigins(allowedOrigins.ToArray())

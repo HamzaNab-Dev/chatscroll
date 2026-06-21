@@ -35,7 +35,6 @@ jobs:
           # Tag with both :latest (ECS pulls this) and :<sha> (lets you verify
           # exactly which commit is running by checking ECS task details in console).
           docker build \
-            --no-cache \
             --build-arg COMMIT_SHA=${{ github.sha }} \
             -t $ECR_REPO:latest \
             -t $ECR_REPO:${{ github.sha }} \
