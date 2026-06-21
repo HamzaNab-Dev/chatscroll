@@ -7,7 +7,6 @@ import { Navigation } from "@/components/Navigation";
 import { ConversationsSidebar, type ConversationItem } from "@/components/ConversationsSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { generateId } from "@/lib/utils";
 import type { Folder } from "@/lib/api";
 import { Menu, ScrollText } from "lucide-react";
 
@@ -16,7 +15,7 @@ function ChatContent() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
-  const [conversationId, setConversationId] = useState<string>(() => generateId());
+  const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
 
@@ -96,7 +95,7 @@ function ChatContent() {
       setConversations((prev) => [item, ...prev]);
     } catch (err) {
       console.warn("Failed to create conversation in Aurora, using local ID:", err);
-      setConversationId(generateId());
+      setConversationId(crypto.randomUUID());
     }
     setInitialMessage(undefined);
     setShowConversations(false); // Close mobile panel after selection
