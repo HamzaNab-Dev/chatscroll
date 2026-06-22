@@ -53,8 +53,15 @@ function HighlightText({ text, query }: { text: string; query: string }) {
   );
 }
 
-function NoteGridItem({ note, folder, onExport, query, isAiResult }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean }) {
+const RANK_BADGES = [
+  { label: "✦ #1 Match", cls: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-600/50" },
+  { label: "✦ #2 Match", cls: "bg-gray-100 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 border-gray-300 dark:border-slate-600/50" },
+  { label: "✦ #3 Match", cls: "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-500 border-orange-200 dark:border-orange-700/40" },
+];
+
+function NoteGridItem({ note, folder, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
   const borderColor = folder?.color ?? "#d97706";
+  const rankBadge = rank !== undefined && rank < 3 ? RANK_BADGES[rank] : null;
   return (
     <div className="relative group">
       <Link
@@ -68,11 +75,17 @@ function NoteGridItem({ note, folder, onExport, query, isAiResult }: { note: Not
               {folder.icon} {folder.name}
             </p>
           ) : <span />}
-          {isAiResult && (
-            <span className="flex-shrink-0 text-[9px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full px-1.5 py-0.5 leading-none ml-1">
-              🧠 AI
-            </span>
-          )}
+          <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+            {rankBadge ? (
+              <span className={`text-[9px] font-semibold border rounded-full px-1.5 py-0.5 leading-none ${rankBadge.cls}`}>
+                {rankBadge.label}
+              </span>
+            ) : isAiResult ? (
+              <span className="text-[9px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full px-1.5 py-0.5 leading-none">
+                🧠 AI
+              </span>
+            ) : null}
+          </div>
         </div>
         <p className="text-sm font-medium text-gray-800 dark:text-slate-200 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors mb-2 pr-7">
           {query ? <HighlightText text={note.title} query={query} /> : note.title}
@@ -109,8 +122,9 @@ function NoteGridItem({ note, folder, onExport, query, isAiResult }: { note: Not
   );
 }
 
-function NoteListItem({ note, folder, onExport, query, isAiResult }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean }) {
+function NoteListItem({ note, folder, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
   const borderColor = folder?.color ?? "#d97706";
+  const rankBadge = rank !== undefined && rank < 3 ? RANK_BADGES[rank] : null;
   return (
     <div className="relative group flex items-start border-b border-gray-100 dark:border-slate-800/60 last:border-0" style={{ borderLeftWidth: "3px", borderLeftColor: borderColor }}>
       <Link
@@ -124,11 +138,15 @@ function NoteListItem({ note, folder, onExport, query, isAiResult }: { note: Not
                 {folder.icon} {folder.name}
               </p>
             )}
-            {isAiResult && (
+            {rankBadge ? (
+              <span className={`flex-shrink-0 text-[9px] font-semibold border rounded-full px-1.5 py-0.5 leading-none ${rankBadge.cls}`}>
+                {rankBadge.label}
+              </span>
+            ) : isAiResult ? (
               <span className="flex-shrink-0 text-[9px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full px-1.5 py-0.5 leading-none">
                 🧠 AI
               </span>
-            )}
+            ) : null}
           </div>
           <p className="text-sm font-medium text-gray-800 dark:text-slate-200 line-clamp-2 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors">
             {query ? <HighlightText text={note.title} query={query} /> : note.title}
@@ -916,7 +934,7 @@ function LibraryContent() {
             </div>
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {displayNotes.map((note) => (
+              {displayNotes.map((note, index) => (
                 <NoteGridItem
                   key={note.id}
                   note={note}
@@ -924,12 +942,13 @@ function LibraryContent() {
                   onExport={setExportNote}
                   query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
                   isAiResult={searchMode === "smart" && !!searchQuery.trim()}
+                  rank={searchMode === "smart" && searchQuery.trim() ? index : undefined}
                 />
               ))}
             </div>
           ) : (
             <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 overflow-hidden">
-              {displayNotes.map((note) => (
+              {displayNotes.map((note, index) => (
                 <NoteListItem
                   key={note.id}
                   note={note}
@@ -937,6 +956,7 @@ function LibraryContent() {
                   onExport={setExportNote}
                   query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
                   isAiResult={searchMode === "smart" && !!searchQuery.trim()}
+                  rank={searchMode === "smart" && searchQuery.trim() ? index : undefined}
                 />
               ))}
             </div>

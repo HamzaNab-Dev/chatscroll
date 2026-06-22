@@ -73,7 +73,7 @@ public class AuroraNoteRepository : INoteRepository
         var vecStr = '[' + string.Join(",",
             embedding.Select(f => f.ToString("G6", CultureInfo.InvariantCulture))) + ']';
 
-        // Only include notes whose cosine similarity exceeds 0.4 (1 - distance > 0.4).
+        // Only include notes whose cosine similarity exceeds 0.3 (1 - distance > 0.3).
         // Results are ordered best-match-first (ascending distance = descending similarity).
         var vectorResults = await _db.Notes
             .FromSqlInterpolated($"""
@@ -82,9 +82,9 @@ public class AuroraNoteRepository : INoteRepository
                 FROM notes
                 WHERE user_id = {userId}
                   AND embedding IS NOT NULL
-                  AND 1 - (embedding <=> {vecStr}::vector) > 0.4
+                  AND 1 - (embedding <=> {vecStr}::vector) > 0.3
                 ORDER BY embedding <=> {vecStr}::vector
-                LIMIT 5
+                LIMIT 10
                 """)
             .AsNoTracking()
             .ToListAsync();
