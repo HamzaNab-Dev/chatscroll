@@ -28,13 +28,33 @@ function ChatContent() {
 
   // Load pending question on mount, then load conversation list from real API
   useEffect(() => {
-    const pending = sessionStorage.getItem("pendingQuestion");
-    if (pending) {
-      sessionStorage.removeItem("pendingQuestion");
-      setInitialMessage(pending);
-    }
+    // Consume one-shot flags from sessionStorage before any async work
+    const pending = (() => {
+      try { const v = sessionStorage.getItem("pendingQuestion"); if (v) sessionStorage.removeItem("pendingQuestion"); return v; }
+      catch { return null; }
+    })();
+    const forceNew = (() => {
+      try { const v = sessionStorage.getItem("cs_force_new"); if (v) sessionStorage.removeItem("cs_force_new"); return v === "1"; }
+      catch { return false; }
+    })();
+    const shouldForceNew = !!pending || forceNew;
 
     const initConversations = async () => {
+      if (!isAuthenticated) {
+        // Clear any cached history so a non-auth user never sees another user's conversations
+        try { localStorage.removeItem(LAST_CONV_KEY); } catch {}
+        try { localStorage.removeItem(CONV_CACHE_KEY); } catch {}
+        setConversations([]);
+        // Still create a DB-backed conversation so the chat API accepts messages
+        try {
+          const newConv = await api.createConversation();
+          setConversationId(newConv.id);
+        } catch { /* stays as random UUID */ }
+        setLoadingConversations(false);
+        if (pending) setInitialMessage(pending);
+        return;
+      }
+
       const lastId = (() => { try { return localStorage.getItem(LAST_CONV_KEY); } catch { return null; } })();
 
       try {
@@ -46,30 +66,35 @@ function ChatContent() {
         }));
         setConversations(mapped);
 
-        if (mapped.length > 0 && !pending) {
-          // Resume the exact conversation the user was on before the refresh
+        if (!shouldForceNew && mapped.length > 0) {
+          // Refresh or back-nav: restore the exact conversation the user was on
           const resume = lastId ? mapped.find((c) => c.id === lastId) : null;
           setConversationId(resume ? resume.id : mapped[0].id);
         } else {
-          // No conversations yet, or a pending question needs a fresh chat — create one
+          // Intentional new: Chat nav link, home page send, or no existing convs
           const newConv = await api.createConversation();
           const newItem: ConversationItem = { id: newConv.id, title: "New Chat", updatedAt: new Date(newConv.updatedAt) };
           setConversationId(newConv.id);
-          // Prepend — never replace existing conversations
           setConversations((prev) => [newItem, ...prev]);
+          // Set initialMessage AFTER the new conversationId is established (avoids race)
+          if (pending) setInitialMessage(pending);
         }
       } catch (err) {
         console.warn("Failed to load conversations from API, restoring from cache:", err);
-        // Restore from localStorage cache so the user doesn't see "No conversations yet"
         try {
-          const cached = localStorage.getItem(CONV_CACHE_KEY);
-          if (cached) {
-            const parsed = JSON.parse(cached) as Array<{ id: string; title: string; updatedAt: string }>;
-            const restored = parsed.map((c) => ({ ...c, updatedAt: new Date(c.updatedAt) }));
-            setConversations(restored);
-            const target = lastId ? restored.find((c) => c.id === lastId) : null;
-            const fallback = target ?? restored[0];
-            if (fallback) setConversationId(fallback.id);
+          if (!shouldForceNew) {
+            // Only restore on refresh/back — never when a force-new was requested
+            const cached = localStorage.getItem(CONV_CACHE_KEY);
+            if (cached) {
+              const parsed = JSON.parse(cached) as Array<{ id: string; title: string; updatedAt: string }>;
+              const restored = parsed.map((c) => ({ ...c, updatedAt: new Date(c.updatedAt) }));
+              setConversations(restored);
+              const target = lastId ? restored.find((c) => c.id === lastId) : null;
+              const fallback = target ?? restored[0];
+              if (fallback) setConversationId(fallback.id);
+            }
+          } else if (pending) {
+            setInitialMessage(pending);
           }
         } catch {}
       } finally {

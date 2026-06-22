@@ -47,6 +47,12 @@ export function Navigation() {
             <Link
               key={link.href}
               href={link.href}
+              onClick={() => {
+                // Force a new conversation when clicking Chat from another page
+                if (link.href === "/chat" && pathname !== "/chat") {
+                  try { sessionStorage.setItem("cs_force_new", "1"); } catch {}
+                }
+              }}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5",
                 pathname === link.href
