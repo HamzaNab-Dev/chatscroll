@@ -51,5 +51,5 @@ public class MockAiService : IAiService
     }
 
     public Task<float[]> GenerateEmbeddingAsync(string text, string taskType = "RETRIEVAL_DOCUMENT") =>
-        Task.FromResult(new float[768]);
+        Task.FromResult(new float[3072]);
 }

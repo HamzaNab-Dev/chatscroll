@@ -179,16 +179,17 @@ public class GeminiAiService : IAiService
 
         try
         {
-            // text-embedding-004 produces 768-dim vectors; Aurora column must be vector(768)
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={_apiKey}";
+            // gemini-embedding-001 produces 3072-dim vectors; Aurora column must be vector(3072)
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={_apiKey}";
             _logger.LogInformation("Gemini embedding request: {Url} taskType={TaskType}",
                 url.Replace(_apiKey, "[REDACTED]"), taskType);
 
             var body = JsonSerializer.Serialize(new
             {
-                model = "models/text-embedding-004",
+                model = "models/gemini-embedding-001",
                 content = new { parts = new[] { new { text } } },
-                taskType
+                taskType,
+                outputDimensionality = 3072
             });
 
             var response = await _httpClient.PostAsync(url,

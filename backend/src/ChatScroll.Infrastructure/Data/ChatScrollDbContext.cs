@@ -94,7 +94,7 @@ public class ChatScrollDbContext : DbContext
             e.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
             e.Property(x => x.UserId).HasColumnName("user_id");
             e.Property(x => x.Title).HasColumnName("title");
-            e.Property(x => x.SuggestedFolder).HasColumnName("suggested_folder");
+            e.Property(x => x.SuggestedFolder).HasColumnName("suggested_folder").HasColumnType("ltree");
             e.Property(x => x.MessageCount).HasColumnName("message_count").HasDefaultValue(0);
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
             e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
