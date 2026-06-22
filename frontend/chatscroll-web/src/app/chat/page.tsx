@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { KnowledgePanel } from "@/components/KnowledgePanel";
 import { Navigation } from "@/components/Navigation";
@@ -12,23 +12,55 @@ import { Menu, ScrollText } from "lucide-react";
 
 const LAST_CONV_KEY = "cs_last_conv";
 const CONV_CACHE_KEY = "cs_convs";
+const PINNED_KEY = "cs_pinned_convs";
 
 function ChatContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authState } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
   const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
+    try {
+      const v = typeof window !== "undefined" ? localStorage.getItem(PINNED_KEY) : null;
+      return v ? new Set(JSON.parse(v) as string[]) : new Set<string>();
+    } catch { return new Set<string>(); }
+  });
 
   // Mobile panel visibility
   const [showConversations, setShowConversations] = useState(false);
   const [showScrolls, setShowScrolls] = useState(false);
 
-  // Load pending question on mount, then load conversation list from real API
+  // Prevents double-init when authState.status changes from "loading" → settled
+  const hasInitRef = useRef(false);
+
+  // Persist pinned IDs to localStorage
   useEffect(() => {
-    // Consume one-shot flags from sessionStorage before any async work
+    try { localStorage.setItem(PINNED_KEY, JSON.stringify([...pinnedIds])); } catch {}
+  }, [pinnedIds]);
+
+  // Persist the active conversation so we can restore it on refresh / back-nav
+  useEffect(() => {
+    if (conversationId) {
+      try { localStorage.setItem(LAST_CONV_KEY, conversationId); } catch {}
+    }
+  }, [conversationId]);
+
+  // Cache conversation list for offline/error fallback
+  useEffect(() => {
+    if (conversations.length > 0) {
+      try { localStorage.setItem(CONV_CACHE_KEY, JSON.stringify(conversations)); } catch {}
+    }
+  }, [conversations]);
+
+  // Main init — waits for auth to settle so "loading" is never mistaken for "unauthenticated"
+  useEffect(() => {
+    if (authState.status === "loading") return;
+    if (hasInitRef.current) return;
+    hasInitRef.current = true;
+
     const pending = (() => {
       try { const v = sessionStorage.getItem("pendingQuestion"); if (v) sessionStorage.removeItem("pendingQuestion"); return v; }
       catch { return null; }
@@ -41,15 +73,10 @@ function ChatContent() {
 
     const initConversations = async () => {
       if (!isAuthenticated) {
-        // Clear any cached history so a non-auth user never sees another user's conversations
+        // Clear any cached history so non-auth users never see another user's conversations
         try { localStorage.removeItem(LAST_CONV_KEY); } catch {}
         try { localStorage.removeItem(CONV_CACHE_KEY); } catch {}
         setConversations([]);
-        // Still create a DB-backed conversation so the chat API accepts messages
-        try {
-          const newConv = await api.createConversation();
-          setConversationId(newConv.id);
-        } catch { /* stays as random UUID */ }
         setLoadingConversations(false);
         if (pending) setInitialMessage(pending);
         return;
@@ -71,19 +98,15 @@ function ChatContent() {
           const resume = lastId ? mapped.find((c) => c.id === lastId) : null;
           setConversationId(resume ? resume.id : mapped[0].id);
         } else {
-          // Intentional new: Chat nav link, home page send, or no existing convs
-          const newConv = await api.createConversation();
-          const newItem: ConversationItem = { id: newConv.id, title: "New Chat", updatedAt: new Date(newConv.updatedAt) };
-          setConversationId(newConv.id);
-          setConversations((prev) => [newItem, ...prev]);
-          // Set initialMessage AFTER the new conversationId is established (avoids race)
+          // Nav Chat click, home page send, or no existing convs.
+          // Use a client-side UUID — backend creates the Aurora record on the first message.
+          setConversationId(crypto.randomUUID());
           if (pending) setInitialMessage(pending);
         }
       } catch (err) {
         console.warn("Failed to load conversations from API, restoring from cache:", err);
         try {
           if (!shouldForceNew) {
-            // Only restore on refresh/back — never when a force-new was requested
             const cached = localStorage.getItem(CONV_CACHE_KEY);
             if (cached) {
               const parsed = JSON.parse(cached) as Array<{ id: string; title: string; updatedAt: string }>;
@@ -104,21 +127,7 @@ function ChatContent() {
 
     initConversations();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Persist the active conversation so we can restore it on next page load
-  useEffect(() => {
-    if (conversationId) {
-      try { localStorage.setItem(LAST_CONV_KEY, conversationId); } catch {}
-    }
-  }, [conversationId]);
-
-  // Cache the conversation list so it can be shown if the API call fails on next load
-  useEffect(() => {
-    if (conversations.length > 0) {
-      try { localStorage.setItem(CONV_CACHE_KEY, JSON.stringify(conversations)); } catch {}
-    }
-  }, [conversations]);
+  }, [authState.status]);
 
   const loadFolders = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -141,35 +150,54 @@ function ChatContent() {
     setRefreshKey((k) => k + 1);
   };
 
-  const handleNewChat = async () => {
-    try {
-      const newConv = await api.createConversation();
-      const item: ConversationItem = {
-        id: newConv.id,
-        title: "New Chat",
-        updatedAt: new Date(newConv.updatedAt),
-      };
-      setConversationId(newConv.id);
-      setConversations((prev) => [item, ...prev]);
-    } catch (err) {
-      console.warn("Failed to create conversation in Aurora, using local ID:", err);
-      setConversationId(crypto.randomUUID());
-    }
+  // New chat: just use a fresh UUID — no API call; backend creates Aurora record on first message
+  const handleNewChat = () => {
+    setConversationId(crypto.randomUUID());
     setInitialMessage(undefined);
-    setShowConversations(false); // Close mobile panel after selection
+    setShowConversations(false);
   };
 
   const handleSelectConversation = (id: string) => {
     setConversationId(id);
     setInitialMessage(undefined);
-    setShowConversations(false); // Close mobile panel after selection
+    setShowConversations(false);
+  };
+
+  const handleDeleteConversation = async (id: string) => {
+    // Optimistic update first
+    const remaining = conversations.filter((c) => c.id !== id);
+    setConversations(remaining);
+    setPinnedIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+
+    if (conversationId === id) {
+      setConversationId(remaining.length > 0 ? remaining[0].id : crypto.randomUUID());
+      setInitialMessage(undefined);
+    }
+
+    try { await api.deleteConversation(id); }
+    catch { console.warn("Failed to delete conversation from API"); }
+  };
+
+  const handleRenameConversation = async (id: string, newTitle: string) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title: newTitle } : c))
+    );
+    try { await api.updateConversationTitle(id, newTitle); }
+    catch { console.warn("Failed to rename conversation"); }
+  };
+
+  const handlePinConversation = (id: string) => {
+    setPinnedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
   // Called by ChatPanel when the first user message is sent
   const handleFirstMessage = useCallback((msg: string, convId: string) => {
     const title = msg.length > 45 ? msg.slice(0, 45) + "..." : msg;
 
-    // Update sidebar immediately (optimistic)
     setConversations((prev) => {
       const existing = prev.find((c) => c.id === convId);
       if (existing) {
@@ -177,11 +205,10 @@ function ChatContent() {
           c.id === convId ? { ...c, title, updatedAt: new Date() } : c
         );
       }
+      // New conversation just created — add it to the top of the sidebar
       return [{ id: convId, title, updatedAt: new Date() }, ...prev];
     });
 
-    // Persist title to Aurora (ChatController already does this server-side via the message endpoint,
-    // but we also call PATCH here as a belt-and-suspenders for newly-created conversations)
     api.updateConversationTitle(convId, title).catch((err) =>
       console.warn("Failed to update conversation title:", err)
     );
@@ -229,8 +256,12 @@ function ChatContent() {
           <ConversationsSidebar
             conversations={conversations}
             currentId={conversationId}
+            pinnedIds={pinnedIds}
             onNew={handleNewChat}
             onSelect={handleSelectConversation}
+            onDelete={handleDeleteConversation}
+            onRename={handleRenameConversation}
+            onPin={handlePinConversation}
             loading={loadingConversations}
           />
         </div>

@@ -158,6 +158,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ title, messageCount }),
     }),
+  deleteConversation: (id: string) =>
+    request<void>(`/api/conversations/${id}`, { method: "DELETE" }),
   getConversationMessages: (id: string) =>
     request<Array<{ role: string; content: string; timestamp: string }>>(`/api/conversations/${id}/messages`),
 

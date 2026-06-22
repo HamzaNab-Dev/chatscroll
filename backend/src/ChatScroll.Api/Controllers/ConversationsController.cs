@@ -50,6 +50,13 @@ public class ConversationsController : ControllerBase
         });
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _repository.DeleteAsync(id, MockUserId);
+        return NoContent();
+    }
+
     [HttpPatch("{id}/title")]
     public async Task<IActionResult> UpdateTitle(Guid id, [FromBody] UpdateTitleRequest request)
     {

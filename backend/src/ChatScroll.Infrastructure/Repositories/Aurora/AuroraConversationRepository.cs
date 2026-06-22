@@ -49,4 +49,15 @@ public class AuroraConversationRepository : IConversationRepository
         await _db.SaveChangesAsync();
         return conversation;
     }
+
+    public async Task DeleteAsync(Guid id, Guid userId)
+    {
+        var conv = await _db.Conversations
+            .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+        if (conv is not null)
+        {
+            _db.Conversations.Remove(conv);
+            await _db.SaveChangesAsync();
+        }
+    }
 }

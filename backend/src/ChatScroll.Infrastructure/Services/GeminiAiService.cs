@@ -139,25 +139,30 @@ public class GeminiAiService : IAiService
         }
     }
 
-    public async Task<bool> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles)
+    public async Task<(bool IsKnown, string? MatchingTitle)> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles)
     {
         try
         {
             var titles = existingNoteTitles.ToList();
-            if (!titles.Any()) return false;
+            if (!titles.Any()) return (false, null);
 
             var titleList = string.Join("\n", titles.Take(20).Select((t, i) => $"{i + 1}. {t}"));
 
             var prompt = $$"""
-                Does this new question cover the same topic as any existing note?
+                Does this new question ask about EXACTLY the same specific concept as one of the existing note titles below?
 
                 New question: {{question}}
 
                 Existing note titles:
                 {{titleList}}
 
+                STRICT RULES — only return isAlreadyKnown=true when:
+                - The question and the note title address the SAME specific concept (e.g. "async/await in C#" matches "How does async/await work in C#?")
+                - Do NOT match if one is a broader parent topic of the other (e.g. "SOLID principles" does NOT match "what is OOP?" — they are related but different topics)
+                - Do NOT match on shared keywords alone (e.g. "What is pgvector?" and "What is a vector?" are different topics)
+
                 Respond ONLY with valid JSON:
-                {"isAlreadyKnown": true, "matchingTitle": "LINQ Joins in EF Core"}
+                {"isAlreadyKnown": true, "matchingTitle": "exact title from the list above"}
                 or
                 {"isAlreadyKnown": false, "matchingTitle": null}
                 """;
@@ -165,11 +170,16 @@ public class GeminiAiService : IAiService
             var responseText = await CallGeminiAsync(prompt);
             var json = ExtractJson(responseText);
             using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("isAlreadyKnown").GetBoolean();
+            var root = doc.RootElement;
+            var isKnown = root.GetProperty("isAlreadyKnown").GetBoolean();
+            var matchingTitle = root.TryGetProperty("matchingTitle", out var mt) && mt.ValueKind == JsonValueKind.String
+                ? mt.GetString()
+                : null;
+            return (isKnown, matchingTitle);
         }
         catch
         {
-            return false;
+            return (false, null);
         }
     }
 

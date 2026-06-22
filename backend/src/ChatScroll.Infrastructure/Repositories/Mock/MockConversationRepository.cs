@@ -33,4 +33,10 @@ public class MockConversationRepository : IConversationRepository
         }
         return Task.FromResult(conversation);
     }
+
+    public Task DeleteAsync(Guid id, Guid userId)
+    {
+        _conversations.RemoveAll(c => c.Id == id && c.UserId == userId);
+        return Task.CompletedTask;
+    }
 }

@@ -325,8 +325,8 @@ export function ChatPanel({
                 </div>
               </div>
 
-              {/* Already researched banner — no Save/Skip when this shows */}
-              {!isAnimating && message.isAlreadyKnown && message.role === "assistant" && (
+              {/* Already researched banner — only for authenticated users with their own library */}
+              {!isAnimating && message.isAlreadyKnown && message.role === "assistant" && isAuthenticated && (
                 <div className="ml-10 mt-2 flex items-start gap-2 text-xs bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-xl px-3 py-2.5 animate-in fade-in duration-500">
                   <Lightbulb className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">

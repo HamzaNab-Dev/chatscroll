@@ -78,9 +78,9 @@ export function Navigation() {
         </nav>
       ) : (
         <nav className="flex-1 hidden md:flex items-center justify-center gap-6 text-sm text-gray-500 dark:text-slate-400">
-          <a href="#features" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Features</a>
-          <a href="#how-it-works" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">How it works</a>
-          <a href="#pricing" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Pricing</a>
+          <a href="/#features" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Features</a>
+          <a href="/#how-it-works" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">How it works</a>
+          <a href="/#pricing" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Pricing</a>
         </nav>
       )}
 

@@ -174,13 +174,20 @@ public class ChatController : ControllerBase
         }
 
         // Semantic duplicate detection — search first 30 chars as heuristic keyword match
-        // Production: replace SearchAsync with pgvector cosine similarity on the full question embedding
         var searchTerm = request.Message[..Math.Min(30, request.Message.Length)];
         var existingNotes = (await _noteRepository.SearchAsync(MockUserId, searchTerm)).ToList();
-        var isAlreadyKnown = await _aiService.IsAlreadyKnownAsync(
+        var (isAlreadyKnown, matchingTitle) = await _aiService.IsAlreadyKnownAsync(
             request.Message, existingNotes.Select(n => n.Title));
 
-        var matchingNote = isAlreadyKnown ? existingNotes.FirstOrDefault() : null;
+        // Use the title the AI identified to find the correct note, not just the first search result
+        Note? matchingNote = null;
+        if (isAlreadyKnown)
+        {
+            matchingNote = matchingTitle != null
+                ? existingNotes.FirstOrDefault(n => string.Equals(n.Title, matchingTitle, StringComparison.OrdinalIgnoreCase))
+                  ?? existingNotes.FirstOrDefault()
+                : existingNotes.FirstOrDefault();
+        }
 
         // Use real user folder paths instead of hardcoded values
         var userFolders = await _folderRepository.GetByUserIdAsync(MockUserId);

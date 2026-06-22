@@ -146,22 +146,24 @@ public class BedrockAiService : IAiService
     // ─────────────────────────────────────────
     // ALREADY KNOWN DETECTOR
     // ─────────────────────────────────────────
-    public async Task<bool> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles)
+    public async Task<(bool IsKnown, string? MatchingTitle)> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles)
     {
         try
         {
             var titles = existingNoteTitles.ToList();
-            if (!titles.Any()) return false;
+            if (!titles.Any()) return (false, null);
 
             var titleList = string.Join("\n", titles.Take(20).Select((t, i) => $"{i + 1}. {t}"));
 
             var prompt = $$"""
-                Does this new question cover the same topic as any existing note?
+                Does this new question ask about EXACTLY the same specific concept as one of the existing note titles?
 
                 New question: {{question}}
 
                 Existing note titles:
                 {{titleList}}
+
+                Only return isAlreadyKnown=true for the same specific concept — not just related topics.
 
                 Respond ONLY with valid JSON:
                 {"isAlreadyKnown": true, "matchingTitle": "LINQ Joins in EF Core"}
@@ -172,12 +174,17 @@ public class BedrockAiService : IAiService
             var responseText = await InvokeClaudeAsync(prompt);
             var json = ExtractJson(responseText);
             using var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("isAlreadyKnown").GetBoolean();
+            var root = doc.RootElement;
+            var isKnown = root.GetProperty("isAlreadyKnown").GetBoolean();
+            var matchingTitle = root.TryGetProperty("matchingTitle", out var mt) && mt.ValueKind == JsonValueKind.String
+                ? mt.GetString()
+                : null;
+            return (isKnown, matchingTitle);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Already known check failed");
-            return false;
+            return (false, null);
         }
     }
 

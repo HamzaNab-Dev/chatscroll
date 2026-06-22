@@ -42,12 +42,12 @@ public class MockAiService : IAiService
         return Task.FromResult(note);
     }
 
-    public Task<bool> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles)
+    public Task<(bool IsKnown, string? MatchingTitle)> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles)
     {
-        var isKnown = existingNoteTitles.Any(t =>
-            t.Contains(question[..Math.Min(20, question.Length)],
-            StringComparison.OrdinalIgnoreCase));
-        return Task.FromResult(isKnown);
+        var prefix = question[..Math.Min(20, question.Length)];
+        var match = existingNoteTitles.FirstOrDefault(t =>
+            t.Contains(prefix, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult((match is not null, match));
     }
 
     public Task<float[]> GenerateEmbeddingAsync(string text, string taskType = "RETRIEVAL_DOCUMENT") =>
