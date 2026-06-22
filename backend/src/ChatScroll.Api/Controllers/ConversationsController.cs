@@ -6,11 +6,10 @@ namespace ChatScroll.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ConversationsController : ControllerBase
+public class ConversationsController : ApiControllerBase
 {
     private readonly IConversationRepository _repository;
     private readonly IDynamoDbChatRepository _dynamoDb;
-    private static readonly Guid MockUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     public ConversationsController(IConversationRepository repository, IDynamoDbChatRepository dynamoDb)
     {
@@ -21,7 +20,8 @@ public class ConversationsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var conversations = await _repository.GetByUserIdAsync(MockUserId);
+        var userId = GetUserId();
+        var conversations = await _repository.GetByUserIdAsync(userId);
         return Ok(conversations
             .OrderByDescending(c => c.UpdatedAt)
             .Select(c => new
@@ -36,9 +36,10 @@ public class ConversationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateConversationRequest request)
     {
+        var userId = GetUserId();
         var conversation = await _repository.CreateAsync(new Conversation
         {
-            UserId = MockUserId,
+            UserId = userId,
             Title = request.Title
         });
         return Ok(new
@@ -53,14 +54,16 @@ public class ConversationsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _repository.DeleteAsync(id, MockUserId);
+        var userId = GetUserId();
+        await _repository.DeleteAsync(id, userId);
         return NoContent();
     }
 
     [HttpPatch("{id}/title")]
     public async Task<IActionResult> UpdateTitle(Guid id, [FromBody] UpdateTitleRequest request)
     {
-        var conversation = await _repository.GetByIdAsync(id, MockUserId);
+        var userId = GetUserId();
+        var conversation = await _repository.GetByIdAsync(id, userId);
         if (conversation is null) return NotFound();
         conversation.Title = request.Title;
         conversation.MessageCount = request.MessageCount ?? conversation.MessageCount;
@@ -71,7 +74,8 @@ public class ConversationsController : ControllerBase
     [HttpGet("{id}/messages")]
     public async Task<IActionResult> GetMessages(Guid id)
     {
-        var messages = await _dynamoDb.GetConversationAsync(id, MockUserId);
+        var userId = GetUserId();
+        var messages = await _dynamoDb.GetConversationAsync(id, userId);
         return Ok(messages.Select(m => new
         {
             role = m.Role,

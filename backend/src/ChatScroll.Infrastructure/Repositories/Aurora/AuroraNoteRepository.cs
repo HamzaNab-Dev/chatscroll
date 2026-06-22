@@ -73,22 +73,27 @@ public class AuroraNoteRepository : INoteRepository
         var vecStr = '[' + string.Join(",",
             embedding.Select(f => f.ToString("G6", CultureInfo.InvariantCulture))) + ']';
 
+        // Only include notes whose cosine similarity exceeds 0.4 (1 - distance > 0.4).
+        // Results are ordered best-match-first (ascending distance = descending similarity).
         var vectorResults = await _db.Notes
             .FromSqlInterpolated($"""
                 SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
                        clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
                 FROM notes
-                WHERE user_id = {userId} AND embedding IS NOT NULL
+                WHERE user_id = {userId}
+                  AND embedding IS NOT NULL
+                  AND 1 - (embedding <=> {vecStr}::vector) > 0.4
                 ORDER BY embedding <=> {vecStr}::vector
-                LIMIT 10
+                LIMIT 5
                 """)
             .AsNoTracking()
             .ToListAsync();
 
-        var textIds = textResults.Select(n => n.Id).ToHashSet();
-        return textResults
-            .Concat(vectorResults.Where(n => !textIds.Contains(n.Id)))
-            .Take(20)
+        // Semantic results lead (already ranked by similarity); text-only results trail.
+        var semanticIds = vectorResults.Select(n => n.Id).ToHashSet();
+        return vectorResults
+            .Concat(textResults.Where(n => !semanticIds.Contains(n.Id)))
+            .Take(10)
             .ToList();
     }
 

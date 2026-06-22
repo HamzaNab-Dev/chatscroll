@@ -6,11 +6,10 @@ namespace ChatScroll.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class NotesController : ControllerBase
+public class NotesController : ApiControllerBase
 {
     private readonly INoteRepository _noteRepository;
     private readonly IFolderRepository _folderRepository;
-    private static readonly Guid MockUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     public NotesController(INoteRepository noteRepository, IFolderRepository folderRepository)
     {
@@ -21,14 +20,16 @@ public class NotesController : ControllerBase
     [HttpGet("folder/{folderId}")]
     public async Task<IActionResult> GetByFolder(Guid folderId)
     {
-        var notes = await _noteRepository.GetByFolderIdAsync(folderId, MockUserId);
+        var userId = GetUserId();
+        var notes = await _noteRepository.GetByFolderIdAsync(folderId, userId);
         return Ok(notes);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var note = await _noteRepository.GetByIdAsync(id, MockUserId);
+        var userId = GetUserId();
+        var note = await _noteRepository.GetByIdAsync(id, userId);
         if (note is null) return NotFound();
         return Ok(note);
     }
@@ -36,21 +37,24 @@ public class NotesController : ControllerBase
     [HttpGet("recent")]
     public async Task<IActionResult> GetRecent([FromQuery] int limit = 4)
     {
-        var notes = await _noteRepository.GetRecentAsync(MockUserId, limit);
+        var userId = GetUserId();
+        var notes = await _noteRepository.GetRecentAsync(userId, limit);
         return Ok(notes);
     }
 
     [HttpGet("all")]
     public async Task<IActionResult> GetAll()
     {
-        var notes = await _noteRepository.GetAllAsync(MockUserId);
+        var userId = GetUserId();
+        var notes = await _noteRepository.GetAllAsync(userId);
         return Ok(notes);
     }
 
     [HttpPut("{id}/view")]
     public async Task<IActionResult> IncrementView(Guid id)
     {
-        await _noteRepository.IncrementViewCountAsync(id, MockUserId);
+        var userId = GetUserId();
+        await _noteRepository.IncrementViewCountAsync(id, userId);
         return NoContent();
     }
 
@@ -62,9 +66,10 @@ public class NotesController : ControllerBase
     public async Task<IActionResult> Search([FromQuery] string q, [FromQuery] string mode = "smart")
     {
         if (string.IsNullOrWhiteSpace(q)) return Ok(Array.Empty<Note>());
+        var userId = GetUserId();
         var notes = mode == "exact"
-            ? await _noteRepository.SearchExactAsync(MockUserId, q)
-            : await _noteRepository.SearchAsync(MockUserId, q);
+            ? await _noteRepository.SearchExactAsync(userId, q)
+            : await _noteRepository.SearchAsync(userId, q);
         return Ok(notes);
     }
 
@@ -75,7 +80,8 @@ public class NotesController : ControllerBase
     public async Task<IActionResult> SemanticSearch([FromQuery] string q)
     {
         if (string.IsNullOrWhiteSpace(q)) return Ok(new { query = q, results = Array.Empty<Note>(), searchType = "smart" });
-        var notes = await _noteRepository.SearchAsync(MockUserId, q);
+        var userId = GetUserId();
+        var notes = await _noteRepository.SearchAsync(userId, q);
         return Ok(new { query = q, results = notes, searchType = "smart" });
     }
 
@@ -86,7 +92,8 @@ public class NotesController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
-        var allNotes = (await _noteRepository.SearchAsync(MockUserId, "")).ToList();
+        var userId = GetUserId();
+        var allNotes = (await _noteRepository.SearchAsync(userId, "")).ToList();
         var today = DateTime.UtcNow.Date;
         var todaySaved = allNotes.Count(n => n.CreatedAt.Date == today);
 
@@ -114,9 +121,12 @@ public class NotesController : ControllerBase
     [HttpGet("shared/{id}")]
     public async Task<IActionResult> GetShared(Guid id)
     {
-        var note = await _noteRepository.GetByIdAsync(id, MockUserId);
+        // Shared scrolls are public — look up using the owner's ID from the header
+        // so the note is found regardless of who is viewing.
+        var userId = GetUserId();
+        var note = await _noteRepository.GetByIdAsync(id, userId);
         if (note is null) return NotFound();
-        var folder = await _folderRepository.GetByIdAsync(note.FolderId, MockUserId);
+        var folder = await _folderRepository.GetByIdAsync(note.FolderId, userId);
         return Ok(new
         {
             id = note.Id,
@@ -134,9 +144,10 @@ public class NotesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateNoteRequest request)
     {
+        var userId = GetUserId();
         var note = new Note
         {
-            UserId = MockUserId,
+            UserId = userId,
             FolderId = request.FolderId,
             ConversationId = request.ConversationId,
             Title = request.Title,
@@ -153,14 +164,16 @@ public class NotesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _noteRepository.DeleteAsync(id, MockUserId);
+        var userId = GetUserId();
+        await _noteRepository.DeleteAsync(id, userId);
         return NoContent();
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateNoteRequest request)
     {
-        var note = await _noteRepository.GetByIdAsync(id, MockUserId);
+        var userId = GetUserId();
+        var note = await _noteRepository.GetByIdAsync(id, userId);
         if (note is null) return NotFound();
         if (request.FolderId.HasValue) note.FolderId = request.FolderId.Value;
         if (request.Title != null) note.Title = request.Title;

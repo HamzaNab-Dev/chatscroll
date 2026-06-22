@@ -1,5 +1,15 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001";
 
+function getUserId(): string {
+  if (typeof window === "undefined") return "00000000-0000-0000-0000-000000000001";
+  let id = localStorage.getItem("cs_user_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("cs_user_id", id);
+  }
+  return id;
+}
+
 export type Folder = {
   id: string;
   userId: string;
@@ -91,10 +101,15 @@ export type SharedNote = {
 };
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const { headers: extraHeaders, ...restOptions } = options ?? {};
   const res = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    ...restOptions,
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-Id": getUserId(),
+      ...(extraHeaders as Record<string, string> | undefined),
+    },
     credentials: "include",
-    ...options,
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
@@ -138,10 +153,10 @@ export const api = {
   updateNote: (id: string, data: { folderId?: string; title?: string; tags?: string[] }) =>
     request<Note>(`/api/notes/${id}`, { method: "PUT", body: JSON.stringify(data) }),
 
-  sendMessage: (message: string, conversationHistory: string, conversationId?: string) =>
+  sendMessage: (message: string, conversationHistory: string, conversationId?: string, isGuest = false) =>
     request<ChatResponse>("/api/chat/message", {
       method: "POST",
-      body: JSON.stringify({ message, conversationHistory, conversationId }),
+      body: JSON.stringify({ message, conversationHistory, conversationId, isGuest }),
     }),
 
   previewChat: (q: string) =>

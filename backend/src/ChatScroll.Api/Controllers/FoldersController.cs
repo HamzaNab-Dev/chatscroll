@@ -6,10 +6,9 @@ namespace ChatScroll.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class FoldersController : ControllerBase
+public class FoldersController : ApiControllerBase
 {
     private readonly IFolderRepository _folderRepository;
-    private static readonly Guid MockUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     public FoldersController(IFolderRepository folderRepository)
     {
@@ -19,7 +18,8 @@ public class FoldersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var folders = await _folderRepository.GetByUserIdAsync(MockUserId);
+        var userId = GetUserId();
+        var folders = await _folderRepository.GetByUserIdAsync(userId);
         return Ok(folders);
     }
 
@@ -32,7 +32,8 @@ public class FoldersController : ControllerBase
     [HttpGet("tree")]
     public async Task<IActionResult> GetTree()
     {
-        var folders = (await _folderRepository.GetByUserIdAsync(MockUserId)).ToList();
+        var userId = GetUserId();
+        var folders = (await _folderRepository.GetByUserIdAsync(userId)).ToList();
         var roots = folders.Where(f => f.ParentId == null).ToList();
         return Ok(BuildTree(roots, folders));
     }
@@ -40,7 +41,8 @@ public class FoldersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var folder = await _folderRepository.GetByIdAsync(id, MockUserId);
+        var userId = GetUserId();
+        var folder = await _folderRepository.GetByIdAsync(id, userId);
         if (folder is null) return NotFound();
         return Ok(folder);
     }
@@ -48,9 +50,10 @@ public class FoldersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateFolderRequest request)
     {
+        var userId = GetUserId();
         var folder = new Folder
         {
-            UserId = MockUserId,
+            UserId = userId,
             Name = request.Name,
             Path = request.Path,
             Icon = request.Icon,
@@ -64,7 +67,8 @@ public class FoldersController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _folderRepository.DeleteAsync(id, MockUserId);
+        var userId = GetUserId();
+        await _folderRepository.DeleteAsync(id, userId);
         return NoContent();
     }
 

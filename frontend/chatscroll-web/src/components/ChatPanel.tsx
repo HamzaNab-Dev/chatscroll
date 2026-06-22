@@ -176,7 +176,7 @@ export function ChatPanel({
         .map((m) => `${m.role}: ${m.content}`)
         .join("\n");
 
-      const response = await api.sendMessage(content, history, conversationId);
+      const response = await api.sendMessage(content, history, conversationId, !isAuthenticated);
 
       const assistantMessage: Message = {
         id: generateId(),

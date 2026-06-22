@@ -7,14 +7,13 @@ namespace ChatScroll.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ChatController : ControllerBase
+public class ChatController : ApiControllerBase
 {
     private readonly IAiService _aiService;
     private readonly INoteRepository _noteRepository;
     private readonly IFolderRepository _folderRepository;
     private readonly IDynamoDbChatRepository _dynamoDb;
     private readonly IConversationRepository _conversationRepository;
-    private static readonly Guid MockUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     public ChatController(
         IAiService aiService,
@@ -116,46 +115,53 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
     {
         var conversationId = request.ConversationId ?? Guid.NewGuid();
+        var isGuest = request.IsGuest;
+        var userId = GetUserId();
 
-        // Persist user turn to DynamoDB chat history (90-day TTL)
-        await _dynamoDb.SaveMessageAsync(conversationId, "user", request.Message, MockUserId);
+        // Only persist turns for authenticated users — guests must never write to another user's account.
+        if (!isGuest)
+        {
+            await _dynamoDb.SaveMessageAsync(conversationId, "user", request.Message, userId);
+        }
 
         var answer = await _aiService.ChatAsync(request.Message, request.ConversationHistory ?? "");
 
-        // Persist assistant turn
-        await _dynamoDb.SaveMessageAsync(conversationId, "assistant", answer, MockUserId);
+        if (!isGuest)
+        {
+            await _dynamoDb.SaveMessageAsync(conversationId, "assistant", answer, userId);
 
-        // Update conversation in Aurora: create if missing, bump updatedAt, auto-set title
-        try
-        {
-            var conversation = await _conversationRepository.GetByIdAsync(conversationId, MockUserId);
-            if (conversation is null)
+            // Update conversation in Aurora: create if missing, bump updatedAt, auto-set title
+            try
             {
-                conversation = await _conversationRepository.CreateAsync(new Conversation
+                var conversation = await _conversationRepository.GetByIdAsync(conversationId, userId);
+                if (conversation is null)
                 {
-                    Id = conversationId,
-                    UserId = MockUserId,
-                    Title = request.Message.Length > 45
-                        ? request.Message[..45] + "..."
-                        : request.Message,
-                    MessageCount = 2
-                });
-            }
-            else
-            {
-                if (string.IsNullOrWhiteSpace(conversation.Title) || conversation.Title == "New Chat")
-                {
-                    conversation.Title = request.Message.Length > 45
-                        ? request.Message[..45] + "..."
-                        : request.Message;
+                    conversation = await _conversationRepository.CreateAsync(new Conversation
+                    {
+                        Id = conversationId,
+                        UserId = userId,
+                        Title = request.Message.Length > 45
+                            ? request.Message[..45] + "..."
+                            : request.Message,
+                        MessageCount = 2
+                    });
                 }
-                conversation.MessageCount += 2;
-                await _conversationRepository.UpdateAsync(conversation);
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(conversation.Title) || conversation.Title == "New Chat")
+                    {
+                        conversation.Title = request.Message.Length > 45
+                            ? request.Message[..45] + "..."
+                            : request.Message;
+                    }
+                    conversation.MessageCount += 2;
+                    await _conversationRepository.UpdateAsync(conversation);
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning("Failed to update conversation {Id} in Aurora: {Error}", conversationId, ex.Message);
+            catch (Exception ex)
+            {
+                Log.Warning("Failed to update conversation {Id} in Aurora: {Error}", conversationId, ex.Message);
+            }
         }
 
         // If the AI call itself failed, skip all follow-up AI calls — return immediately without save prompt
@@ -173,9 +179,27 @@ public class ChatController : ControllerBase
             ));
         }
 
+        // Duplicate detection and folder suggestion are only meaningful for authenticated users
+        // who have a library. Guests get a clean response without any cross-contamination.
+        if (isGuest)
+        {
+            var guestFolderSuggestion = await _aiService.SuggestFolderAsync(request.Message, answer, new[] { "general" });
+            var guestCleanNote = await _aiService.RewriteAsNoteAsync(request.Message, answer);
+            return Ok(new ChatMessageResponse(
+                Answer: answer,
+                FolderSuggestion: guestFolderSuggestion,
+                CleanNote: guestCleanNote,
+                IsAlreadyKnown: false,
+                AlreadyKnownMessage: null,
+                SimilarNoteId: null,
+                SimilarNoteTitle: null,
+                SimilarNoteDate: null
+            ));
+        }
+
         // Semantic duplicate detection — search first 30 chars as heuristic keyword match
         var searchTerm = request.Message[..Math.Min(30, request.Message.Length)];
-        var existingNotes = (await _noteRepository.SearchAsync(MockUserId, searchTerm)).ToList();
+        var existingNotes = (await _noteRepository.SearchAsync(userId, searchTerm)).ToList();
         var (isAlreadyKnown, matchingTitle) = await _aiService.IsAlreadyKnownAsync(
             request.Message, existingNotes.Select(n => n.Title));
 
@@ -190,7 +214,7 @@ public class ChatController : ControllerBase
         }
 
         // Use real user folder paths instead of hardcoded values
-        var userFolders = await _folderRepository.GetByUserIdAsync(MockUserId);
+        var userFolders = await _folderRepository.GetByUserIdAsync(userId);
         var folderPaths = userFolders.Select(f => f.Path).ToArray();
         if (folderPaths.Length == 0) folderPaths = new[] { "general" };
 
@@ -213,7 +237,8 @@ public class ChatController : ControllerBase
 public record ChatMessageRequest(
     string Message,
     string? ConversationHistory,
-    Guid? ConversationId
+    Guid? ConversationId,
+    bool IsGuest = false
 );
 
 public record ChatMessageResponse(
