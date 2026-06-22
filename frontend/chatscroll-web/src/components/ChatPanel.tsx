@@ -361,7 +361,7 @@ export function ChatPanel({
                 message.folderSuggestion &&
                 message.cleanNote &&
                 !message.content.startsWith("GEMINI_ERROR:") &&
-                !message.isAlreadyKnown &&
+                !(isAuthenticated && message.isAlreadyKnown) &&
                 !message.saved &&
                 !dismissedSave.has(message.id) && (
                   <div className="ml-10 mt-2 max-w-sm">

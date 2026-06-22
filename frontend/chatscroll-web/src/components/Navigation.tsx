@@ -32,23 +32,24 @@ export function Navigation() {
 
   return (
     <header className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0">
-      {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-        <Image src="/logo.png" alt="ChatScroll" width={32} height={32} className="rounded-lg" />
-        <span className="font-bold text-gray-900 dark:text-slate-100 text-sm tracking-tight hidden sm:block">
-          ChatScroll
-        </span>
-      </Link>
+      {/* Logo — left anchor */}
+      <div className="flex-1 flex items-center">
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo.png" alt="ChatScroll" width={32} height={32} className="rounded-lg" />
+          <span className="font-bold text-gray-900 dark:text-slate-100 text-sm tracking-tight hidden sm:block">
+            ChatScroll
+          </span>
+        </Link>
+      </div>
 
-      {/* Center nav */}
+      {/* Center nav — truly centered because both sides use flex-1 */}
       {isAuthenticated ? (
-        <nav className="flex-1 flex items-center justify-center gap-1">
+        <nav className="flex items-center gap-1">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => {
-                // Force a new conversation when clicking Chat from another page
                 if (link.href === "/chat" && pathname !== "/chat") {
                   try { sessionStorage.setItem("cs_force_new", "1"); } catch {}
                 }
@@ -77,15 +78,15 @@ export function Navigation() {
           ))}
         </nav>
       ) : (
-        <nav className="flex-1 hidden md:flex items-center justify-center gap-6 text-sm text-gray-500 dark:text-slate-400">
+        <nav className="hidden md:flex items-center gap-6 text-sm text-gray-500 dark:text-slate-400">
           <a href="/#features" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Features</a>
           <a href="/#how-it-works" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">How it works</a>
           <a href="/#pricing" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Pricing</a>
         </nav>
       )}
 
-      {/* Right controls — always show theme toggle */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      {/* Right controls — right anchor, flex-1 + justify-end balances the left side */}
+      <div className="flex-1 flex items-center justify-end gap-2">
         <button
           onClick={toggleTheme}
           className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
@@ -98,22 +99,13 @@ export function Navigation() {
         {isAuthenticated ? (
           <UserMenu />
         ) : (
-          <>
-            <Link
-              href="/login"
-              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 transition-colors whitespace-nowrap"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/login"
-              className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
-            >
-              <span className="hidden sm:inline">Start Free</span>
-              <span className="sm:hidden">Sign Up</span>
-              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 hidden sm:inline" />
-            </Link>
-          </>
+          <Link
+            href="/login"
+            className="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap"
+          >
+            Sign In
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         )}
       </div>
     </header>

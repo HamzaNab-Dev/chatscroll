@@ -61,6 +61,7 @@ interface ConvRowProps {
 
 function ConvRow({ conv, isActive, isPinned, onSelect, onDelete, onPin, onRenameConfirm }: ConvRowProps) {
   const [editing, setEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editValue, setEditValue] = useState(conv.title || "New Chat");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -117,35 +118,59 @@ function ConvRow({ conv, isActive, isPinned, onSelect, onDelete, onPin, onRename
         {conv.title || "New Chat"}
       </button>
 
-      {/* Hover-reveal action buttons */}
-      <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0 ml-1">
-        <button
-          onClick={(e) => { e.stopPropagation(); onPin(); }}
-          title={isPinned ? "Unpin" : "Pin to top"}
-          className={cn(
-            "p-1 rounded transition-colors",
-            isPinned
-              ? "text-amber-500 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-              : "text-gray-400 dark:text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-slate-700"
-          )}
+      {/* Delete confirmation — shown when trash is clicked */}
+      {confirmingDelete && (
+        <div
+          className="flex items-center gap-1 flex-shrink-0 ml-1"
+          onClick={(e) => e.stopPropagation()}
         >
-          <Pin className="w-2.5 h-2.5 rotate-45" />
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-          title="Rename"
-          className="p-1 rounded text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-        >
-          <Pencil className="w-2.5 h-2.5" />
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          title="Delete"
-          className="p-1 rounded text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-        >
-          <Trash2 className="w-2.5 h-2.5" />
-        </button>
-      </div>
+          <span className="text-[10px] text-red-500 dark:text-red-400 whitespace-nowrap font-medium">Delete?</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmingDelete(false); onDelete(); }}
+            className="text-[10px] px-1.5 py-0.5 rounded bg-red-500 hover:bg-red-600 text-white font-medium transition-colors"
+          >
+            Yes
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmingDelete(false); }}
+            className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 font-medium transition-colors"
+          >
+            No
+          </button>
+        </div>
+      )}
+
+      {/* Hover-reveal action buttons — hidden while confirming delete */}
+      {!confirmingDelete && (
+        <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0 ml-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onPin(); }}
+            title={isPinned ? "Unpin" : "Pin to top"}
+            className={cn(
+              "p-1 rounded transition-colors",
+              isPinned
+                ? "text-amber-500 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                : "text-gray-400 dark:text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-slate-700"
+            )}
+          >
+            <Pin className="w-2.5 h-2.5 rotate-45" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+            title="Rename"
+            className="p-1 rounded text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Pencil className="w-2.5 h-2.5" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmingDelete(true); }}
+            title="Delete"
+            className="p-1 rounded text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <Trash2 className="w-2.5 h-2.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

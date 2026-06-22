@@ -36,6 +36,13 @@ function ChatContent() {
   // Prevents double-init when authState.status changes from "loading" → settled
   const hasInitRef = useRef(false);
 
+  // Capture the stored last-conv ID synchronously at mount, before any effects can overwrite it.
+  // The persist effect below runs after first render and would clobber the stored value with the
+  // initial random UUID — reading it here in a ref avoids that race.
+  const storedLastConvRef = useRef<string | null>(
+    typeof window !== "undefined" ? localStorage.getItem(LAST_CONV_KEY) : null
+  );
+
   // Persist pinned IDs to localStorage
   useEffect(() => {
     try { localStorage.setItem(PINNED_KEY, JSON.stringify([...pinnedIds])); } catch {}
@@ -82,7 +89,7 @@ function ChatContent() {
         return;
       }
 
-      const lastId = (() => { try { return localStorage.getItem(LAST_CONV_KEY); } catch { return null; } })();
+      const lastId = storedLastConvRef.current;
 
       try {
         const convs = await api.getConversations();

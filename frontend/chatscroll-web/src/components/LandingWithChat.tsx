@@ -455,45 +455,91 @@ export function LandingWithChat() {
 
       {/* Pricing — only for guests */}
       {!isAuthenticated && <section id="pricing" className="py-20 bg-gray-50/60 dark:bg-slate-900/40">
-        <div className="max-w-2xl mx-auto px-6 text-center">
+        <div className="max-w-4xl mx-auto px-6 text-center">
           <p className="text-xs font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">Pricing</p>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-3">Simple & Free</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mb-10">No credit card. No catch. Just your knowledge.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-3">Simple, transparent pricing</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mb-10">Start free. Upgrade when you need more.</p>
 
-          <div className="relative rounded-2xl border-2 border-amber-500/50 dark:border-amber-500/30 bg-white dark:bg-slate-900 p-8 shadow-xl shadow-amber-500/10 max-w-sm mx-auto">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span className="text-xs font-semibold bg-amber-600 text-white px-3 py-1 rounded-full whitespace-nowrap">
-                AWS H0 Hackathon
-              </span>
+          <div className="grid sm:grid-cols-2 gap-6 items-start">
+            {/* Free plan */}
+            <div className="relative rounded-2xl border-2 border-amber-500/50 dark:border-amber-500/30 bg-white dark:bg-slate-900 p-8 shadow-xl shadow-amber-500/10">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="text-xs font-semibold bg-amber-600 text-white px-3 py-1 rounded-full whitespace-nowrap">
+                  AWS H0 Hackathon
+                </span>
+              </div>
+
+              <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3">Free</p>
+              <div className="text-5xl font-bold text-gray-900 dark:text-slate-100 mb-1">$0</div>
+              <p className="text-sm text-gray-400 dark:text-slate-500 mb-8">Free during the hackathon period</p>
+
+              <ul className="space-y-3 text-sm text-left mb-8">
+                {[
+                  "Unlimited AI conversations",
+                  "Unlimited Scrolls saved",
+                  "Full library & folder search",
+                  "Smart AI folder suggestions",
+                  "Semantic search (pgvector)",
+                  "AWS Aurora + ECS backend",
+                  "Share scrolls (public links)",
+                  "Export PDF & Markdown",
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2.5 text-gray-600 dark:text-slate-300">
+                    <span className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                      ✓
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/login"
+                className="block w-full py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors"
+              >
+                Create Free Account →
+              </Link>
             </div>
 
-            <div className="text-5xl font-bold text-gray-900 dark:text-slate-100 mb-1">$0</div>
-            <p className="text-sm text-gray-400 dark:text-slate-500 mb-8">Free during the hackathon period</p>
+            {/* Pro plan */}
+            <div className="relative rounded-2xl border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 opacity-80">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="text-xs font-semibold bg-gray-700 dark:bg-slate-600 text-white px-3 py-1 rounded-full whitespace-nowrap">
+                  Coming Soon
+                </span>
+              </div>
 
-            <ul className="space-y-3 text-sm text-left mb-8 max-w-xs mx-auto">
-              {[
-                "Unlimited AI conversations",
-                "Unlimited Scrolls saved",
-                "Full library & folder search",
-                "Smart AI folder suggestions",
-                "Semantic search (pgvector)",
-                "AWS Aurora + ECS backend",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-2.5 text-gray-600 dark:text-slate-300">
-                  <span className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                    ✓
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+              <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3">Pro</p>
+              <div className="text-5xl font-bold text-gray-900 dark:text-slate-100 mb-1">$9</div>
+              <p className="text-sm text-gray-400 dark:text-slate-500 mb-8">per month · billed monthly</p>
 
-            <Link
-              href="/login"
-              className="block w-full py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors"
-            >
-              Create Free Account →
-            </Link>
+              <ul className="space-y-3 text-sm text-left mb-8">
+                {[
+                  { text: "Everything in Free", highlight: false },
+                  { text: "Priority AI responses (GPT-4o / Claude)", highlight: false },
+                  { text: "Study Mode flashcard review", highlight: false },
+                  { text: "Advanced folder analytics", highlight: false },
+                  { text: "Team collaboration & shared libraries", highlight: false },
+                  { text: "Custom AI personas & system prompts", highlight: false },
+                  { text: "API access to your scroll library", highlight: false },
+                  { text: "Priority support", highlight: false },
+                ].map(({ text }) => (
+                  <li key={text} className="flex items-center gap-2.5 text-gray-500 dark:text-slate-400">
+                    <span className="w-4 h-4 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 text-[10px] text-gray-400 dark:text-slate-500 font-bold">
+                      ✓
+                    </span>
+                    {text}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                disabled
+                className="block w-full py-3 bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 rounded-xl font-medium text-sm cursor-not-allowed"
+              >
+                Notify Me When Available
+              </button>
+            </div>
           </div>
         </div>
       </section>}

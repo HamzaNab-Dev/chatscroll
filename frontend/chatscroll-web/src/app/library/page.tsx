@@ -599,8 +599,13 @@ function LibraryContent() {
     setSearchLoading(true);
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const results = await api.searchNotes(searchQuery, searchMode);
-        setSearchResults(results);
+        if (searchMode === "smart") {
+          const data = await api.semanticSearch(searchQuery);
+          setSearchResults(data.results);
+        } else {
+          const results = await api.searchNotes(searchQuery, "exact");
+          setSearchResults(results);
+        }
       } catch {
         setSearchResults([]);
       } finally {
