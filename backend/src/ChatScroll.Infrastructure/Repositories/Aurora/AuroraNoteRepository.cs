@@ -133,6 +133,8 @@ public class AuroraNoteRepository : INoteRepository
 
     public async Task<Note> CreateAsync(Note note)
     {
+        await _db.EnsureUserExistsAsync(note.UserId);
+
         note.Id = Guid.NewGuid();
         note.CreatedAt = DateTime.UtcNow;
         note.UpdatedAt = DateTime.UtcNow;

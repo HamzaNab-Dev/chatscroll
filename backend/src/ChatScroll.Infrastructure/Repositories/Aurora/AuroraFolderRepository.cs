@@ -44,6 +44,8 @@ public class AuroraFolderRepository : IFolderRepository
 
     public async Task<Folder> CreateAsync(Folder folder)
     {
+        await _db.EnsureUserExistsAsync(folder.UserId);
+
         folder.Id = Guid.NewGuid();
         folder.CreatedAt = DateTime.UtcNow;
         folder.UpdatedAt = DateTime.UtcNow;

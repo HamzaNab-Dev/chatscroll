@@ -68,33 +68,71 @@ export function SaveNoteModal({
 
   const activeFolderHasChildren = localFolders.some((f) => f.parentId === activeFolder?.id);
 
-  // True when the AI's suggested folder doesn't exist yet and the user hasn't picked one manually
-  const willCreateFolder = !selectedFolderId && !suggestedFolder;
+  // An exact match means the deepest existing folder covers the full suggested path.
+  // A partial match (parent found but child missing) still requires folder creation.
+  const hasExactMatch = !selectedFolderId && suggestedFolder?.path === folderSuggestion.suggestedPath;
+  const willCreateFolder = !selectedFolderId && !hasExactMatch;
 
-  const folderLabel = activeFolder
-    ? activeFolderHasChildren
-      ? formatPath(activeFolder.path) + " → General"
-      : formatPath(activeFolder.path)
-    : formatPath(folderSuggestion.suggestedPath);
+  // Show full suggested path whenever we'll be creating anything — partial match included.
+  const folderLabel = (() => {
+    if (selectedFolderId && activeFolder) {
+      return activeFolderHasChildren
+        ? formatPath(activeFolder.path) + " → General"
+        : formatPath(activeFolder.path);
+    }
+    if (hasExactMatch && activeFolder) {
+      return activeFolderHasChildren
+        ? formatPath(activeFolder.path) + " → General"
+        : formatPath(activeFolder.path);
+    }
+    return formatPath(folderSuggestion.suggestedPath);
+  })();
 
   const handleSave = async () => {
-    // No fallback to localFolders[0] — if nothing matches, auto-create the AI's suggestion
-    let folderId = selectedFolderId || suggestedFolder?.id;
     setSaving(true);
     try {
+      let folderId = selectedFolderId;
+
       if (!folderId) {
-        // Suggested folder doesn't exist yet — create the top-level segment
-        const segments = folderSuggestion.suggestedPath.split(".");
-        const topSegment = segments[0];
-        const slug = topSegment.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "general";
-        // Use suggestedName only when the path is a single segment (it refers to the leaf)
-        const name = segments.length === 1
-          ? (folderSuggestion.suggestedName || slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
-          : slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-        const created = await api.createFolder({ name, path: slug, icon: "📁" });
-        setLocalFolders((prev) => [...prev, created]);
-        folderId = created.id;
+        if (hasExactMatch && suggestedFolder) {
+          // Full path already exists — use it directly.
+          folderId = suggestedFolder.id;
+        } else {
+          // Partial match or no match: create every missing segment in order.
+          // E.g. suggested "programming.software" with "programming" already existing
+          // → only create "software" as a child of "programming".
+          const allSegments = folderSuggestion.suggestedPath.split(".");
+          const existingDepth = suggestedFolder ? suggestedFolder.path.split(".").length : 0;
+          const segmentsToCreate = allSegments.slice(existingDepth);
+
+          let parent: { id: string; path: string } | null = suggestedFolder
+            ? { id: suggestedFolder.id, path: suggestedFolder.path }
+            : null;
+
+          for (let i = 0; i < segmentsToCreate.length; i++) {
+            const seg = segmentsToCreate[i];
+            const slug = seg.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "general";
+            const isLeaf = i === segmentsToCreate.length - 1;
+            // Leaf gets the AI's human-readable name; intermediate segments get capitalized slug.
+            const name = isLeaf
+              ? (folderSuggestion.suggestedName || slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
+              : slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+            const path = parent ? `${parent.path}.${slug}` : slug;
+
+            const created = await api.createFolder({
+              name,
+              path,
+              icon: "📁",
+              parentId: parent?.id,
+            });
+            setLocalFolders((prev) => [...prev, created]);
+            parent = { id: created.id, path: created.path };
+          }
+
+          folderId = parent?.id ?? "";
+        }
       }
+
       const title = question.length > 60 ? question.slice(0, 60) + "..." : question;
       await onSave(folderId, title);
     } catch (err) {

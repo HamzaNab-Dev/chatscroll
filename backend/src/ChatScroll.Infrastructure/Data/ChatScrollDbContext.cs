@@ -118,4 +118,19 @@ public class ChatScrollDbContext : DbContext
                 .HasForeignKey(x => x.MatchedNoteId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
         });
     }
+
+    /// <summary>
+    /// Upserts a minimal user row so foreign-key constraints on conversations, folders, and notes
+    /// are satisfied for browser-generated UUIDs. Uses ON CONFLICT DO NOTHING — safe under
+    /// concurrent requests for the same new user.
+    /// </summary>
+    public async Task EnsureUserExistsAsync(Guid userId)
+    {
+        var email = $"{userId}@anonymous.chatscroll.app";
+        await Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO users (id, cognito_sub, email, display_name, plan, created_at, updated_at)
+            VALUES ({userId}, '', {email}, 'Anonymous User', 'free', NOW(), NOW())
+            ON CONFLICT (id) DO NOTHING
+            """);
+    }
 }

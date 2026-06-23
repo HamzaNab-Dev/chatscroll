@@ -32,6 +32,8 @@ public class AuroraConversationRepository : IConversationRepository
 
     public async Task<Conversation> CreateAsync(Conversation conversation)
     {
+        await _db.EnsureUserExistsAsync(conversation.UserId);
+
         if (conversation.Id == Guid.Empty)
             conversation.Id = Guid.NewGuid();
         conversation.CreatedAt = DateTime.UtcNow;
