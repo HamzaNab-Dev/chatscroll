@@ -6,6 +6,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function isGeneralFolder(f: Folder): boolean {
+  return f.name.toLowerCase() === "general" || f.path.split(".").at(-1) === "general";
+}
+
+function sortSiblings(flds: Folder[]): Folder[] {
+  return flds
+    .sort((a, b) => {
+      const aG = isGeneralFolder(a);
+      const bG = isGeneralFolder(b);
+      if (aG && !bG) return -1;
+      if (!aG && bG) return 1;
+      return a.name.localeCompare(b.name);
+    })
+    .map((f) => ({ ...f, children: f.children?.length ? sortSiblings(f.children) : f.children }));
+}
+
 export function buildFolderTree(folders: Folder[]): Folder[] {
   const map = new Map<string, Folder>();
   const roots: Folder[] = [];
@@ -28,7 +44,7 @@ export function buildFolderTree(folders: Folder[]): Folder[] {
     }
   });
 
-  return roots;
+  return sortSiblings(roots);
 }
 
 export function formatDate(date: string | Date): string {

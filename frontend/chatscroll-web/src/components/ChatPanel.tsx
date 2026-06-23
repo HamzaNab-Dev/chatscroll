@@ -71,40 +71,16 @@ export function ChatPanel({
   useEffect(() => {
     if (!conversationId) { setLoadingHistory(false); return; }
 
-    const defaultSuggestion: import("@/lib/api").FolderSuggestion = {
-      suggestedPath: "general",
-      suggestedName: "General",
-      reasoning: "",
-      isNewFolder: false,
-    };
-
-    Promise.all([
-      api.getConversationMessages(conversationId),
-      api.getAllNotes().catch(() => [] as import("@/lib/api").Note[]),
-    ])
-      .then(([fetched, savedNotes]) => {
+    api.getConversationMessages(conversationId)
+      .then((fetched) => {
         if (fetched.length === 0) return; // keep welcome message
-
-        // Build a set of saved content fingerprints for fast lookup
-        const savedFingerprints = new Set(
-          savedNotes.map((n) => n.cleanContent.trimEnd().slice(0, 300))
-        );
-
-        const mapped: Message[] = fetched.map((m) => {
-          const isAssistant = m.role === "assistant";
-          const fingerprint = m.content.trimEnd().slice(0, 300);
-          const alreadySaved = isAssistant && savedFingerprints.has(fingerprint);
-          return {
-            id: generateId(),
-            role: m.role as "user" | "assistant",
-            content: m.content,
-            timestamp: new Date(m.timestamp),
-            // If the note was deleted, saved=false lets the save button reappear
-            saved: alreadySaved ? true : (isAssistant ? false : undefined),
-            cleanNote: isAssistant ? m.content : undefined,
-            folderSuggestion: isAssistant ? defaultSuggestion : undefined,
-          };
-        });
+        const mapped: Message[] = fetched.map((m) => ({
+          id: generateId(),
+          role: m.role as "user" | "assistant",
+          content: m.content,
+          timestamp: new Date(m.timestamp),
+          saved: m.role === "assistant" ? true : undefined,
+        }));
         setMessages(mapped);
         firstUserMessageSentRef.current = mapped.some((m) => m.role === "user");
       })

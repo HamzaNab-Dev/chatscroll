@@ -6,6 +6,24 @@ import type { Folder, FolderSuggestion } from "@/lib/api";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+// Sort a flat folder list so "General" subfolders appear first within each parent group
+function sortFoldersForPicker(folders: Folder[]): Folder[] {
+  return [...folders].sort((a, b) => {
+    // Group by parent (folders with same parentId sort together via path)
+    const aPath = a.path.split(".");
+    const bPath = b.path.split(".");
+    const aParentPath = aPath.slice(0, -1).join(".");
+    const bParentPath = bPath.slice(0, -1).join(".");
+    if (aParentPath !== bParentPath) return a.path.localeCompare(b.path);
+    // Same parent: "general" last segment or name first
+    const aG = aPath.at(-1) === "general" || a.name.toLowerCase() === "general";
+    const bG = bPath.at(-1) === "general" || b.name.toLowerCase() === "general";
+    if (aG && !bG) return -1;
+    if (!aG && bG) return 1;
+    return a.name.localeCompare(b.name);
+  });
+}
+
 const FOLDER_ICONS = ["📁","💻","🔷","🏥","📚","🎓","🔬","💡","🎯","🚀","💼","🎮","🍕","🎵","📝","🌐","🔧","⚡","🧪","📊","🏋️","🌱","🎨","🐍","🦀","☁️"];
 
 
@@ -67,8 +85,6 @@ export function SaveNoteModal({
     ? localFolders.find((f) => f.id === selectedFolderId)
     : suggestedFolder;
 
-  const activeFolderHasChildren = localFolders.some((f) => f.parentId === activeFolder?.id);
-
   // An exact match means the deepest existing folder covers the full suggested path.
   // A partial match (parent found but child missing) still requires folder creation.
   const hasExactMatch = !selectedFolderId && suggestedFolder?.path === folderSuggestion.suggestedPath;
@@ -76,16 +92,8 @@ export function SaveNoteModal({
 
   // Show full suggested path whenever we'll be creating anything — partial match included.
   const folderLabel = (() => {
-    if (selectedFolderId && activeFolder) {
-      return activeFolderHasChildren
-        ? formatPath(activeFolder.path) + " → General"
-        : formatPath(activeFolder.path);
-    }
-    if (hasExactMatch && activeFolder) {
-      return activeFolderHasChildren
-        ? formatPath(activeFolder.path) + " → General"
-        : formatPath(activeFolder.path);
-    }
+    if (selectedFolderId && activeFolder) return formatPath(activeFolder.path);
+    if (hasExactMatch && activeFolder) return formatPath(activeFolder.path);
     return formatPath(folderSuggestion.suggestedPath);
   })();
 
@@ -230,11 +238,8 @@ export function SaveNoteModal({
       {/* Folder picker */}
       {showPicker && (
         <div className={cn("border-t border-amber-200/60 dark:border-amber-700/20 px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto", showNewFolder ? "max-h-96" : "max-h-48")}>
-          {localFolders.map((folder) => {
-            const hasChildren = localFolders.some((f) => f.parentId === folder.id);
-            const label = hasChildren
-              ? formatPath(folder.path) + " → General"
-              : formatPath(folder.path);
+          {sortFoldersForPicker(localFolders).map((folder) => {
+            const label = formatPath(folder.path);
             const isActive =
               selectedFolderId === folder.id ||
               (!selectedFolderId && folder.id === suggestedFolder?.id);

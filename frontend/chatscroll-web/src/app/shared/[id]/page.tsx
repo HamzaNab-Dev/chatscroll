@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import { ScrollText, Tag, Calendar, ArrowRight, Copy, Check } from "lucide-react";
+import { useParams } from "next/navigation";
+import { ScrollText, Tag, Calendar, ArrowRight, Copy, Check, BookmarkPlus } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
 import { api } from "@/lib/api";
-import type { SharedNote } from "@/lib/api";
+import type { SharedNote, Folder } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
 function folderBreadcrumb(path: string): string {
@@ -17,19 +17,22 @@ function folderBreadcrumb(path: string): string {
     .join(" → ");
 }
 
+function segmentToName(segment: string): string {
+  return segment.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function SharedScrollPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [note, setNote] = useState<SharedNote | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const openChat = () => {
-    try { sessionStorage.setItem("cs_force_new", "1"); } catch {}
-    router.push("/chat");
-  };
+  // Save-to-scrolls state
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+  const [savedFolderPath, setSavedFolderPath] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!params?.id) return;
@@ -51,6 +54,68 @@ export default function SharedScrollPage() {
     await navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveToScrolls = async () => {
+    if (!note) return;
+    setSaving(true);
+    setSaveStatus("idle");
+
+    try {
+      const userFolders = await api.getFolders();
+      const folderMap = new Map<string, Folder>(userFolders.map((f) => [f.path, f]));
+
+      let targetFolderId: string;
+
+      if (note.folderPath) {
+        const segments = note.folderPath.split(".");
+        let parentId: string | undefined;
+
+        for (let i = 0; i < segments.length; i++) {
+          const cumPath = segments.slice(0, i + 1).join(".");
+          const existing = folderMap.get(cumPath);
+
+          if (existing) {
+            parentId = existing.id;
+          } else {
+            const isLeaf = i === segments.length - 1;
+            const created = await api.createFolder({
+              name: isLeaf ? (note.folderName ?? segmentToName(segments[i])) : segmentToName(segments[i]),
+              path: cumPath,
+              icon: isLeaf ? (note.folderIcon ?? "📁") : "📁",
+              parentId,
+            });
+            // Add to map so later segments can find it
+            folderMap.set(cumPath, created);
+            parentId = created.id;
+          }
+        }
+        targetFolderId = parentId!;
+      } else {
+        // No folder path on the shared note — fall back to first user folder or create General
+        const first = userFolders[0];
+        if (first) {
+          targetFolderId = first.id;
+        } else {
+          const created = await api.createFolder({ name: "General", path: "general", icon: "📁" });
+          targetFolderId = created.id;
+        }
+      }
+
+      await api.createNote({
+        folderId: targetFolderId,
+        title: note.title,
+        cleanContent: note.cleanContent,
+        tags: note.tags,
+      });
+
+      setSavedFolderPath(note.folderPath ? folderBreadcrumb(note.folderPath) : null);
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -76,6 +141,27 @@ export default function SharedScrollPage() {
     );
   }
 
+  const SaveButton = ({ size = "sm" }: { size?: "sm" | "lg" }) => {
+    if (saveStatus === "saved") {
+      return (
+        <div className={`flex items-center gap-2 ${size === "lg" ? "px-6 py-2.5 text-sm" : "px-3 py-1.5 text-xs"} rounded-xl bg-emerald-600 text-white font-medium`}>
+          <Check className={size === "lg" ? "w-4 h-4" : "w-3 h-3"} />
+          Saved to Library!
+        </div>
+      );
+    }
+    return (
+      <button
+        onClick={handleSaveToScrolls}
+        disabled={saving}
+        className={`flex items-center gap-1.5 ${size === "lg" ? "px-6 py-2.5 text-sm" : "px-3 py-1.5 text-xs"} rounded-${size === "lg" ? "xl" : "lg"} bg-amber-600 hover:bg-amber-500 disabled:opacity-60 text-white font-medium transition-colors`}
+      >
+        <BookmarkPlus className={size === "lg" ? "w-4 h-4" : "w-3 h-3"} />
+        {saving ? "Saving…" : "Save to My Scrolls"}
+      </button>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
       {/* Minimal public nav */}
@@ -94,12 +180,7 @@ export default function SharedScrollPage() {
               {copied ? "Copied!" : "Copy link"}
             </button>
             {isAuthenticated ? (
-              <button
-                onClick={openChat}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors"
-              >
-                Open ChatScroll <ArrowRight className="w-3 h-3" />
-              </button>
+              <SaveButton size="sm" />
             ) : (
               <Link
                 href="/login?mode=signup"
@@ -169,18 +250,39 @@ export default function SharedScrollPage() {
           <div className="text-2xl mb-2">📚</div>
           {isAuthenticated ? (
             <>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">
-                Ready to save your own Scrolls?
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-                Head to ChatScroll and ask AI anything — save the best answers to your personal library.
-              </p>
-              <button
-                onClick={openChat}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-medium transition-colors"
-              >
-                Open ChatScroll <ArrowRight className="w-4 h-4" />
-              </button>
+              {saveStatus === "saved" ? (
+                <>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">
+                    Scroll saved to your library!
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                    {savedFolderPath
+                      ? `Added to ${savedFolderPath} in your library.`
+                      : "Added to your library."}
+                  </p>
+                  <Link
+                    href="/library"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-medium transition-colors"
+                  >
+                    View in Library <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">
+                    Save this Scroll to your library
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                    {note.folderPath
+                      ? `It will be saved under ${folderBreadcrumb(note.folderPath)} — folders are created automatically if you don't have them yet.`
+                      : "One click to add it to your personal knowledge library."}
+                  </p>
+                  {saveStatus === "error" && (
+                    <p className="text-xs text-red-500 mb-3">Something went wrong. Please try again.</p>
+                  )}
+                  <SaveButton size="lg" />
+                </>
+              )}
             </>
           ) : (
             <>

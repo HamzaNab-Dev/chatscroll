@@ -83,9 +83,10 @@ public class GeminiAiService : IAiService
 
                 Rules:
                 - Base the folder on the TOPIC OF THE QUESTION, not the topic of the answer
-                - If the topic matches an existing folder, use it; otherwise create a brand-new path
+                - If the topic matches an existing folder exactly, use that folder path
+                - If the question fits under an existing folder but is a specific sub-topic, suggest "existing_folder.subtopic" (e.g. "programming.docker")
+                - If you need a catch-all subfolder under an existing folder (no specific subtopic fits), use path "existing_folder.general" with name exactly "General"
                 - You MAY suggest a new top-level folder (e.g. "medicine", "finance", "cooking", "fitness") when nothing existing fits
-                - Never suggest a parent folder if it already has child folders — use parentPath.general instead (e.g. "programming.general")
                 - Use lowercase with underscores for spaces, dots as separators (ltree format)
                 - Keep paths max 3 levels deep
                 - isNewFolder = true when the path does not appear in the existing folders list
