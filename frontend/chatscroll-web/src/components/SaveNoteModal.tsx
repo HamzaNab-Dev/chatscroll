@@ -48,6 +48,7 @@ export function SaveNoteModal({
   const [localFolders, setLocalFolders] = useState<Folder[]>(folders);
   const [selectedFolderId, setSelectedFolderId] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string>("");
   const [showPicker, setShowPicker] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -90,6 +91,7 @@ export function SaveNoteModal({
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError("");
     try {
       let folderId = selectedFolderId;
 
@@ -136,6 +138,8 @@ export function SaveNoteModal({
       const title = question.length > 60 ? question.slice(0, 60) + "..." : question;
       await onSave(folderId, title);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Save failed";
+      setSaveError(msg);
       console.error("Failed to save scroll:", err);
     } finally {
       setSaving(false);
@@ -215,6 +219,13 @@ export function SaveNoteModal({
           Skip
         </button>
       </div>
+
+      {/* Inline save error */}
+      {saveError && (
+        <div className="px-3 pb-1.5">
+          <p className="text-[10px] text-red-500 dark:text-red-400">{saveError}</p>
+        </div>
+      )}
 
       {/* Folder picker */}
       {showPicker && (

@@ -19,6 +19,8 @@ import {
   Zap,
   ChevronLeft,
   RotateCcw,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -188,12 +190,14 @@ function FolderSidebar({
   selectedFolderId,
   onSelect,
   onFolderCreated,
+  onFolderUpdated,
 }: {
   folders: Folder[];
   notes: Note[];
   selectedFolderId: string | null;
   onSelect: (id: string | null) => void;
   onFolderCreated?: (folder: Folder) => void;
+  onFolderUpdated?: (folder: Folder) => void;
 }) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [showNewFolder, setShowNewFolder] = useState(false);
@@ -209,6 +213,26 @@ function FolderSidebar({
     return notes.filter((n) => n.folderId === parentId || childIds.includes(n.folderId)).length;
   };
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState("📁");
+  const [editIconPickerOpen, setEditIconPickerOpen] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const handleSaveEdit = async (folderId: string) => {
+    if (!editName.trim()) return;
+    setSavingEdit(true);
+    try {
+      const updated = await api.updateFolder(folderId, { name: editName.trim(), icon: editIcon });
+      onFolderUpdated?.(updated);
+      setEditingId(null);
+      setEditIconPickerOpen(false);
+    } catch {
+      // silently skip
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const parents = folders.filter((f) => !f.parentId);
   const getChildren = (parentId: string) => folders.filter((f) => f.parentId === parentId);
@@ -347,9 +371,65 @@ function FolderSidebar({
 
           return (
             <div key={parent.id}>
+              {editingId === parent.id ? (
+                <div className="px-2 py-1.5 border-y border-amber-200/60 dark:border-amber-700/20 bg-amber-50/40 dark:bg-amber-900/10">
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditIconPickerOpen((v) => !v)}
+                      className="text-base flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                      title="Change icon"
+                    >
+                      {editIcon}
+                    </button>
+                    <input
+                      autoFocus
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveEdit(parent.id);
+                        if (e.key === "Escape") { setEditingId(null); setEditIconPickerOpen(false); }
+                      }}
+                      className="flex-1 min-w-0 bg-white dark:bg-slate-700 border border-amber-300 dark:border-amber-600/50 rounded px-1.5 py-0.5 text-xs text-gray-700 dark:text-slate-300 focus:outline-none"
+                    />
+                    <button
+                      onClick={() => handleSaveEdit(parent.id)}
+                      disabled={!editName.trim() || savingEdit}
+                      className="text-emerald-500 hover:text-emerald-600 disabled:opacity-40 flex-shrink-0"
+                      title="Save"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => { setEditingId(null); setEditIconPickerOpen(false); }}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 flex-shrink-0"
+                      title="Cancel"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {editIconPickerOpen && (
+                    <div className="flex flex-wrap gap-0.5 mt-1.5 max-h-16 overflow-y-auto">
+                      {FOLDER_ICONS.map((icon) => (
+                        <button
+                          key={icon}
+                          onClick={() => { setEditIcon(icon); setEditIconPickerOpen(false); }}
+                          className={cn(
+                            "text-sm w-6 h-6 rounded flex items-center justify-center transition-colors",
+                            editIcon === icon
+                              ? "bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-400 dark:ring-amber-600"
+                              : "hover:bg-gray-100 dark:hover:bg-slate-700"
+                          )}
+                        >
+                          {icon}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
               <div
                 className={cn(
-                  "flex items-center transition-colors",
+                  "group flex items-center transition-colors",
                   isSelected
                     ? "bg-amber-50 dark:bg-amber-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-slate-800/50"
@@ -386,7 +466,21 @@ function FolderSidebar({
                     </span>
                   )}
                 </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingId(parent.id);
+                    setEditName(parent.name);
+                    setEditIcon(parent.icon ?? "📁");
+                    setEditIconPickerOpen(false);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 flex-shrink-0 mr-1 p-0.5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all"
+                  title="Edit folder"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                </button>
               </div>
+              )}
 
               {isExpanded && (
                 <>
@@ -411,25 +505,80 @@ function FolderSidebar({
                   {children.map((child) => {
                     const childCount = countDirect(child.id);
                     return (
-                    <button
-                      key={child.id}
-                      onClick={() => onSelect(child.id)}
-                      className={cn(
-                        "w-full flex items-center gap-1.5 pl-7 pr-3 py-2 text-sm text-left transition-colors",
-                        selectedFolderId === child.id
-                          ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
-                          : "text-gray-500 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-slate-800/50"
-                      )}
-                    >
-                      <span className="text-[10px] text-gray-400 dark:text-slate-600">↳</span>
-                      <span className="flex-shrink-0 text-xs">{child.icon ?? "📁"}</span>
-                      <span className="flex-1 truncate text-xs">{child.name}</span>
-                      {childCount > 0 && (
-                        <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
-                          {childCount}
-                        </span>
-                      )}
-                    </button>
+                      <div key={child.id}>
+                        {editingId === child.id ? (
+                          <div className="pl-7 pr-2 py-1.5 border-y border-amber-200/60 dark:border-amber-700/20 bg-amber-50/40 dark:bg-amber-900/10">
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setEditIconPickerOpen((v) => !v)}
+                                className="text-sm flex-shrink-0 w-5 h-5 flex items-center justify-center rounded hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                                title="Change icon"
+                              >
+                                {editIcon}
+                              </button>
+                              <input
+                                autoFocus
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveEdit(child.id);
+                                  if (e.key === "Escape") { setEditingId(null); setEditIconPickerOpen(false); }
+                                }}
+                                className="flex-1 min-w-0 bg-white dark:bg-slate-700 border border-amber-300 dark:border-amber-600/50 rounded px-1.5 py-0.5 text-xs text-gray-700 dark:text-slate-300 focus:outline-none"
+                              />
+                              <button onClick={() => handleSaveEdit(child.id)} disabled={!editName.trim() || savingEdit} className="text-emerald-500 hover:text-emerald-600 disabled:opacity-40 flex-shrink-0">
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button onClick={() => { setEditingId(null); setEditIconPickerOpen(false); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 flex-shrink-0">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                            {editIconPickerOpen && (
+                              <div className="flex flex-wrap gap-0.5 mt-1 max-h-14 overflow-y-auto">
+                                {FOLDER_ICONS.map((icon) => (
+                                  <button key={icon} onClick={() => { setEditIcon(icon); setEditIconPickerOpen(false); }} className={cn("text-sm w-5 h-5 rounded flex items-center justify-center", editIcon === icon ? "bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-400 dark:ring-amber-600" : "hover:bg-gray-100 dark:hover:bg-slate-700")}>
+                                    {icon}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="group flex items-center transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50">
+                            <button
+                              onClick={() => onSelect(child.id)}
+                              className={cn(
+                                "flex-1 flex items-center gap-1.5 pl-7 pr-2 py-2 text-sm text-left transition-colors",
+                                selectedFolderId === child.id
+                                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
+                                  : "text-gray-500 dark:text-slate-500"
+                              )}
+                            >
+                              <span className="text-[10px] text-gray-400 dark:text-slate-600">↳</span>
+                              <span className="flex-shrink-0 text-xs">{child.icon ?? "📁"}</span>
+                              <span className="flex-1 truncate text-xs">{child.name}</span>
+                              {childCount > 0 && (
+                                <span className="text-[10px] text-gray-400 dark:text-slate-600 flex-shrink-0">
+                                  {childCount}
+                                </span>
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingId(child.id);
+                                setEditName(child.name);
+                                setEditIcon(child.icon ?? "📁");
+                                setEditIconPickerOpen(false);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 flex-shrink-0 mr-1 p-0.5 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all"
+                              title="Edit folder"
+                            >
+                              <Pencil className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </>
@@ -728,6 +877,7 @@ function LibraryContent() {
             selectedFolderId={selectedFolderId}
             onSelect={setSelectedFolderId}
             onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
+            onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
           />
         </div>
 
@@ -745,6 +895,7 @@ function LibraryContent() {
                 selectedFolderId={selectedFolderId}
                 onSelect={(id) => { setSelectedFolderId(id); setShowFolderPanel(false); }}
                 onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
+                onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
               />
             </div>
           </div>

@@ -64,6 +64,20 @@ public class FoldersController : ApiControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateFolderRequest request)
+    {
+        var userId = GetUserId();
+        var folder = await _folderRepository.GetByIdAsync(id, userId);
+        if (folder is null) return NotFound();
+
+        folder.Name = request.Name;
+        if (request.Icon is not null) folder.Icon = request.Icon;
+
+        var updated = await _folderRepository.UpdateAsync(folder);
+        return Ok(updated);
+    }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -93,3 +107,5 @@ public record CreateFolderRequest(
     string? Color,
     Guid? ParentId
 );
+
+public record UpdateFolderRequest(string Name, string? Icon);

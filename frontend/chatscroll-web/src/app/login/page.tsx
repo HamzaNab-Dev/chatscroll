@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ScrollText, Eye, EyeOff, Loader2, Mail, Sun, Moon, ArrowLeft } from "lucide-react";
@@ -25,6 +25,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Open on Sign Up tab when navigated from "Start for Free" / "Create Free Account"
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "signup") setMode("signup");
+  }, []);
+
+  // Password strength
+  const passwordRequirements = [
+    { label: "At least 8 characters", met: password.length >= 8 },
+    { label: "One uppercase letter (A–Z)", met: /[A-Z]/.test(password) },
+    { label: "One lowercase letter (a–z)", met: /[a-z]/.test(password) },
+    { label: "One number (0–9)", met: /[0-9]/.test(password) },
+    { label: "One special character (!@#$…)", met: /[^a-zA-Z0-9]/.test(password) },
+  ];
+  const strengthCount = passwordRequirements.filter((r) => r.met).length;
+  const strengthLabel = strengthCount <= 1 ? "Weak" : strengthCount <= 2 ? "Fair" : strengthCount <= 3 ? "Good" : strengthCount === 4 ? "Strong" : "Very Strong";
+  const strengthBarColor = strengthCount <= 1 ? "bg-red-500" : strengthCount <= 2 ? "bg-orange-400" : strengthCount <= 3 ? "bg-amber-400" : "bg-emerald-500";
+  const strengthTextColor = strengthCount <= 1 ? "text-red-500" : strengthCount <= 2 ? "text-orange-400" : strengthCount <= 3 ? "text-amber-500" : "text-emerald-500";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +218,49 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+
+                  {/* Password strength — only shown in signup mode once user starts typing */}
+                  {mode === "signup" && password.length > 0 && (
+                    <div className="space-y-2 pt-1">
+                      {/* Strength bar */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex gap-1">
+                          {passwordRequirements.map((_, i) => (
+                            <div
+                              key={i}
+                              className={cn(
+                                "h-1 flex-1 rounded-full transition-colors duration-200",
+                                i < strengthCount ? strengthBarColor : "bg-gray-200 dark:bg-slate-700"
+                              )}
+                            />
+                          ))}
+                        </div>
+                        <span className={cn("text-xs font-semibold min-w-[56px] text-right", strengthTextColor)}>
+                          {strengthLabel}
+                        </span>
+                      </div>
+                      {/* Requirements checklist */}
+                      <div className="space-y-1">
+                        {passwordRequirements.map((req) => (
+                          <div key={req.label} className="flex items-center gap-1.5">
+                            {req.met ? (
+                              <span className="text-emerald-500 text-xs leading-none">✓</span>
+                            ) : (
+                              <span className="text-gray-400 dark:text-slate-600 text-xs leading-none font-bold">+</span>
+                            )}
+                            <span className={cn(
+                              "text-xs",
+                              req.met
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-gray-400 dark:text-slate-500"
+                            )}>
+                              {req.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}

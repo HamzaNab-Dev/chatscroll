@@ -159,12 +159,21 @@ export function LandingWithChat() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            href="/login"
-            className="px-7 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm shadow-amber-500/25"
-          >
-            Start for Free <ArrowRight className="w-4 h-4" />
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              href="/chat"
+              className="px-7 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm shadow-amber-500/25"
+            >
+              Open ChatScroll <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <Link
+              href="/login?mode=signup"
+              className="px-7 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm shadow-amber-500/25"
+            >
+              Start for Free <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
           <a
             href="#how-it-works"
             className="px-7 py-3 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-500 text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 bg-white dark:bg-transparent"
@@ -201,18 +210,18 @@ export function LandingWithChat() {
       {/* How it works — visual product demo */}
       <section id="how-it-works" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <p className="text-xs font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">How It Works</p>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-3">
+          <div className="text-center mb-14">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">How It Works</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-slate-100 mb-4">
               Ask once. Keep forever.
             </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm mx-auto">
-              Stop re-Googling the same thing. Every question you ask becomes a searchable knowledge note in your library.
+            <p className="text-base text-gray-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+              Stop re-Googling the same thing. Every question you ask becomes a searchable knowledge note in your personal library.
             </p>
           </div>
 
           {/* 4-step flow */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-14">
             {[
               { emoji: "💬", label: "You ask", desc: "Any question, any topic" },
               { emoji: "⚡", label: "AI answers", desc: "Concise, focused response" },
@@ -221,13 +230,13 @@ export function LandingWithChat() {
             ].map(({ emoji, label, desc }, i) => (
               <div key={label} className="relative text-center">
                 {i < 3 && (
-                  <div className="hidden sm:block absolute top-5 left-[calc(50%+20px)] right-[-50%] h-px bg-gradient-to-r from-amber-300/60 to-amber-200/20 dark:from-amber-600/30 dark:to-amber-500/10" />
+                  <div className="hidden sm:block absolute top-6 left-[calc(50%+24px)] right-[-50%] h-px bg-gradient-to-r from-amber-300/60 to-amber-200/20 dark:from-amber-600/30 dark:to-amber-500/10" />
                 )}
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/40 flex items-center justify-center mx-auto mb-2 text-xl relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/40 flex items-center justify-center mx-auto mb-3 text-2xl relative z-10 shadow-sm">
                   {emoji}
                 </div>
-                <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">{label}</p>
-                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">{desc}</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-slate-100">{label}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 leading-snug">{desc}</p>
               </div>
             ))}
           </div>
@@ -396,12 +405,15 @@ export function LandingWithChat() {
       {/* AWS Infrastructure section */}
       <section className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/40 py-16">
         <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100 text-center mb-2">
-            🏗️ Built on Production-Grade AWS Infrastructure
-          </h2>
-          <p className="text-gray-500 dark:text-slate-500 text-sm text-center mb-10">
-            Every layer is production-ready and deployed on AWS
-          </p>
+          <div className="text-center mb-10">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">Infrastructure</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 mb-3">
+              🏗️ Built on Production-Grade AWS
+            </h2>
+            <p className="text-base text-gray-500 dark:text-slate-400 max-w-md mx-auto">
+              Every layer is production-ready, auto-scaling, and deployed on AWS — built for the AWS H0 Hackathon.
+            </p>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {AWS_STACK.map(({ icon, name, desc }) => (
               <div
@@ -423,7 +435,13 @@ export function LandingWithChat() {
       {/* Features */}
       <section id="features" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-slate-100 text-center mb-12">Everything you need</h2>
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">Features</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-slate-100 mb-3">Everything you need</h2>
+            <p className="text-base text-gray-500 dark:text-slate-400 max-w-md mx-auto">
+              A complete knowledge management system powered by production-grade AWS infrastructure.
+            </p>
+          </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { icon: "🧠", title: "AI-Powered Chat", desc: "Ask anything, get concise answers powered by Gemini 2.5 Flash with 5-step reasoning" },
@@ -442,11 +460,11 @@ export function LandingWithChat() {
             ].map(({ icon, title, desc }) => (
               <div
                 key={title}
-                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5 hover:border-amber-500/20 transition-colors"
+                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 hover:border-amber-400/40 dark:hover:border-amber-600/30 hover:shadow-lg hover:shadow-amber-500/5 transition-all"
               >
                 <div className="text-2xl mb-3">{icon}</div>
-                <h3 className="font-semibold text-gray-800 dark:text-slate-200 mb-1 text-sm">{title}</h3>
-                <p className="text-xs text-gray-500 dark:text-slate-500 leading-relaxed">{desc}</p>
+                <h3 className="font-bold text-gray-800 dark:text-slate-200 mb-1.5 text-sm">{title}</h3>
+                <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -494,7 +512,7 @@ export function LandingWithChat() {
               </ul>
 
               <Link
-                href="/login"
+                href="/login?mode=signup"
                 className="block w-full py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors"
               >
                 Create Free Account →

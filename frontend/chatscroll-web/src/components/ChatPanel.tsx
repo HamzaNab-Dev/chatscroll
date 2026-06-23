@@ -35,6 +35,7 @@ interface ChatPanelProps {
   initialMessage?: string;
   conversationId?: string;
   onFirstMessage?: (msg: string, conversationId: string) => void;
+  title?: string;
 }
 
 export function ChatPanel({
@@ -43,6 +44,7 @@ export function ChatPanel({
   initialMessage,
   conversationId,
   onFirstMessage,
+  title,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
@@ -263,16 +265,30 @@ export function ChatPanel({
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-transparent">
-      {/* Chat header — shows conversation title (5A) */}
+      {/* Chat header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-800">
         <ScrollText className="w-4 h-4 text-amber-500 dark:text-amber-400" />
         <h2 className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate flex-1">
-          {conversationTitle}
+          {title ?? conversationTitle}
         </h2>
         <span className="text-xs text-gray-400 dark:text-slate-600 flex-shrink-0">
           {messages.length - 1} messages
         </span>
       </div>
+
+      {/* Non-auth history notice */}
+      {!isAuthenticated && (
+        <div className="px-4 py-2 flex items-center gap-2 bg-amber-50/70 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-800/20">
+          <span className="text-amber-500 flex-shrink-0 text-xs">💡</span>
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            Chat history is only saved for signed-in users.{" "}
+            <Link href="/login" className="underline hover:text-amber-600 dark:hover:text-amber-300 transition-colors">
+              Sign in free
+            </Link>{" "}
+            to keep your conversations.
+          </p>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.map((message) => {

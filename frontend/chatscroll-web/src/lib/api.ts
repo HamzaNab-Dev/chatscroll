@@ -120,6 +120,8 @@ export const api = {
   getFolderTree: () => request<Folder[]>("/api/folders/tree"),
   createFolder: (data: { name: string; path: string; icon?: string; color?: string; parentId?: string }) =>
     request<Folder>("/api/folders", { method: "POST", body: JSON.stringify(data) }),
+  updateFolder: (id: string, data: { name: string; icon?: string }) =>
+    request<Folder>(`/api/folders/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteFolder: (id: string) =>
     request<void>(`/api/folders/${id}`, { method: "DELETE" }),
 

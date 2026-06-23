@@ -290,6 +290,7 @@ function ChatContent() {
             initialMessage={initialMessage}
             conversationId={conversationId}
             onFirstMessage={handleFirstMessage}
+            title={conversations.find((c) => c.id === conversationId)?.title}
           />
         </main>
 
