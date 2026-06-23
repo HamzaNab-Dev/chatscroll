@@ -68,15 +68,20 @@ function FolderNode({
           className="flex-1 flex items-center gap-1.5 py-2 pr-2 text-left min-w-0"
         >
           <span className="text-base flex-shrink-0">
-            {folder.icon ?? (isSelected ? "📂" : "📁")}
+            {folder.icon ?? (hasChildren && expanded ? "📂" : "📁")}
           </span>
 
           <span
             className={cn(
-              "text-sm flex-1 truncate",
+              "flex-1 truncate",
+              depth === 0 ? "text-sm" : "text-[13px]",
               isSelected
-                ? "text-amber-700 dark:text-amber-200 font-medium"
-                : "text-gray-700 dark:text-slate-300"
+                ? depth === 0
+                  ? "text-amber-700 dark:text-amber-200 font-semibold"
+                  : "text-amber-700 dark:text-amber-200 font-medium"
+                : depth === 0
+                  ? "text-gray-800 dark:text-slate-100 font-semibold"
+                  : "text-gray-500 dark:text-slate-400"
             )}
           >
             {folder.name}
@@ -139,7 +144,7 @@ export function FolderTree({
   const tree = buildFolderTree(folders);
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       {tree.map((folder) => (
         <FolderNode
           key={folder.id}

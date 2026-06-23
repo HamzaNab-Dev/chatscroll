@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Send, ScrollText, Sparkles } from "lucide-react";
+import { Send, ScrollText, Sparkles, Check } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
 import { SaveNoteModal } from "@/components/SaveNoteModal";
 import { formatDate, generateId } from "@/lib/utils";
 import { api } from "@/lib/api";
-import type { Message, Folder } from "@/lib/api";
+import type { Message, Folder, Note } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Lightbulb } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -51,6 +51,7 @@ export function ChatPanel({
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [dismissedSave, setDismissedSave] = useState<Set<string>>(new Set());
+  const [savedNotesMap, setSavedNotesMap] = useState<Map<string, Pick<Note, "id" | "folderId">>>(new Map());
 
   // Typewriter state
   const [animatingId, setAnimatingId] = useState<string | null>(null);
@@ -71,24 +72,40 @@ export function ChatPanel({
   useEffect(() => {
     if (!conversationId) { setLoadingHistory(false); return; }
 
-    api.getConversationMessages(conversationId)
-      .then((fetched) => {
+    // Load messages and saved notes in parallel — both must be ready before rendering
+    // so we never flash a stale "Saved" state on messages whose scrolls were deleted.
+    Promise.allSettled([
+      api.getConversationMessages(conversationId),
+      isAuthenticated ? api.getAllNotes() : Promise.resolve([] as Note[]),
+    ]).then(([messagesResult, notesResult]) => {
+      // Build saved-notes map first — this is the single source of truth for saved state.
+      // savedNotesMap drives both "Saved in [folder]" display and save-button visibility.
+      // We intentionally do NOT set saved:true on history messages anymore;
+      // if a note was deleted the map won't have the entry, so the save button reappears.
+      if (notesResult.status === "fulfilled") {
+        const map = new Map<string, Pick<Note, "id" | "folderId">>();
+        for (const n of notesResult.value) {
+          if (n.originalQuestion) map.set(n.originalQuestion, { id: n.id, folderId: n.folderId });
+        }
+        setSavedNotesMap(map);
+      }
+
+      if (messagesResult.status === "fulfilled") {
+        const fetched = messagesResult.value;
         if (fetched.length === 0) return; // keep welcome message
         const mapped: Message[] = fetched.map((m) => ({
           id: generateId(),
           role: m.role as "user" | "assistant",
           content: m.content,
           timestamp: new Date(m.timestamp),
-          saved: m.role === "assistant" ? true : undefined,
+          // saved intentionally omitted — savedNotesMap is the source of truth
         }));
         setMessages(mapped);
         firstUserMessageSentRef.current = mapped.some((m) => m.role === "user");
-      })
-      .catch((err) => {
-        console.warn("Failed to load conversation messages from API:", err);
-        // Keep welcome message — app still works, just no history loaded
-      })
-      .finally(() => setLoadingHistory(false));
+      } else {
+        console.warn("Failed to load conversation messages:", messagesResult.reason);
+      }
+    }).finally(() => setLoadingHistory(false));
   }, []); // intentionally empty — only runs on mount (key remount handles conversation switching)
 
   // Current conversation title derived from messages (for 5A display)
@@ -250,7 +267,7 @@ export function ChatPanel({
     const msgIndex = messages.findIndex((m) => m.id === messageId);
     const userQuestion = msgIndex > 0 ? messages[msgIndex - 1]?.content : undefined;
 
-    await api.createNote({
+    const createdNote = await api.createNote({
       folderId,
       title,
       originalQuestion: userQuestion,
@@ -258,6 +275,14 @@ export function ChatPanel({
       cleanContent: message.cleanNote,
       tags: [],
     });
+
+    if (userQuestion && createdNote) {
+      setSavedNotesMap((prev) => {
+        const next = new Map(prev);
+        next.set(userQuestion, { id: createdNote.id, folderId });
+        return next;
+      });
+    }
 
     setMessages((prev) =>
       prev.map((m) => (m.id === messageId ? { ...m, saved: true } : m))
@@ -301,8 +326,18 @@ export function ChatPanel({
             <div className="flex gap-3"><div className="w-7 h-7 bg-gray-100 dark:bg-slate-800 rounded-full flex-shrink-0" /><div className="flex-1 space-y-2"><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-full" /><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-3/4" /></div></div>
           </div>
         )}
-        {!loadingHistory && messages.map((message) => {
+        {!loadingHistory && messages.map((message, idx) => {
           const isAnimating = message.id === animatingId;
+
+          // Find the user question that preceded this assistant message
+          const prevUserMsg = message.role === "assistant"
+            ? messages.slice(0, idx).reverse().find((m) => m.role === "user")
+            : undefined;
+          // Check if that question already has a saved scroll
+          const savedNote = isAuthenticated && prevUserMsg
+            ? savedNotesMap.get(prevUserMsg.content)
+            : undefined;
+          const savedFolder = savedNote ? folders.find((f) => f.id === savedNote.folderId) : undefined;
 
           return (
             <div
@@ -389,14 +424,12 @@ export function ChatPanel({
                 !message.content.startsWith("GEMINI_ERROR:") &&
                 !(isAuthenticated && message.isAlreadyKnown) &&
                 !message.saved &&
+                !savedNote &&
                 !dismissedSave.has(message.id) && (
                   <div className="ml-10 mt-2 max-w-sm">
                     {isAuthenticated ? (
                       <SaveNoteModal
-                        question={(() => {
-                          const idx = messages.findIndex((m) => m.id === message.id);
-                          return idx > 0 ? (messages[idx - 1]?.content ?? "") : "";
-                        })()}
+                        question={prevUserMsg?.content ?? ""}
                         cleanNote={message.cleanNote}
                         folderSuggestion={message.folderSuggestion}
                         folders={folders}
@@ -437,9 +470,22 @@ export function ChatPanel({
                   </div>
                 )}
 
-              {message.saved && (
-                <div className="ml-10 mt-2 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 animate-in fade-in duration-300">
-                  📜 Saved as a Scroll!
+              {(message.saved || savedNote) && (
+                <div className="ml-10 mt-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 animate-in fade-in duration-300">
+                  <Check className="w-3 h-3 flex-shrink-0" />
+                  {savedNote ? (
+                    <>
+                      <span>Saved in <span className="font-medium">{savedFolder?.name ?? "Library"}</span></span>
+                      <Link
+                        href={`/scroll/${savedNote.id}?from=chat`}
+                        className="underline underline-offset-2 hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"
+                      >
+                        View →
+                      </Link>
+                    </>
+                  ) : (
+                    <span>Saved as a Scroll!</span>
+                  )}
                 </div>
               )}
             </div>
@@ -512,7 +558,10 @@ export function ChatPanel({
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 text-center">
+        <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1 text-center">
+          ChatScroll AI can make mistakes. Please double-check responses.
+        </p>
+        <p className="text-[10px] text-gray-300 dark:text-slate-700 mt-0.5 text-center">
           Powered by Gemini 2.5 Flash · ChatScroll
         </p>
       </div>

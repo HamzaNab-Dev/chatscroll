@@ -97,9 +97,20 @@ public class GeminiAiService : IAiService
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
+            var suggestedPath = root.GetProperty("suggestedPath").GetString() ?? "general";
+            var suggestedName = root.GetProperty("suggestedName").GetString() ?? "General";
+
+            // Root-level folders (no dot = single segment) must not be prefixed with "General"
+            // e.g. "General Programming" → "Programming"
+            if (!suggestedPath.Contains('.') &&
+                suggestedName.StartsWith("General ", StringComparison.OrdinalIgnoreCase))
+            {
+                suggestedName = suggestedName[8..].Trim();
+            }
+
             return new FolderSuggestion(
-                SuggestedPath: root.GetProperty("suggestedPath").GetString() ?? "general",
-                SuggestedName: root.GetProperty("suggestedName").GetString() ?? "General",
+                SuggestedPath: suggestedPath,
+                SuggestedName: suggestedName,
                 Reasoning: root.GetProperty("reasoning").GetString() ?? "",
                 IsNewFolder: root.GetProperty("isNewFolder").GetBoolean()
             );
