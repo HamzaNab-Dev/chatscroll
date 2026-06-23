@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ScrollText, Tag, Calendar, ArrowRight, Copy, Check } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
 import { api } from "@/lib/api";
 import type { SharedNote } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 function folderBreadcrumb(path: string): string {
   return path
@@ -18,10 +19,17 @@ function folderBreadcrumb(path: string): string {
 
 export default function SharedScrollPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [note, setNote] = useState<SharedNote | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const openChat = () => {
+    try { sessionStorage.setItem("cs_force_new", "1"); } catch {}
+    router.push("/chat");
+  };
 
   const load = useCallback(async () => {
     if (!params?.id) return;
@@ -85,12 +93,21 @@ export default function SharedScrollPage() {
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? "Copied!" : "Copy link"}
             </button>
-            <Link
-              href="/login"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors"
-            >
-              Save your own Scrolls <ArrowRight className="w-3 h-3" />
-            </Link>
+            {isAuthenticated ? (
+              <button
+                onClick={openChat}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors"
+              >
+                Open ChatScroll <ArrowRight className="w-3 h-3" />
+              </button>
+            ) : (
+              <Link
+                href="/login?mode=signup"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors"
+              >
+                Save your own Scrolls <ArrowRight className="w-3 h-3" />
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -150,18 +167,37 @@ export default function SharedScrollPage() {
         {/* CTA */}
         <div className="rounded-2xl border border-amber-200 dark:border-amber-700/30 bg-amber-50/60 dark:bg-amber-950/10 p-6 text-center">
           <div className="text-2xl mb-2">📚</div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">
-            Build your own knowledge library
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-            Ask AI anything, save the best answers as Scrolls — organized, searchable, always at hand.
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-medium transition-colors"
-          >
-            Start for free <ArrowRight className="w-4 h-4" />
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">
+                Ready to save your own Scrolls?
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                Head to ChatScroll and ask AI anything — save the best answers to your personal library.
+              </p>
+              <button
+                onClick={openChat}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-medium transition-colors"
+              >
+                Open ChatScroll <ArrowRight className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">
+                Build your own knowledge library
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                Ask AI anything, save the best answers as Scrolls — organized, searchable, always at hand.
+              </p>
+              <Link
+                href="/login?mode=signup"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-medium transition-colors"
+              >
+                Start for free <ArrowRight className="w-4 h-4" />
+              </Link>
+            </>
+          )}
         </div>
       </main>
 

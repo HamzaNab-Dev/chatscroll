@@ -85,11 +85,11 @@ export function UserMenu() {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          className="text-gray-400 dark:text-slate-400 focus:bg-gray-100 dark:focus:bg-slate-800 focus:text-gray-700 dark:focus:text-slate-200 cursor-pointer"
-          disabled
+          onClick={() => router.push("/profile")}
+          className="text-gray-700 dark:text-slate-300 focus:bg-gray-100 dark:focus:bg-slate-800 focus:text-gray-900 dark:focus:text-slate-100 cursor-pointer"
         >
           <User className="w-4 h-4 mr-2" />
-          Profile (coming soon)
+          Profile
         </DropdownMenuItem>
 
         <DropdownMenuSeparator className="bg-gray-200 dark:bg-slate-800" />

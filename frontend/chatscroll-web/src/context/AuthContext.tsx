@@ -15,6 +15,8 @@ import {
   signOut as amplifySignOut,
   getCurrentUser,
   fetchAuthSession,
+  updateUserAttributes,
+  updatePassword as amplifyUpdatePassword,
 } from "aws-amplify/auth";
 import { isCognitoConfigured, cognitoConfig } from "@/lib/auth-config";
 
@@ -49,6 +51,8 @@ type AuthContextType = {
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   confirmSignUp: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateDisplayName: (name: string) => Promise<void>;
+  updatePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   isAuthenticated: boolean;
   user: AuthUser | null;
 };
@@ -163,6 +167,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthState({ status: "unauthenticated" });
   };
 
+  const updateDisplayName = async (name: string) => {
+    if (isCognitoConfigured) {
+      await updateUserAttributes({ userAttributes: { name } });
+    }
+    setAuthState((prev) =>
+      prev.status === "authenticated"
+        ? { ...prev, user: { ...prev.user, displayName: name } }
+        : prev
+    );
+  };
+
+  const updatePassword = async (oldPassword: string, newPassword: string) => {
+    if (!isCognitoConfigured) {
+      throw new Error("Password changes are not available in dev mode.");
+    }
+    await amplifyUpdatePassword({ oldPassword, newPassword });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -171,6 +193,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         confirmSignUp,
         signOut,
+        updateDisplayName,
+        updatePassword,
         isAuthenticated: authState.status === "authenticated",
         user: authState.status === "authenticated" ? authState.user : null,
       }}

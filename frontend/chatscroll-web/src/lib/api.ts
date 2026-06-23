@@ -112,7 +112,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     credentials: "include",
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  // 204 No Content and other empty responses have no body to parse
+  if (res.status === 204 || res.headers.get("content-length") === "0") {
+    return undefined as T;
+  }
+  const text = await res.text();
+  return text ? (JSON.parse(text) as T) : (undefined as T);
 }
 
 export const api = {

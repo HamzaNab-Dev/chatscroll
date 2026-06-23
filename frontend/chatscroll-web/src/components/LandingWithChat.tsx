@@ -160,12 +160,12 @@ export function LandingWithChat() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {isAuthenticated ? (
-            <Link
-              href="/chat"
+            <button
+              onClick={() => { try { sessionStorage.setItem("cs_force_new", "1"); } catch {} router.push("/chat"); }}
               className="px-7 py-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-sm shadow-amber-500/25"
             >
               Open ChatScroll <ArrowRight className="w-4 h-4" />
-            </Link>
+            </button>
           ) : (
             <Link
               href="/login?mode=signup"
