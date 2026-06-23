@@ -99,13 +99,14 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
   useEffect(() => {
     if (selectedFolder) {
       setLoadingNotes(true);
-      api
-        .getNotesByFolder(selectedFolder.id)
-        .then(setNotes)
+      const childFolders = folders.filter((f) => f.parentId === selectedFolder.id);
+      const folderIds = [selectedFolder.id, ...childFolders.map((f) => f.id)];
+      Promise.all(folderIds.map((id) => api.getNotesByFolder(id)))
+        .then((results) => setNotes(results.flat()))
         .catch(console.error)
         .finally(() => setLoadingNotes(false));
     }
-  }, [selectedFolder, refreshKey]);
+  }, [selectedFolder, refreshKey, folders]);
 
   const loadStats = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -280,7 +281,7 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
                       {note.title}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 line-clamp-2">
-                      {note.cleanContent.replace(/[#*`]/g, "").slice(0, 80)}...
+                      {(() => { const t = note.cleanContent.replace(/[#*`_>]/g, "").replace(/\s+/g, " ").trim(); if (t.length <= 90) return t; const cut = t.slice(0, 90); const s = cut.lastIndexOf(" "); return (s > 0 ? cut.slice(0, s) : cut) + "..."; })()}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       {note.tags.slice(0, 3).map((tag) => (

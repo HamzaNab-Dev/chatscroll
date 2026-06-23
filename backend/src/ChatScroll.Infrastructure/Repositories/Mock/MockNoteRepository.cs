@@ -47,6 +47,9 @@ public class MockNoteRepository : INoteRepository
     public Task<Note?> GetByIdAsync(Guid id, Guid userId) =>
         Task.FromResult(_notes.FirstOrDefault(n => n.Id == id && n.UserId == userId));
 
+    public Task<Note?> GetByIdPublicAsync(Guid id) =>
+        Task.FromResult(_notes.FirstOrDefault(n => n.Id == id));
+
     public Task<IEnumerable<Note>> SearchAsync(Guid userId, string query) =>
         Task.FromResult(_notes.Where(n =>
             n.UserId == userId &&

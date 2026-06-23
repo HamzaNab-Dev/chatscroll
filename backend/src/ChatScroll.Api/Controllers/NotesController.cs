@@ -121,12 +121,9 @@ public class NotesController : ApiControllerBase
     [HttpGet("shared/{id}")]
     public async Task<IActionResult> GetShared(Guid id)
     {
-        // Shared scrolls are public — look up using the owner's ID from the header
-        // so the note is found regardless of who is viewing.
-        var userId = GetUserId();
-        var note = await _noteRepository.GetByIdAsync(id, userId);
+        var note = await _noteRepository.GetByIdPublicAsync(id);
         if (note is null) return NotFound();
-        var folder = await _folderRepository.GetByIdAsync(note.FolderId, userId);
+        var folder = await _folderRepository.GetByIdAsync(note.FolderId, note.UserId);
         return Ok(new
         {
             id = note.Id,

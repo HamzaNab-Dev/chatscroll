@@ -97,7 +97,7 @@ public class ChatController : ApiControllerBase
 
         var answer = await _aiService.ChatAsync(q, "");
         var folderSuggestion = await _aiService.SuggestFolderAsync(q, answer, new[] { "general" });
-        var cleanNote = await _aiService.RewriteAsNoteAsync(q, answer);
+        var cleanNote = answer;
 
         return Ok(new ChatMessageResponse(
             Answer: answer,
@@ -184,7 +184,7 @@ public class ChatController : ApiControllerBase
         if (isGuest)
         {
             var guestFolderSuggestion = await _aiService.SuggestFolderAsync(request.Message, answer, new[] { "general" });
-            var guestCleanNote = await _aiService.RewriteAsNoteAsync(request.Message, answer);
+            var guestCleanNote = answer;
             return Ok(new ChatMessageResponse(
                 Answer: answer,
                 FolderSuggestion: guestFolderSuggestion,
@@ -219,7 +219,7 @@ public class ChatController : ApiControllerBase
         if (folderPaths.Length == 0) folderPaths = new[] { "general" };
 
         var folderSuggestion = await _aiService.SuggestFolderAsync(request.Message, answer, folderPaths);
-        var cleanNote = await _aiService.RewriteAsNoteAsync(request.Message, answer);
+        var cleanNote = answer;
 
         return Ok(new ChatMessageResponse(
             Answer: answer,

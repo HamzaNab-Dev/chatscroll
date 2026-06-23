@@ -61,7 +61,29 @@ const RANK_BADGES = [
   { label: "✦ #3 Match", cls: "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-500 border-orange-200 dark:border-orange-700/40" },
 ];
 
-function NoteGridItem({ note, folder, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
+function truncateAtWord(text: string, maxChars: number): string {
+  const cleaned = text
+    .replace(/^#{1,6}\s+.*$/gm, "")  // drop heading lines so preview shows body text
+    .replace(/[*`_>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleaned.length <= maxChars) return cleaned;
+  const cut = cleaned.slice(0, maxChars);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut) + "...";
+}
+
+function getFolderPath(folder: Folder, folderMap: Map<string, Folder>): string {
+  const parts: string[] = [];
+  let current: Folder | undefined = folder;
+  while (current) {
+    parts.unshift(`${current.icon ?? "📁"} ${current.name}`);
+    current = current.parentId ? folderMap.get(current.parentId) : undefined;
+  }
+  return parts.join(" → ");
+}
+
+function NoteGridItem({ note, folder, folderMap, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; folderMap?: Map<string, Folder>; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
   const borderColor = folder?.color ?? "#d97706";
   const rankBadge = rank !== undefined && rank < 3 ? RANK_BADGES[rank] : null;
   return (
@@ -74,7 +96,7 @@ function NoteGridItem({ note, folder, onExport, query, isAiResult, rank }: { not
         <div className="flex items-center justify-between mb-1.5">
           {folder ? (
             <p className="text-[10px] font-medium truncate" style={{ color: borderColor }}>
-              {folder.icon} {folder.name}
+              {folderMap ? getFolderPath(folder, folderMap) : `${folder.icon ?? "📁"} ${folder.name}`}
             </p>
           ) : <span />}
           <div className="flex items-center gap-1 flex-shrink-0 ml-1">
@@ -94,8 +116,8 @@ function NoteGridItem({ note, folder, onExport, query, isAiResult, rank }: { not
         </p>
         <p className="text-xs text-gray-400 dark:text-slate-500 line-clamp-2 mb-3">
           {query
-            ? <HighlightText text={note.cleanContent.replace(/[#*`]/g, "").slice(0, 120)} query={query} />
-            : note.cleanContent.replace(/[#*`]/g, "").slice(0, 120)}
+            ? <HighlightText text={truncateAtWord(note.cleanContent, 150)} query={query} />
+            : truncateAtWord(note.cleanContent, 150)}
         </p>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-[10px] text-gray-400 dark:text-slate-600">
@@ -124,7 +146,7 @@ function NoteGridItem({ note, folder, onExport, query, isAiResult, rank }: { not
   );
 }
 
-function NoteListItem({ note, folder, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
+function NoteListItem({ note, folder, folderMap, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; folderMap?: Map<string, Folder>; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
   const borderColor = folder?.color ?? "#d97706";
   const rankBadge = rank !== undefined && rank < 3 ? RANK_BADGES[rank] : null;
   return (
@@ -137,7 +159,7 @@ function NoteListItem({ note, folder, onExport, query, isAiResult, rank }: { not
           <div className="flex items-center gap-1.5 mb-0.5">
             {folder && (
               <p className="text-[10px] font-medium truncate" style={{ color: borderColor }}>
-                {folder.icon} {folder.name}
+                {folderMap ? getFolderPath(folder, folderMap) : `${folder.icon ?? "📁"} ${folder.name}`}
               </p>
             )}
             {rankBadge ? (
@@ -155,8 +177,8 @@ function NoteListItem({ note, folder, onExport, query, isAiResult, rank }: { not
           </p>
           <p className="text-xs text-gray-400 dark:text-slate-500 truncate mt-0.5">
             {query
-              ? <HighlightText text={note.cleanContent.replace(/[#*`]/g, "").slice(0, 80)} query={query} />
-              : note.cleanContent.replace(/[#*`]/g, "").slice(0, 80)}
+              ? <HighlightText text={truncateAtWord(note.cleanContent, 100)} query={query} />
+              : truncateAtWord(note.cleanContent, 100)}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 pr-8">
@@ -1090,6 +1112,7 @@ function LibraryContent() {
                   key={note.id}
                   note={note}
                   folder={folderMap.get(note.folderId)}
+                  folderMap={folderMap}
                   onExport={setExportNote}
                   query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
                   isAiResult={searchMode === "smart" && !!searchQuery.trim()}
@@ -1104,6 +1127,7 @@ function LibraryContent() {
                   key={note.id}
                   note={note}
                   folder={folderMap.get(note.folderId)}
+                  folderMap={folderMap}
                   onExport={setExportNote}
                   query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
                   isAiResult={searchMode === "smart" && !!searchQuery.trim()}

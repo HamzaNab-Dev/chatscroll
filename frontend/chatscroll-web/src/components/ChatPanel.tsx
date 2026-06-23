@@ -49,6 +49,7 @@ export function ChatPanel({
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [dismissedSave, setDismissedSave] = useState<Set<string>>(new Set());
 
   // Typewriter state
@@ -68,7 +69,7 @@ export function ChatPanel({
 
   // Load messages from DynamoDB (via backend) when the panel mounts for a conversation
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId) { setLoadingHistory(false); return; }
 
     api.getConversationMessages(conversationId)
       .then((fetched) => {
@@ -86,7 +87,8 @@ export function ChatPanel({
       .catch((err) => {
         console.warn("Failed to load conversation messages from API:", err);
         // Keep welcome message — app still works, just no history loaded
-      });
+      })
+      .finally(() => setLoadingHistory(false));
   }, []); // intentionally empty — only runs on mount (key remount handles conversation switching)
 
   // Current conversation title derived from messages (for 5A display)
@@ -291,7 +293,15 @@ export function ChatPanel({
       )}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map((message) => {
+        {loadingHistory && (
+          <div className="space-y-4 animate-pulse">
+            <div className="flex justify-end"><div className="h-8 bg-gray-100 dark:bg-slate-800 rounded-2xl w-48" /></div>
+            <div className="flex gap-3"><div className="w-7 h-7 bg-gray-100 dark:bg-slate-800 rounded-full flex-shrink-0" /><div className="flex-1 space-y-2"><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-full" /><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-5/6" /><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-4/6" /></div></div>
+            <div className="flex justify-end"><div className="h-8 bg-gray-100 dark:bg-slate-800 rounded-2xl w-64" /></div>
+            <div className="flex gap-3"><div className="w-7 h-7 bg-gray-100 dark:bg-slate-800 rounded-full flex-shrink-0" /><div className="flex-1 space-y-2"><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-full" /><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-3/4" /></div></div>
+          </div>
+        )}
+        {!loadingHistory && messages.map((message) => {
           const isAnimating = message.id === animatingId;
 
           return (

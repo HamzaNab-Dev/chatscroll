@@ -45,6 +45,13 @@ public class AuroraNoteRepository : INoteRepository
             .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
     }
 
+    public async Task<Note?> GetByIdPublicAsync(Guid id)
+    {
+        return await _db.Notes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(n => n.Id == id);
+    }
+
     public async Task<IEnumerable<Note>> GetRecentAsync(Guid userId, int limit)
     {
         return await _db.Notes
@@ -73,7 +80,7 @@ public class AuroraNoteRepository : INoteRepository
         var vecStr = '[' + string.Join(",",
             embedding.Select(f => f.ToString("G6", CultureInfo.InvariantCulture))) + ']';
 
-        // Only include notes whose cosine similarity exceeds 0.3 (1 - distance > 0.3).
+        // Only include notes whose cosine similarity exceeds 0.5 (1 - distance > 0.5).
         // Results are ordered best-match-first (ascending distance = descending similarity).
         var vectorResults = await _db.Notes
             .FromSqlInterpolated($"""
@@ -82,19 +89,19 @@ public class AuroraNoteRepository : INoteRepository
                 FROM notes
                 WHERE user_id = {userId}
                   AND embedding IS NOT NULL
-                  AND 1 - (embedding <=> {vecStr}::vector) > 0.3
+                  AND 1 - (embedding <=> {vecStr}::vector) > 0.5
                 ORDER BY embedding <=> {vecStr}::vector
                 LIMIT 10
                 """)
             .AsNoTracking()
             .ToListAsync();
 
-        // Semantic results lead (already ranked by similarity); text-only results trail.
-        var semanticIds = vectorResults.Select(n => n.Id).ToHashSet();
-        return vectorResults
-            .Concat(textResults.Where(n => !semanticIds.Contains(n.Id)))
-            .Take(10)
-            .ToList();
+        // If no notes pass the semantic threshold, fall back to text results so the
+        // user always sees something rather than an empty list.
+        if (vectorResults.Count == 0)
+            return textResults;
+
+        return vectorResults.Take(10).ToList();
     }
 
     public async Task<IEnumerable<Note>> SearchExactAsync(Guid userId, string query)

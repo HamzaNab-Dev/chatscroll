@@ -26,6 +26,25 @@ import { api } from "@/lib/api";
 import type { Note, Folder } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*\*([^*]+)\*\*\*/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/_{2}([^_]+)_{2}/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    .replace(/^[-*+]\s+/gm, "• ")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/^>\s*/gm, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^[-*_]{3,}$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function ScrollDetailContent() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -78,7 +97,7 @@ function ScrollDetailContent() {
 
   const handleCopy = async () => {
     if (!note) return;
-    await navigator.clipboard.writeText(note.cleanContent);
+    await navigator.clipboard.writeText(stripMarkdown(note.cleanContent));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -88,7 +107,7 @@ function ScrollDetailContent() {
     setDeleting(true);
     try {
       await api.deleteNote(note.id);
-      router.push("/library");
+      router.push(backHref);
     } catch {
       setDeleting(false);
     }

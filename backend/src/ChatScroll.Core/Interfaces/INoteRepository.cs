@@ -6,6 +6,7 @@ public interface INoteRepository
 {
     Task<IEnumerable<Note>> GetByFolderIdAsync(Guid folderId, Guid userId);
     Task<Note?> GetByIdAsync(Guid id, Guid userId);
+    Task<Note?> GetByIdPublicAsync(Guid id);
     Task<IEnumerable<Note>> SearchAsync(Guid userId, string query);
     Task<IEnumerable<Note>> SearchExactAsync(Guid userId, string query);
     Task<IEnumerable<Note>> GetRecentAsync(Guid userId, int limit);
