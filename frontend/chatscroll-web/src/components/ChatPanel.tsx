@@ -8,7 +8,7 @@ import { Markdown } from "@/components/ui/markdown";
 import { SaveNoteModal } from "@/components/SaveNoteModal";
 import { formatDate, generateId } from "@/lib/utils";
 import { api } from "@/lib/api";
-import type { Message, Folder, Note } from "@/lib/api";
+import type { Message, Folder, Note, FolderSuggestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Lightbulb } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -94,11 +94,24 @@ export function ChatPanel({
       if (messagesResult.status === "fulfilled") {
         const fetched = messagesResult.value;
         if (fetched.length === 0) return; // keep welcome message
-        const mapped: Message[] = fetched.map((m) => ({
+
+        // Restore folder suggestions persisted at send-time so they survive page refresh
+        let storedSuggestions: Record<string, FolderSuggestion> = {};
+        if (conversationId) {
+          try {
+            const raw = localStorage.getItem(`cs_suggestions_${conversationId}`);
+            if (raw) storedSuggestions = JSON.parse(raw);
+          } catch {}
+        }
+
+        const mapped: Message[] = fetched.map((m, i) => ({
           id: generateId(),
           role: m.role as "user" | "assistant",
           content: m.content,
           timestamp: new Date(m.timestamp),
+          folderSuggestion: m.role === "assistant" && i > 0
+            ? storedSuggestions[fetched[i - 1]?.content?.trim() ?? ""]
+            : undefined,
           // saved intentionally omitted — savedNotesMap is the source of truth
         }));
         setMessages(mapped);
@@ -214,6 +227,16 @@ export function ChatPanel({
         timestamp: new Date(),
       };
 
+      // Persist suggestion so it survives page refresh
+      if (response.folderSuggestion && conversationId) {
+        try {
+          const key = `cs_suggestions_${conversationId}`;
+          const stored: Record<string, FolderSuggestion> = JSON.parse(localStorage.getItem(key) ?? "{}");
+          stored[content.trim()] = response.folderSuggestion;
+          localStorage.setItem(key, JSON.stringify(stored));
+        } catch {}
+      }
+
       if (assistantMessage.content.trim()) {
         animationWordsRef.current = assistantMessage.content.split(" ");
         setVisibleWordCount(0);
@@ -284,6 +307,16 @@ export function ChatPanel({
         next.set(userQuestion.trim(), { id: createdNote.id, folderId });
         return next;
       });
+    }
+
+    // Remove persisted suggestion — scroll is now saved, no longer needed
+    if (conversationId && userQuestion) {
+      try {
+        const key = `cs_suggestions_${conversationId}`;
+        const stored: Record<string, FolderSuggestion> = JSON.parse(localStorage.getItem(key) ?? "{}");
+        delete stored[userQuestion.trim()];
+        localStorage.setItem(key, JSON.stringify(stored));
+      } catch {}
     }
 
     setMessages((prev) =>

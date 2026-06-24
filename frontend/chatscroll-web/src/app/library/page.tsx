@@ -639,31 +639,31 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
   if (!note) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 bg-white dark:bg-slate-950 flex flex-col">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-amber-500" />
-          <span className="text-sm font-medium text-slate-200">Study Mode</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-slate-200">Study Mode</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500 tabular-nums">{index + 1} / {total}</span>
+          <span className="text-xs text-gray-500 dark:text-slate-500 tabular-nums">{index + 1} / {total}</span>
           <button
             onClick={() => { setIndex(0); setRevealed(false); }}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
             title="Restart"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onExit}
-            className="px-3 py-1.5 text-xs rounded-lg border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:border-gray-400 dark:hover:border-slate-500 transition-colors"
           >
             Exit
           </button>
         </div>
       </div>
 
-      <div className="h-0.5 bg-slate-800">
+      <div className="h-0.5 bg-gray-200 dark:bg-slate-800">
         <div
           className="h-full bg-amber-500 transition-all duration-300"
           style={{ width: `${((index + 1) / total) * 100}%` }}
@@ -673,23 +673,23 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
       <div className="flex-1 flex items-center justify-center px-6 py-8 overflow-hidden">
         <div className="w-full max-w-2xl">
           {folder && (
-            <p className="text-center text-[11px] font-medium text-amber-500/80 mb-3 tracking-wide">
+            <p className="text-center text-[11px] font-medium text-amber-600 dark:text-amber-500/80 mb-3 tracking-wide">
               {folder.icon ?? "📁"} {folder.name}
             </p>
           )}
 
           <div
-            className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden cursor-pointer select-none"
+            className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden cursor-pointer select-none"
             onClick={() => setRevealed((v) => !v)}
           >
-            <div className="px-8 py-7 border-b border-slate-800">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-100 text-center leading-snug">
+            <div className="px-8 py-7 border-b border-gray-200 dark:border-slate-800">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100 text-center leading-snug">
                 {note.title}
               </h2>
               {note.tags.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-1.5 mt-3">
                   {note.tags.slice(0, 4).map((t) => (
-                    <span key={t} className="text-[10px] text-amber-500/70 bg-amber-950/30 border border-amber-700/20 rounded-full px-2 py-0.5">
+                    <span key={t} className="text-[10px] text-amber-600 dark:text-amber-500/70 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/20 rounded-full px-2 py-0.5">
                       {t}
                     </span>
                   ))}
@@ -699,26 +699,26 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
 
             {!revealed ? (
               <div className="px-8 py-6 text-center">
-                <p className="text-sm text-slate-500">Click to reveal answer</p>
-                <p className="text-[10px] text-slate-600 mt-1">or press Space</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500">Click to reveal answer</p>
+                <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1">or press Space</p>
               </div>
             ) : (
               <div className="px-8 py-6 max-h-[50vh] overflow-y-auto">
-                <div className="[&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-slate-100 [&_h1]:mb-3 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-slate-200 [&_h2]:mb-2 [&_h2]:mt-4 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-slate-300 [&_p]:text-slate-300 [&_p]:text-sm [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:text-slate-300 [&_ul]:text-sm [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:text-slate-300 [&_ol]:text-sm [&_ol]:mb-3 [&_li]:mb-1 [&_strong]:text-slate-100 [&_code]:bg-slate-800 [&_code]:text-amber-300 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-slate-800 [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-amber-600 [&_blockquote]:pl-4 [&_blockquote]:text-slate-400 [&_blockquote]:italic">
+                <div className="[&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-gray-900 dark:[&_h1]:text-slate-100 [&_h1]:mb-3 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-gray-800 dark:[&_h2]:text-slate-200 [&_h2]:mb-2 [&_h2]:mt-4 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-gray-700 dark:[&_h3]:text-slate-300 [&_p]:text-gray-700 dark:[&_p]:text-slate-300 [&_p]:text-sm [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:ml-5 [&_ul]:text-gray-700 dark:[&_ul]:text-slate-300 [&_ul]:text-sm [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:ml-5 [&_ol]:text-gray-700 dark:[&_ol]:text-slate-300 [&_ol]:text-sm [&_ol]:mb-3 [&_li]:mb-1 [&_strong]:text-gray-900 dark:[&_strong]:text-slate-100 [&_code]:bg-gray-100 dark:[&_code]:bg-slate-800 [&_code]:text-amber-700 dark:[&_code]:text-amber-300 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-gray-100 dark:[&_pre]:bg-slate-800 [&_pre]:rounded-xl [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-amber-600 [&_blockquote]:pl-4 [&_blockquote]:text-gray-500 dark:[&_blockquote]:text-slate-400 [&_blockquote]:italic">
                   <Markdown content={note.cleanContent} />
                 </div>
-                <p className="text-[10px] text-slate-600 text-center mt-4">Click to hide</p>
+                <p className="text-[10px] text-gray-400 dark:text-slate-600 text-center mt-4">Click to hide</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 px-6 py-5 border-t border-slate-800">
+      <div className="flex items-center justify-center gap-4 px-6 py-5 border-t border-gray-200 dark:border-slate-800">
         <button
           onClick={prev}
           disabled={index === 0}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-300 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:border-gray-400 dark:hover:border-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
         >
           <ChevronLeft className="w-4 h-4" /> Previous
         </button>
@@ -731,13 +731,13 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
         <button
           onClick={next}
           disabled={index === total - 1}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-300 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:border-gray-400 dark:hover:border-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
         >
           Next <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      <p className="text-center text-[10px] text-slate-700 pb-3">
+      <p className="text-center text-[10px] text-gray-400 dark:text-slate-700 pb-3">
         ← → navigate · Space reveal · Esc exit
       </p>
     </div>
@@ -1012,7 +1012,7 @@ function LibraryContent() {
                 title={selectedFolder ? `Export ${selectedFolder.name} folder` : "Export full library"}
               >
                 <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{selectedFolder ? "Folder" : "Library"}</span>
+                <span className="hidden sm:inline">Export</span>
               </button>
 
               <div className="w-px h-5 bg-gray-200 dark:bg-slate-700" />

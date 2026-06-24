@@ -29,7 +29,7 @@ const FOLDER_ICONS = ["📁","💻","🔷","🏥","📚","🎓","🔬","💡","�
 // Slugs that are too generic to be worth creating as child folders.
 // When the only missing segment is one of these and a parent already exists,
 // we save directly in the parent instead.
-const GENERIC_SLUGS = new Set(["general", "misc", "other", "miscellaneous"]);
+const GENERIC_SLUGS = new Set(["general", "misc", "other", "miscellaneous", "uncategorized", "default", "common"]);
 
 
 interface SaveNoteModalProps {
@@ -155,51 +155,34 @@ export function SaveNoteModal({
             setLocalFolders((prev) => [...prev, created]);
             folderId = created.id;
           } else {
-          // Partial match or no match: create every missing segment in order.
-          // E.g. suggested "programming.docker" with "programming" already existing
-          // → only create "docker" as a child of "programming".
           const allSegments = suggestedPath.split(".");
           const existingDepth = suggestedFolder ? suggestedFolder.path.split(".").length : 0;
           const segmentsToCreate = allSegments.slice(existingDepth);
 
-          // Guard: if the only segment to create is a generic catch-all name and a parent
-          // folder already exists, save directly in the parent — never auto-create a
-          // meaningless child folder.
-          if (
-            suggestedFolder &&
-            segmentsToCreate.length === 1 &&
-            GENERIC_SLUGS.has(segmentsToCreate[0].toLowerCase())
-          ) {
-            folderId = suggestedFolder.id;
-          } else {
-            let parent: { id: string; path: string } | null = suggestedFolder
-              ? { id: suggestedFolder.id, path: suggestedFolder.path }
-              : null;
+          let parent: { id: string; path: string } | null = suggestedFolder
+            ? { id: suggestedFolder.id, path: suggestedFolder.path }
+            : null;
 
-            for (let i = 0; i < segmentsToCreate.length; i++) {
-              const seg = segmentsToCreate[i];
-              const slug = seg.toLowerCase().replace(/[^a-z0-9_]/g, "_");
-              // Skip empty slugs that would produce a meaningless folder
-              if (!slug) continue;
-              const isLeaf = i === segmentsToCreate.length - 1;
-              // Leaf gets the AI's human-readable name; intermediate segments get capitalized slug.
-              const name = isLeaf
-                ? (folderSuggestion.suggestedName || slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
-                : slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-              const path = parent ? `${parent.path}.${slug}` : slug;
+          for (let i = 0; i < segmentsToCreate.length; i++) {
+            const seg = segmentsToCreate[i];
+            const slug = seg.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+            if (!slug) continue;
+            // Never auto-create generic catch-all folders; save in the last real parent instead.
+            if (GENERIC_SLUGS.has(slug)) break;
+            const name = slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+            const path = parent ? `${parent.path}.${slug}` : slug;
 
-              const created = await api.createFolder({
-                name,
-                path,
-                icon: "📁",
-                parentId: parent?.id,
-              });
-              setLocalFolders((prev) => [...prev, created]);
-              parent = { id: created.id, path: created.path };
-            }
-
-            folderId = parent?.id ?? "";
+            const created = await api.createFolder({
+              name,
+              path,
+              icon: "📁",
+              parentId: parent?.id,
+            });
+            setLocalFolders((prev) => [...prev, created]);
+            parent = { id: created.id, path: created.path };
           }
+
+          folderId = parent?.id ?? "";
           } // end else (not isNoSuggestion)
         }
       }
