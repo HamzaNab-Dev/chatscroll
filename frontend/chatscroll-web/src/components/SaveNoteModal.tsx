@@ -238,39 +238,17 @@ export function SaveNoteModal({
       {/* Folder picker */}
       {showPicker && (
         <div className={cn("border-t border-amber-200/60 dark:border-amber-700/20 px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto", showNewFolder ? "max-h-96" : "max-h-48")}>
-          {sortFoldersForPicker(localFolders).map((folder) => {
-            const label = formatPath(folder.path);
-            const isActive =
-              selectedFolderId === folder.id ||
-              (!selectedFolderId && folder.id === suggestedFolder?.id);
-            return (
-              <button
-                key={folder.id}
-                onClick={() => { setSelectedFolderId(folder.id); setShowPicker(false); }}
-                className={cn(
-                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-all",
-                  isActive
-                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium"
-                    : "text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800/60"
-                )}
-              >
-                <span className="flex-shrink-0">{folder.icon ?? "📁"}</span>
-                <span className="truncate">{label}</span>
-              </button>
-            );
-          })}
-
-          {/* New folder toggle */}
+          {/* New folder — always at the top */}
           {!showNewFolder ? (
             <button
               onClick={() => setShowNewFolder(true)}
-              className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-white dark:hover:bg-slate-800/60 transition-colors border border-dashed border-gray-200 dark:border-slate-700 mt-0.5"
+              className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-white dark:hover:bg-slate-800/60 transition-colors border border-dashed border-gray-200 dark:border-slate-700 mb-0.5"
             >
               <Plus className="w-3 h-3 flex-shrink-0" />
               New folder
             </button>
           ) : (
-            <div className="mt-1 p-2 rounded-lg border border-amber-200 dark:border-amber-700/30 bg-white dark:bg-slate-800/60 space-y-1.5">
+            <div className="mb-0.5 p-2 rounded-lg border border-amber-200 dark:border-amber-700/30 bg-white dark:bg-slate-800/60 space-y-1.5">
               <div className="flex gap-1.5">
                 <span className="text-lg leading-none pt-0.5">{newFolderIcon}</span>
                 <input
@@ -297,7 +275,6 @@ export function SaveNoteModal({
                   ))}
                 </select>
               )}
-              {/* Icon picker */}
               <div className="flex flex-wrap gap-1">
                 {FOLDER_ICONS.map((icon) => (
                   <button
@@ -331,6 +308,29 @@ export function SaveNoteModal({
               </div>
             </div>
           )}
+
+          {sortFoldersForPicker(localFolders).map((folder) => {
+            const label = formatPath(folder.path);
+            const isActive =
+              selectedFolderId === folder.id ||
+              (!selectedFolderId && folder.id === suggestedFolder?.id);
+            return (
+              <button
+                key={folder.id}
+                onClick={() => { setSelectedFolderId(folder.id); setShowPicker(false); }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-all",
+                  isActive
+                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium"
+                    : "text-gray-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800/60"
+                )}
+              >
+                <span className="flex-shrink-0">{folder.icon ?? "📁"}</span>
+                <span className="truncate">{label}</span>
+              </button>
+            );
+          })}
+
         </div>
       )}
     </div>

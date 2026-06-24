@@ -419,8 +419,7 @@ export function ChatPanel({
               {/* Save prompt / auth CTA — hidden on AI error responses and duplicate detections */}
               {!isAnimating &&
                 message.role === "assistant" &&
-                message.folderSuggestion &&
-                message.cleanNote &&
+                message.id !== "welcome" &&
                 !message.content.startsWith("GEMINI_ERROR:") &&
                 !(isAuthenticated && message.isAlreadyKnown) &&
                 !message.saved &&
@@ -430,8 +429,8 @@ export function ChatPanel({
                     {isAuthenticated ? (
                       <SaveNoteModal
                         question={prevUserMsg?.content ?? ""}
-                        cleanNote={message.cleanNote}
-                        folderSuggestion={message.folderSuggestion}
+                        cleanNote={message.cleanNote ?? message.content}
+                        folderSuggestion={message.folderSuggestion ?? { suggestedPath: "general", suggestedName: "General", reasoning: "", isNewFolder: true }}
                         folders={folders}
                         onSave={(folderId, title) =>
                           handleSaveNote(message.id, folderId, title, message)

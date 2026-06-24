@@ -99,7 +99,10 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
   useEffect(() => {
     if (selectedFolder) {
       setLoadingNotes(true);
-      const childFolders = folders.filter((f) => f.parentId === selectedFolder.id);
+      // Virtual "General" node (icon "📝") represents notes stored directly in the parent —
+      // fetch only that folder's direct notes, not its children's.
+      const isVirtualGeneral = selectedFolder.icon === "📝";
+      const childFolders = isVirtualGeneral ? [] : folders.filter((f) => f.parentId === selectedFolder.id);
       const folderIds = [selectedFolder.id, ...childFolders.map((f) => f.id)];
       Promise.all(folderIds.map((id) => api.getNotesByFolder(id)))
         .then((results) => setNotes(results.flat()))
