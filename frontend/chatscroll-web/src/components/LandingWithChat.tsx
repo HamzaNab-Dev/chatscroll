@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -25,11 +25,25 @@ const AWS_STACK = [
   { icon: "🌐", name: "Vercel", desc: "Frontend deployment" },
 ];
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001";
+
 export function LandingWithChat() {
   const [question, setQuestion] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  // undefined = loading, number = loaded, null = failed (hide)
+  const [totalScrolls, setTotalScrolls] = useState<number | null | undefined>(undefined);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/stats`)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (typeof data?.totalScrolls === "number") setTotalScrolls(data.totalScrolls);
+        else setTotalScrolls(null);
+      })
+      .catch(() => setTotalScrolls(null));
+  }, []);
 
   const handleSubmit = () => {
     const q = question.trim();
@@ -186,10 +200,18 @@ export function LandingWithChat() {
       {/* Stats bar */}
       <div className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-4">
         <div className="max-w-3xl mx-auto px-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-center gap-y-3 gap-x-4 sm:gap-8">
-          <div className="flex items-center gap-1.5 justify-center">
-            <span className="text-base font-bold text-amber-600 dark:text-amber-400">∞</span>
-            <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved</span>
-          </div>
+          {totalScrolls !== null && (
+            <div className="flex items-center gap-1.5 justify-center">
+              {totalScrolls === undefined ? (
+                <div className="h-4 w-14 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
+              ) : (
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                  📜 {totalScrolls.toLocaleString()}
+                </span>
+              )}
+              <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved</span>
+            </div>
+          )}
           <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
           <div className="flex items-center gap-1.5 justify-center">
             <span className="text-xs font-bold text-amber-600 dark:text-amber-400">5-Step</span>

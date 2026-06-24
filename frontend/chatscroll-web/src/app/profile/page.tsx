@@ -162,20 +162,29 @@ function ProfileContent() {
                     if (e.key === "Enter") handleSaveName();
                     if (e.key === "Escape") { setEditingName(false); setNameValue(me?.displayName ?? user.displayName); }
                   }}
-                  onBlur={handleSaveName}
                   className="flex-1 text-lg font-bold bg-gray-50 dark:bg-slate-800 border border-amber-400 dark:border-amber-500/50 rounded-lg px-3 py-1 text-gray-900 dark:text-slate-100 focus:outline-none"
                 />
               ) : (
                 <p className="text-lg font-bold text-gray-900 dark:text-slate-100 truncate">{displayName}</p>
               )}
-              <button
-                onClick={() => { setEditingName(true); setNameValue(displayName); setNameStatus(null); }}
-                disabled={savingName}
-                className="p-1 rounded-md text-gray-300 dark:text-slate-600 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
-                title="Edit display name"
-              >
-                {savingName ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Pencil className="w-3.5 h-3.5" />}
-              </button>
+              {editingName ? (
+                <button
+                  onClick={handleSaveName}
+                  disabled={savingName}
+                  className="p-1 rounded-md text-emerald-500 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors flex-shrink-0"
+                  title="Save name"
+                >
+                  {savingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setEditingName(true); setNameValue(displayName); setNameStatus(null); }}
+                  className="p-1 rounded-md text-gray-300 dark:text-slate-600 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0"
+                  title="Edit display name"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {nameStatus && <StatusMsg {...nameStatus} />}
@@ -325,6 +334,7 @@ function ProfileContent() {
             </Link>
             <Link
               href="/chat"
+              onClick={() => { try { sessionStorage.setItem("cs_force_new", "1"); } catch {} }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-amber-200 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
             >
               <MessageSquare className="w-4 h-4" />

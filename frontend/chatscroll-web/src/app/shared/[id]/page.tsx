@@ -280,7 +280,9 @@ export default function SharedScrollPage() {
                   {saveStatus === "error" && (
                     <p className="text-xs text-red-500 mb-3">Something went wrong. Please try again.</p>
                   )}
-                  <SaveButton size="lg" />
+                  <div className="flex justify-center">
+                    <SaveButton size="lg" />
+                  </div>
                 </>
               )}
             </>

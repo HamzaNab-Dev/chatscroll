@@ -21,8 +21,11 @@ import {
   RotateCcw,
   Pencil,
   Check,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
+import { useTheme } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ExportScrollModal } from "@/components/ExportScrollModal";
 import { WriteScrollModal } from "@/components/WriteScrollModal";
@@ -617,6 +620,7 @@ function FolderSidebar({
 function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map<string, Folder>; onExit: () => void }) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const note = notes[index];
   const folder = note ? folderMap.get(note.folderId) : undefined;
@@ -653,6 +657,14 @@ function StudyMode({ notes, folderMap, onExit }: { notes: Note[]; folderMap: Map
             title="Restart"
           >
             <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="Toggle theme"
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button
             onClick={onExit}
@@ -1136,6 +1148,7 @@ function LibraryContent() {
               )}
               <Link
                 href="/chat"
+                onClick={() => { try { sessionStorage.setItem("cs_force_new", "1"); } catch {} }}
                 className="mt-4 inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-500 font-medium border border-amber-200 dark:border-amber-700/40 rounded-lg px-3 py-1.5 transition-colors"
               >
                 <MessageSquare className="w-3 h-3" />

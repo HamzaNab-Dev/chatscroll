@@ -179,19 +179,22 @@ public class AuroraNoteRepository : INoteRepository
 
     public async Task<IEnumerable<Note>> GetRelatedAsync(Guid noteId, Guid userId, int limit = 3)
     {
-        // Use a subquery to pull the current note's embedding inline.
-        // If the note has no embedding the subquery returns NULL, the IS NOT NULL check
-        // produces zero rows, and the caller gets an empty list — no error thrown.
+        // CTE fetches the source embedding once; cross-joining with a zero-row CTE
+        // (note not found or no embedding) naturally returns zero rows — no error thrown.
         return await _db.Notes
             .FromSqlInterpolated($"""
-                SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
-                       clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
-                FROM notes
-                WHERE user_id = {userId}
-                  AND id != {noteId}
-                  AND embedding IS NOT NULL
-                  AND (SELECT embedding FROM notes WHERE id = {noteId} AND user_id = {userId}) IS NOT NULL
-                ORDER BY embedding <=> (SELECT embedding FROM notes WHERE id = {noteId} AND user_id = {userId})
+                WITH cur AS (
+                    SELECT embedding FROM notes WHERE id = {noteId} AND user_id = {userId}
+                )
+                SELECT n.id, n.user_id, n.folder_id, n.conversation_id, n.title, n.original_question, n.original_answer,
+                       n.clean_content, n.tags, n.code_language, n.view_count, n.last_viewed_at, n.created_at, n.updated_at
+                FROM notes n, cur
+                WHERE n.user_id = {userId}
+                  AND n.id != {noteId}
+                  AND n.embedding IS NOT NULL
+                  AND cur.embedding IS NOT NULL
+                  AND 1 - (n.embedding <=> cur.embedding) > 0.5
+                ORDER BY n.embedding <=> cur.embedding
                 LIMIT {limit}
                 """)
             .AsNoTracking()
