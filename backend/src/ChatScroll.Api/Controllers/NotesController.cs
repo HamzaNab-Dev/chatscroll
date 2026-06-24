@@ -183,6 +183,40 @@ public class NotesController : ApiControllerBase
     /// Backfills embeddings for all notes that currently have embedding = NULL.
     /// Call once after fixing the embedding pipeline to populate existing notes.
     /// </summary>
+    /// <summary>
+    /// Returns up to 3 notes most similar to the given note by pgvector cosine distance.
+    /// Falls back to an empty list if the note has no embedding yet.
+    /// </summary>
+    [HttpGet("{id}/related")]
+    public async Task<IActionResult> GetRelated(Guid id)
+    {
+        var userId = GetUserId();
+        var related = (await _noteRepository.GetRelatedAsync(id, userId, 3)).ToList();
+        if (related.Count == 0) return Ok(Array.Empty<object>());
+
+        var folderMap = (await _folderRepository.GetByUserIdAsync(userId))
+            .ToDictionary(f => f.Id);
+
+        var result = related.Select(n =>
+        {
+            folderMap.TryGetValue(n.FolderId, out var folder);
+            var preview = (n.CleanContent ?? "")
+                .Replace("\r", "").Replace("\n", " ")
+                .Trim();
+            if (preview.Length > 120) preview = preview[..120].TrimEnd() + "…";
+            return new
+            {
+                id = n.Id,
+                title = n.Title,
+                folderPath = folder?.Path,
+                folderIcon = folder?.Icon,
+                preview,
+            };
+        });
+
+        return Ok(result);
+    }
+
     [HttpPost("admin/backfill-embeddings")]
     public async Task<IActionResult> BackfillEmbeddings()
     {

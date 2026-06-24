@@ -196,18 +196,20 @@ setAuthState({ status: 'authenticated', user });
 
 ---
 
-## Step 3b: Apply pgvector Dimension Fix (768 → replaces 1024)
+## Step 3b: Apply pgvector Dimension Fix (→ 3072)
 
-`text-embedding-004` (Gemini) produces **768-dimensional** vectors, not 1024.
-Run this against your Aurora cluster **once** after the initial schema is applied:
+`gemini-embedding-001` produces **3072-dimensional** vectors.
+Run this against your Aurora cluster **once** (or after any prior ALTER that set a different size):
 
 ```sql
--- Change embedding column to 768-dim (matches Gemini text-embedding-004)
-ALTER TABLE notes ALTER COLUMN embedding TYPE vector(768);
+-- Change embedding columns to 3072-dim (matches gemini-embedding-001)
+ALTER TABLE notes ALTER COLUMN embedding TYPE vector(3072);
+ALTER TABLE question_history ALTER COLUMN question_embedding TYPE vector(3072);
 
--- Drop and recreate the IVFFlat index for the new dimension
+-- Drop and recreate the IVFFlat indexes for the new dimension
+DROP INDEX IF EXISTS idx_notes_embedding;
 DROP INDEX IF EXISTS notes_embedding_idx;
-CREATE INDEX notes_embedding_idx ON notes USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX idx_notes_embedding ON notes USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
 ---

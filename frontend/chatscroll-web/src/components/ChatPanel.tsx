@@ -50,7 +50,6 @@ export function ChatPanel({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
-  const [dismissedSave, setDismissedSave] = useState<Set<string>>(new Set());
   const [savedNotesMap, setSavedNotesMap] = useState<Map<string, Pick<Note, "id" | "folderId">>>(new Map());
 
   // Typewriter state
@@ -85,7 +84,7 @@ export function ChatPanel({
       if (notesResult.status === "fulfilled") {
         const map = new Map<string, Pick<Note, "id" | "folderId">>();
         for (const n of notesResult.value) {
-          if (n.originalQuestion) map.set(n.originalQuestion, { id: n.id, folderId: n.folderId });
+          if (n.originalQuestion) map.set(n.originalQuestion.trim(), { id: n.id, folderId: n.folderId });
         }
         setSavedNotesMap(map);
       }
@@ -262,7 +261,8 @@ export function ChatPanel({
     title: string,
     message: Message
   ) => {
-    if (!message.cleanNote) return;
+    const noteContent = message.cleanNote ?? message.content;
+    if (!noteContent) return;
 
     const msgIndex = messages.findIndex((m) => m.id === messageId);
     const userQuestion = msgIndex > 0 ? messages[msgIndex - 1]?.content : undefined;
@@ -272,14 +272,14 @@ export function ChatPanel({
       title,
       originalQuestion: userQuestion,
       originalAnswer: message.content,
-      cleanContent: message.cleanNote,
+      cleanContent: noteContent,
       tags: [],
     });
 
     if (userQuestion && createdNote) {
       setSavedNotesMap((prev) => {
         const next = new Map(prev);
-        next.set(userQuestion, { id: createdNote.id, folderId });
+        next.set(userQuestion.trim(), { id: createdNote.id, folderId });
         return next;
       });
     }
@@ -335,9 +335,15 @@ export function ChatPanel({
             : undefined;
           // Check if that question already has a saved scroll
           const savedNote = isAuthenticated && prevUserMsg
-            ? savedNotesMap.get(prevUserMsg.content)
+            ? savedNotesMap.get(prevUserMsg.content.trim())
             : undefined;
           const savedFolder = savedNote ? folders.find((f) => f.id === savedNote.folderId) : undefined;
+          const savedFolderParent = savedFolder?.parentId ? folders.find((f) => f.id === savedFolder.parentId) : undefined;
+          const savedFolderLabel = savedFolder
+            ? (savedFolderParent ? `${savedFolderParent.name} → ${savedFolder.name}` : savedFolder.name)
+            : "Library";
+          // A message is "saved" if it was saved this session OR the map has an entry for its question
+          const isSaved = !!(message.saved || savedNote);
 
           return (
             <div
@@ -422,9 +428,7 @@ export function ChatPanel({
                 message.id !== "welcome" &&
                 !message.content.startsWith("GEMINI_ERROR:") &&
                 !(isAuthenticated && message.isAlreadyKnown) &&
-                !message.saved &&
-                !savedNote &&
-                !dismissedSave.has(message.id) && (
+                !isSaved && (
                   <div className="ml-10 mt-2 max-w-sm">
                     {isAuthenticated ? (
                       <SaveNoteModal
@@ -434,9 +438,6 @@ export function ChatPanel({
                         folders={folders}
                         onSave={(folderId, title) =>
                           handleSaveNote(message.id, folderId, title, message)
-                        }
-                        onDismiss={() =>
-                          setDismissedSave((prev) => new Set([...prev, message.id]))
                         }
                       />
                     ) : (
@@ -456,25 +457,17 @@ export function ChatPanel({
                         >
                           Sign up free
                         </Link>
-                        <button
-                          onClick={() =>
-                            setDismissedSave((prev) => new Set([...prev, message.id]))
-                          }
-                          className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 flex-shrink-0"
-                        >
-                          Skip
-                        </button>
                       </div>
                     )}
                   </div>
                 )}
 
-              {(message.saved || savedNote) && (
+              {isSaved && (
                 <div className="ml-10 mt-2 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 animate-in fade-in duration-300">
                   <Check className="w-3 h-3 flex-shrink-0" />
                   {savedNote ? (
                     <>
-                      <span>Saved in <span className="font-medium">{savedFolder?.name ?? "Library"}</span></span>
+                      <span>Saved in <span className="font-medium">{savedFolderLabel}</span></span>
                       <Link
                         href={`/scroll/${savedNote.id}?from=chat`}
                         className="underline underline-offset-2 hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors"

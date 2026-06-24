@@ -120,17 +120,25 @@ public class ChatScrollDbContext : DbContext
     }
 
     /// <summary>
-    /// Upserts a minimal user row so foreign-key constraints on conversations, folders, and notes
-    /// are satisfied for browser-generated UUIDs. Uses ON CONFLICT DO NOTHING — safe under
-    /// concurrent requests for the same new user.
+    /// Upserts a user row. For anonymous users (no email/displayName supplied) uses generated
+    /// placeholder values. For Cognito users, upgrades placeholder email/name on conflict so the
+    /// first real login after anonymous use shows real identity.
     /// </summary>
-    public async Task EnsureUserExistsAsync(Guid userId)
+    public async Task EnsureUserExistsAsync(Guid userId, string? email = null, string? displayName = null)
     {
-        var email = $"{userId}@anonymous.chatscroll.app";
+        var sub         = userId.ToString();
+        var actualEmail = email       ?? $"{userId}@anonymous.chatscroll.app";
+        var actualName  = displayName ?? "Anonymous User";
         await Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO users (id, cognito_sub, email, display_name, plan, created_at, updated_at)
-            VALUES ({userId}, '', {email}, 'Anonymous User', 'free', NOW(), NOW())
-            ON CONFLICT (id) DO NOTHING
+            VALUES ({userId}, {sub}, {actualEmail}, {actualName}, 'free', NOW(), NOW())
+            ON CONFLICT (id) DO UPDATE SET
+              email        = CASE WHEN users.email LIKE '%@anonymous.chatscroll.app'
+                                  THEN EXCLUDED.email        ELSE users.email        END,
+              display_name = CASE WHEN users.display_name = 'Anonymous User'
+                                  THEN EXCLUDED.display_name ELSE users.display_name END,
+              cognito_sub  = EXCLUDED.cognito_sub,
+              updated_at   = NOW()
             """);
     }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ScrollText, Brain, Search, FolderTree, Check, Zap, Shield } from "lucide-react";
+import { StatsBar } from "@/components/StatsBar";
 
 export const metadata = {
   title: "ChatScroll — Every Question Becomes Lasting Knowledge",
@@ -209,6 +210,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Live stats from Aurora */}
+      <StatsBar />
 
       {/* Features */}
       <section className="max-w-5xl mx-auto px-6 py-16">

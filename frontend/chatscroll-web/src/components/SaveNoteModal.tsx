@@ -33,7 +33,6 @@ interface SaveNoteModalProps {
   folderSuggestion: FolderSuggestion;
   folders: Folder[];
   onSave: (folderId: string, title: string) => Promise<void>;
-  onDismiss: () => void;
 }
 
 function formatPath(path: string): string {
@@ -61,7 +60,6 @@ export function SaveNoteModal({
   folderSuggestion,
   folders,
   onSave,
-  onDismiss,
 }: SaveNoteModalProps) {
   const [localFolders, setLocalFolders] = useState<Folder[]>(folders);
   const [selectedFolderId, setSelectedFolderId] = useState<string>("");
@@ -219,12 +217,6 @@ export function SaveNoteModal({
           className="flex-shrink-0 h-6 px-3 text-[11px] font-medium bg-amber-600 hover:bg-amber-500 text-white rounded-full disabled:opacity-40 transition-colors"
         >
           {saving ? "Saving…" : "Save"}
-        </button>
-        <button
-          onClick={onDismiss}
-          className="flex-shrink-0 text-[11px] text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
-        >
-          Skip
         </button>
       </div>
 

@@ -25,6 +25,7 @@ import {
 import { Navigation } from "@/components/Navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ExportScrollModal } from "@/components/ExportScrollModal";
+import { WriteScrollModal } from "@/components/WriteScrollModal";
 import { Markdown } from "@/components/ui/markdown";
 import { api } from "@/lib/api";
 import type { Note, Folder } from "@/lib/api";
@@ -301,7 +302,7 @@ function FolderSidebar({
   };
 
   return (
-    <aside className="w-48 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full">
+    <aside className="w-48 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full overflow-x-hidden">
       <div className="px-3 py-3 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between">
         <h2 className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
           Folders
@@ -474,7 +475,7 @@ function FolderSidebar({
                 <button
                   onClick={() => onSelect(parent.id)}
                   className={cn(
-                    "flex-1 flex items-center gap-2 py-2 pr-3 text-sm text-left",
+                    "flex-1 min-w-0 flex items-center gap-2 py-2 pr-3 text-sm text-left",
                     isSelected
                       ? "text-amber-700 dark:text-amber-300 font-medium"
                       : "text-gray-600 dark:text-slate-400"
@@ -570,7 +571,7 @@ function FolderSidebar({
                             <button
                               onClick={() => onSelect(child.id)}
                               className={cn(
-                                "flex-1 flex items-center gap-1.5 pl-7 pr-2 py-2 text-sm text-left transition-colors",
+                                "flex-1 min-w-0 flex items-center gap-1.5 pl-7 pr-2 py-2 text-sm text-left transition-colors",
                                 selectedFolderId === child.id
                                   ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-medium"
                                   : "text-gray-500 dark:text-slate-500"
@@ -756,6 +757,8 @@ function LibraryContent() {
   const [exportCollection, setExportCollection] = useState(false);
   const [studyMode, setStudyMode] = useState(false);
   const [showFolderPanel, setShowFolderPanel] = useState(false);
+  const [includeChildrenMap, setIncludeChildrenMap] = useState<Record<string, boolean>>({});
+  const [showWriteModal, setShowWriteModal] = useState(false);
 
   const [searchMode, setSearchMode] = useState<"exact" | "smart">("exact");
   const [searchResults, setSearchResults] = useState<Note[] | null>(null);
@@ -836,10 +839,15 @@ function LibraryContent() {
           const selFolder = folders.find((f) => f.id === selectedFolderId);
           const selIsParent = selFolder && !selFolder.parentId;
           if (selIsParent) {
-            const childIds = folders
-              .filter((f) => f.parentId === selectedFolderId)
-              .map((f) => f.id);
-            if (n.folderId !== selectedFolderId && !childIds.includes(n.folderId)) return false;
+            const includeChildren = includeChildrenMap[selectedFolderId] !== false;
+            if (includeChildren) {
+              const childIds = folders
+                .filter((f) => f.parentId === selectedFolderId)
+                .map((f) => f.id);
+              if (n.folderId !== selectedFolderId && !childIds.includes(n.folderId)) return false;
+            } else {
+              if (n.folderId !== selectedFolderId) return false;
+            }
           } else {
             if (n.folderId !== selectedFolderId) return false;
           }
@@ -946,13 +954,34 @@ function LibraryContent() {
                   ? `${selectedFolder.icon ?? "📁"} ${selectedFolder.name}`
                   : "Scroll Library"}
               </h1>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                {loading
-                  ? "Loading..."
-                  : searchLoading
-                  ? "Searching..."
-                  : `${displayNotes.length} scroll${displayNotes.length !== 1 ? "s" : ""}${searchQuery.trim() ? ` · ${searchMode}` : ""}`}
-              </p>
+              <div className="flex items-center gap-3 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-slate-400">
+                  {loading
+                    ? "Loading..."
+                    : searchLoading
+                    ? "Searching..."
+                    : `${displayNotes.length} scroll${displayNotes.length !== 1 ? "s" : ""}${searchQuery.trim() ? ` · ${searchMode}` : ""}`}
+                </p>
+                {selectedFolderId &&
+                  !selectedFolderId.startsWith("__general__") &&
+                  selectedFolder &&
+                  !selectedFolder.parentId &&
+                  folders.some((f) => f.parentId === selectedFolderId) && (
+                    <button
+                      onClick={() =>
+                        setIncludeChildrenMap((prev) => ({
+                          ...prev,
+                          [selectedFolderId]: prev[selectedFolderId] !== false ? false : true,
+                        }))
+                      }
+                      className="text-[11px] text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                    >
+                      {includeChildrenMap[selectedFolderId] === false
+                        ? "Show subfolders ▼"
+                        : "Hide subfolders ▲"}
+                    </button>
+                  )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
@@ -964,6 +993,16 @@ function LibraryContent() {
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 Study
+              </button>
+
+              <button
+                onClick={() => setShowWriteModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-amber-200 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:border-amber-300 dark:hover:border-amber-600/50 transition-colors min-h-[36px]"
+                title="Write a scroll manually"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Write Scroll</span>
+                <span className="sm:hidden">Write</span>
               </button>
 
               <button
@@ -1144,6 +1183,23 @@ function LibraryContent() {
           notes={displayNotes}
           folderMap={folderMap}
           onExit={() => setStudyMode(false)}
+        />
+      )}
+
+      {showWriteModal && (
+        <WriteScrollModal
+          folders={folders}
+          defaultFolderId={
+            selectedFolderId && !selectedFolderId.startsWith("__general__")
+              ? selectedFolderId
+              : undefined
+          }
+          onSaved={(note) => {
+            setAllNotes((prev) => [note, ...prev]);
+            setShowWriteModal(false);
+            load();
+          }}
+          onClose={() => setShowWriteModal(false)}
         />
       )}
 

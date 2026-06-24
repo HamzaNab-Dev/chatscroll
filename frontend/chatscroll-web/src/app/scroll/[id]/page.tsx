@@ -52,7 +52,7 @@ function ScrollDetailContent() {
   const backHref = searchParams.get("from") === "chat" ? "/chat" : "/library";
   const backLabel = searchParams.get("from") === "chat" ? "Back to Chat" : "Back to Library";
   const [note, setNote] = useState<Note | null>(null);
-  const [relatedNotes, setRelatedNotes] = useState<Note[]>([]);
+  const [relatedNotes, setRelatedNotes] = useState<Array<{ id: string; title: string; folderPath?: string; folderIcon?: string; preview: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -67,9 +67,8 @@ function ScrollDetailContent() {
   const load = useCallback(async () => {
     if (!params?.id) return;
     try {
-      const [noteData, allNotes, foldersData] = await Promise.all([
+      const [noteData, foldersData] = await Promise.all([
         api.getNoteById(params.id),
-        api.getAllNotes(),
         api.getFolders(),
       ]);
       setNote(noteData);
@@ -78,12 +77,8 @@ function ScrollDetailContent() {
       // Increment view count (fire-and-forget)
       api.incrementViewCount(params.id).catch(() => {});
 
-      // Find related notes by shared tags
-      const related = allNotes
-        .filter((n) => n.id !== params.id)
-        .filter((n) => n.tags.some((t) => noteData.tags.includes(t)))
-        .slice(0, 3);
-      setRelatedNotes(related);
+      // Fetch semantically similar notes via pgvector (fire-and-forget; silently empty on miss)
+      api.getRelatedNotes(params.id).then(setRelatedNotes).catch(() => {});
     } catch {
       setNotFound(true);
     } finally {
@@ -324,7 +319,7 @@ function ScrollDetailContent() {
           />
         )}
 
-        {/* Related Scrolls */}
+        {/* Related Scrolls — powered by pgvector cosine similarity */}
         {relatedNotes.length > 0 && (
           <div>
             <div className="flex items-center gap-1.5 mb-3">
@@ -332,6 +327,9 @@ function ScrollDetailContent() {
               <h2 className="text-xs font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider">
                 Related Scrolls
               </h2>
+              <span className="text-[10px] text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/30 rounded-full px-2 py-0.5 ml-1">
+                pgvector
+              </span>
             </div>
             <div className="space-y-2">
               {relatedNotes.map((related) => (
@@ -344,17 +342,15 @@ function ScrollDetailContent() {
                     <p className="text-xs font-medium text-gray-700 dark:text-slate-300 truncate group-hover:text-amber-700 dark:group-hover:text-amber-200 transition-colors">
                       {related.title}
                     </p>
-                    {related.tags.length > 0 && (
-                      <div className="flex gap-1 mt-1 flex-wrap">
-                        {related.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[10px] text-gray-400 dark:text-slate-600 bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded px-1.5 py-0.5"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                    {related.preview && (
+                      <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                        {related.preview}
+                      </p>
+                    )}
+                    {related.folderPath && (
+                      <p className="text-[10px] text-amber-600/70 dark:text-amber-500/60 mt-1 truncate">
+                        {related.folderIcon ?? "📁"} {related.folderPath.replace(/\./g, " › ")}
+                      </p>
                     )}
                   </div>
                 </Link>

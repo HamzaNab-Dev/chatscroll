@@ -19,6 +19,7 @@ import {
   updatePassword as amplifyUpdatePassword,
 } from "aws-amplify/auth";
 import { isCognitoConfigured, cognitoConfig } from "@/lib/auth-config";
+import { api, setAuthToken } from "@/lib/api";
 
 // Configure Amplify once on the client when Cognito is available
 if (typeof window !== "undefined" && isCognitoConfigured) {
@@ -38,6 +39,7 @@ export type AuthUser = {
   displayName: string;
   plan: "free" | "pro" | "business";
   token?: string;
+  emailVerified?: boolean;
 };
 
 type AuthState =
@@ -82,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const session = await fetchAuthSession();
         const idToken = session.tokens?.idToken;
         const payload = idToken?.payload ?? {};
+        const tokenStr = idToken?.toString();
         const user: AuthUser = {
           id: userId,
           email: String(payload["email"] ?? ""),
@@ -89,10 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             payload["name"] ?? String(payload["email"] ?? "").split("@")[0]
           ),
           plan: "free",
-          token: idToken?.toString(),
+          token: tokenStr,
+          emailVerified: payload["email_verified"] === true || payload["email_verified"] === "true",
         };
+        setAuthToken(tokenStr ?? null);
         setAuthState({ status: "authenticated", user });
       } catch {
+        setAuthToken(null);
         setAuthState({ status: "unauthenticated" });
       }
     };
@@ -126,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const session = await fetchAuthSession();
     const idToken = session.tokens?.idToken;
     const payload = idToken?.payload ?? {};
+    const tokenStr = idToken?.toString();
     const user: AuthUser = {
       id: userId,
       email: String(payload["email"] ?? email),
@@ -133,8 +140,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         payload["name"] ?? String(payload["email"] ?? email).split("@")[0]
       ),
       plan: "free",
-      token: idToken?.toString(),
+      token: tokenStr,
+      emailVerified: payload["email_verified"] === true || payload["email_verified"] === "true",
     };
+    setAuthToken(tokenStr ?? null);
+
+    // Migrate any anonymous data from this browser to the Cognito account (runs once).
+    // Token is set above so the API call will carry Authorization: Bearer.
+    const anonId = localStorage.getItem("cs_user_id");
+    if (anonId) {
+      try {
+        await api.migrateAnonymous(anonId);
+      } catch {
+        // Non-fatal: no anonymous data to migrate, or already migrated.
+      } finally {
+        localStorage.removeItem("cs_user_id");
+      }
+    }
+
     setAuthState({ status: "authenticated", user });
   };
 
@@ -164,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isCognitoConfigured) {
       await amplifySignOut();
     }
+    setAuthToken(null);
     setAuthState({ status: "unauthenticated" });
   };
 

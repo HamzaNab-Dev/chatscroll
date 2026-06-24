@@ -15,5 +15,6 @@ public interface INoteRepository
     Task<Note> UpdateAsync(Note note);
     Task DeleteAsync(Guid id, Guid userId);
     Task IncrementViewCountAsync(Guid id, Guid userId);
+    Task<IEnumerable<Note>> GetRelatedAsync(Guid noteId, Guid userId, int limit = 3);
     Task<(int success, int failed, int total)> BackfillEmbeddingsAsync();
 }

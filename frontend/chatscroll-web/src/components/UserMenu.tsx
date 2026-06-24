@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User, Zap, Rocket } from "lucide-react";
+import { LogOut, Zap, Rocket, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { isCognitoConfigured } from "@/lib/auth-config";
 
@@ -77,19 +77,19 @@ export function UserMenu() {
         <DropdownMenuSeparator className="bg-gray-200 dark:bg-slate-800" />
 
         <DropdownMenuItem
+          onClick={() => router.push("/profile")}
+          className="cursor-pointer"
+        >
+          <User className="w-4 h-4 mr-2" />
+          Profile
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
           onClick={() => router.push("/plans")}
           className="text-amber-600 dark:text-amber-400 focus:bg-amber-50 dark:focus:bg-amber-950/30 focus:text-amber-700 dark:focus:text-amber-300 cursor-pointer font-medium"
         >
           <Rocket className="w-4 h-4 mr-2" />
           Upgrade your plan
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          onClick={() => router.push("/profile")}
-          className="text-gray-700 dark:text-slate-300 focus:bg-gray-100 dark:focus:bg-slate-800 focus:text-gray-900 dark:focus:text-slate-100 cursor-pointer"
-        >
-          <User className="w-4 h-4 mr-2" />
-          Profile
         </DropdownMenuItem>
 
         <DropdownMenuSeparator className="bg-gray-200 dark:bg-slate-800" />

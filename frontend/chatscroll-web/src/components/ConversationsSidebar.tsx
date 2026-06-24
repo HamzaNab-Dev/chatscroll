@@ -207,7 +207,7 @@ export function ConversationsSidebar({
   return (
     <aside className="w-56 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full">
       {/* New Chat button */}
-      <div className="p-3 border-b border-gray-200 dark:border-slate-800">
+      <div className="px-3 py-1 border-b border-gray-200 dark:border-slate-800">
         <button
           onClick={onNew}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors font-medium"

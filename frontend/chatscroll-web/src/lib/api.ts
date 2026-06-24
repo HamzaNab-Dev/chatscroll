@@ -1,5 +1,11 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5001";
 
+// Set by AuthContext whenever auth state changes. Used to attach JWT to API calls.
+let _authToken: string | null = null;
+export function setAuthToken(token: string | null): void {
+  _authToken = token;
+}
+
 function getUserId(): string {
   if (typeof window === "undefined") return "00000000-0000-0000-0000-000000000001";
   let id = localStorage.getItem("cs_user_id");
@@ -100,19 +106,39 @@ export type SharedNote = {
   folderPath?: string;
 };
 
+export type UserMe = {
+  id: string;
+  email: string;
+  displayName: string;
+  plan: string;
+  createdAt: string;
+  totalScrolls: number;
+  totalFolders: number;
+  totalConversations: number;
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const { headers: extraHeaders, ...restOptions } = options ?? {};
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(extraHeaders as Record<string, string> | undefined),
+  };
+
+  if (_authToken) {
+    // Cognito JWT — backend resolves identity from the sub claim
+    headers["Authorization"] = `Bearer ${_authToken}`;
+  } else {
+    // Anonymous browser user — identified by stable localStorage UUID
+    headers["X-User-Id"] = getUserId();
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     ...restOptions,
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Id": getUserId(),
-      ...(extraHeaders as Record<string, string> | undefined),
-    },
+    headers,
     credentials: "include",
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
-  // 204 No Content and other empty responses have no body to parse
   if (res.status === 204 || res.headers.get("content-length") === "0") {
     return undefined as T;
   }
@@ -121,6 +147,20 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // ── Users ────────────────────────────────────────────────────────────────────
+  getMe: () => request<UserMe>("/api/users/me"),
+  updateMe: (data: { displayName: string }) =>
+    request<{ id: string; displayName: string }>("/api/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  migrateAnonymous: (anonymousUserId: string) =>
+    request<{ migrated: boolean; recordsMigrated: number }>("/api/users/me/migrate-anonymous", {
+      method: "POST",
+      body: JSON.stringify({ anonymousUserId }),
+    }),
+
+  // ── Folders ──────────────────────────────────────────────────────────────────
   getFolders: () => request<Folder[]>("/api/folders"),
   getFolderTree: () => request<Folder[]>("/api/folders/tree"),
   createFolder: (data: { name: string; path: string; icon?: string; color?: string; parentId?: string }) =>
@@ -130,6 +170,7 @@ export const api = {
   deleteFolder: (id: string) =>
     request<void>(`/api/folders/${id}`, { method: "DELETE" }),
 
+  // ── Notes ────────────────────────────────────────────────────────────────────
   getNotesByFolder: (folderId: string) =>
     request<Note[]>(`/api/notes/folder/${folderId}`),
   getNoteById: (id: string) =>
@@ -149,26 +190,26 @@ export const api = {
     tags?: string[];
     codeLanguage?: string;
   }) => request<Note>("/api/notes", { method: "POST", body: JSON.stringify(data) }),
-  getAllNotes: () =>
-    request<Note[]>("/api/notes/all"),
-  getRecentNotes: (limit = 4) =>
-    request<Note[]>(`/api/notes/recent?limit=${limit}`),
+  getAllNotes: () => request<Note[]>("/api/notes/all"),
+  getRecentNotes: (limit = 4) => request<Note[]>(`/api/notes/recent?limit=${limit}`),
   incrementViewCount: (id: string) =>
     request<void>(`/api/notes/${id}/view`, { method: "PUT" }),
-  deleteNote: (id: string) =>
-    request<void>(`/api/notes/${id}`, { method: "DELETE" }),
+  deleteNote: (id: string) => request<void>(`/api/notes/${id}`, { method: "DELETE" }),
   updateNote: (id: string, data: { folderId?: string; title?: string; tags?: string[] }) =>
     request<Note>(`/api/notes/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  getRelatedNotes: (id: string) =>
+    request<Array<{ id: string; title: string; folderPath?: string; folderIcon?: string; preview: string }>>(`/api/notes/${id}/related`),
 
+  // ── Chat ─────────────────────────────────────────────────────────────────────
   sendMessage: (message: string, conversationHistory: string, conversationId?: string, isGuest = false) =>
     request<ChatResponse>("/api/chat/message", {
       method: "POST",
       body: JSON.stringify({ message, conversationHistory, conversationId, isGuest }),
     }),
-
   previewChat: (q: string) =>
     request<ChatResponse>(`/api/chat/preview?q=${encodeURIComponent(q)}`),
 
+  // ── Conversations ─────────────────────────────────────────────────────────────
   getConversations: () => request<Conversation[]>("/api/conversations"),
   createConversation: (title?: string) =>
     request<Conversation>("/api/conversations", {
@@ -185,12 +226,10 @@ export const api = {
   getConversationMessages: (id: string) =>
     request<Array<{ role: string; content: string; timestamp: string }>>(`/api/conversations/${id}/messages`),
 
-  getSharedNote: (id: string) =>
-    request<SharedNote>(`/api/notes/shared/${id}`),
-
+  // ── Shared / Other ────────────────────────────────────────────────────────────
+  getSharedNote: (id: string) => request<SharedNote>(`/api/notes/shared/${id}`),
   getAiStatus: () =>
     request<{ aiService: string; isRealAi: boolean; model: string; status: string }>("/api/chat/ai-status"),
-
   getDatabaseHealth: () =>
     request<Record<string, unknown>>("/api/health/database"),
 };

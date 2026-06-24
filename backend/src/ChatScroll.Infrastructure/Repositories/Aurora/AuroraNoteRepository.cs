@@ -80,9 +80,8 @@ public class AuroraNoteRepository : INoteRepository
         var vecStr = '[' + string.Join(",",
             embedding.Select(f => f.ToString("G6", CultureInfo.InvariantCulture))) + ']';
 
-        // Only include notes whose cosine similarity exceeds 0.5 (1 - distance > 0.5).
-        // Results are ordered best-match-first (ascending distance = descending similarity).
-        var vectorResults = await _db.Notes
+        // Step 1: Get the single best-match note (low threshold — ensures we always find a #1)
+        var topResults = await _db.Notes
             .FromSqlInterpolated($"""
                 SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
                        clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
@@ -91,17 +90,57 @@ public class AuroraNoteRepository : INoteRepository
                   AND embedding IS NOT NULL
                   AND 1 - (embedding <=> {vecStr}::vector) > 0.5
                 ORDER BY embedding <=> {vecStr}::vector
+                LIMIT 1
+                """)
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (topResults.Count == 0)
+            return textResults;
+
+        var topNote = topResults[0];
+
+        // Step 2: Determine the root folder of the #1 result
+        var userFolders = await _db.Folders
+            .Where(f => f.UserId == userId)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var topFolder = userFolders.FirstOrDefault(f => f.Id == topNote.FolderId);
+        if (topFolder == null)
+            return new[] { topNote }; // folder was deleted; return just the top result
+
+        var rootSegment = topFolder.Path.Split('.')[0];
+
+        // All folder IDs that belong to the same root subtree
+        var rootFolderIds = userFolders
+            .Where(f => f.Path == rootSegment || f.Path.StartsWith(rootSegment + '.'))
+            .Select(f => f.Id)
+            .ToHashSet();
+
+        // Step 3: Get additional candidates with a higher similarity threshold (0.65)
+        var topNoteId = topNote.Id;
+        var candidates = await _db.Notes
+            .FromSqlInterpolated($"""
+                SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
+                       clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
+                FROM notes
+                WHERE user_id = {userId}
+                  AND embedding IS NOT NULL
+                  AND id != {topNoteId}
+                  AND 1 - (embedding <=> {vecStr}::vector) > 0.65
+                ORDER BY embedding <=> {vecStr}::vector
                 LIMIT 10
                 """)
             .AsNoTracking()
             .ToListAsync();
 
-        // If no notes pass the semantic threshold, fall back to text results so the
-        // user always sees something rather than an empty list.
-        if (vectorResults.Count == 0)
-            return textResults;
+        // Step 4: Keep only candidates within the same root folder subtree
+        var scoped = candidates.Where(n => rootFolderIds.Contains(n.FolderId)).ToList();
 
-        return vectorResults.Take(10).ToList();
+        var results = new List<Note>(capacity: scoped.Count + 1) { topNote };
+        results.AddRange(scoped.Take(9));
+        return results;
     }
 
     public async Task<IEnumerable<Note>> SearchExactAsync(Guid userId, string query)
@@ -136,6 +175,27 @@ public class AuroraNoteRepository : INoteRepository
                 merged.Add(r);
 
         return merged;
+    }
+
+    public async Task<IEnumerable<Note>> GetRelatedAsync(Guid noteId, Guid userId, int limit = 3)
+    {
+        // Use a subquery to pull the current note's embedding inline.
+        // If the note has no embedding the subquery returns NULL, the IS NOT NULL check
+        // produces zero rows, and the caller gets an empty list — no error thrown.
+        return await _db.Notes
+            .FromSqlInterpolated($"""
+                SELECT id, user_id, folder_id, conversation_id, title, original_question, original_answer,
+                       clean_content, tags, code_language, view_count, last_viewed_at, created_at, updated_at
+                FROM notes
+                WHERE user_id = {userId}
+                  AND id != {noteId}
+                  AND embedding IS NOT NULL
+                  AND (SELECT embedding FROM notes WHERE id = {noteId} AND user_id = {userId}) IS NOT NULL
+                ORDER BY embedding <=> (SELECT embedding FROM notes WHERE id = {noteId} AND user_id = {userId})
+                LIMIT {limit}
+                """)
+            .AsNoTracking()
+            .ToListAsync();
     }
 
     public async Task<Note> CreateAsync(Note note)

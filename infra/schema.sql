@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS notes (
     original_question   TEXT,
     original_answer     TEXT,
     clean_content       TEXT NOT NULL,
-    embedding           VECTOR(1024),
+    embedding           VECTOR(3072),
     search_vector       TSVECTOR,
     tags                TEXT[] DEFAULT '{}',
     code_language       VARCHAR(50),
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS question_history (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id             UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     question_text       TEXT NOT NULL,
-    question_embedding  VECTOR(1024),
+    question_embedding  VECTOR(3072),
     matched_note_id     UUID REFERENCES notes(id) ON DELETE SET NULL,
     asked_at            TIMESTAMPTZ DEFAULT NOW()
 );

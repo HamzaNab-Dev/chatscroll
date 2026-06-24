@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ScrollText, FolderOpen, Brain, Zap } from "lucide-react";
@@ -77,6 +77,7 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
   const [searching, setSearching] = useState(false);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyActivity[] | null>(null);
+  const [includeChildrenMap, setIncludeChildrenMap] = useState<Record<string, boolean>>({});
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Ctrl/Cmd+K focuses search
@@ -97,19 +98,21 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
   }, []);
 
   useEffect(() => {
-    if (selectedFolder) {
-      setLoadingNotes(true);
-      // Virtual "General" node (icon "📝") represents notes stored directly in the parent —
-      // fetch only that folder's direct notes, not its children's.
-      const isVirtualGeneral = selectedFolder.icon === "📝";
-      const childFolders = isVirtualGeneral ? [] : folders.filter((f) => f.parentId === selectedFolder.id);
-      const folderIds = [selectedFolder.id, ...childFolders.map((f) => f.id)];
-      Promise.all(folderIds.map((id) => api.getNotesByFolder(id)))
-        .then((results) => setNotes(results.flat()))
-        .catch(console.error)
-        .finally(() => setLoadingNotes(false));
-    }
-  }, [selectedFolder, refreshKey, folders]);
+    if (!selectedFolder) return;
+    setLoadingNotes(true);
+    // Virtual "General" node (icon "📝") — only fetch direct notes for that folder.
+    const isVirtualGeneral = selectedFolder.icon === "📝";
+    const hasChildren = !isVirtualGeneral && folders.some((f) => f.parentId === selectedFolder.id);
+    const shouldIncludeChildren = hasChildren && includeChildrenMap[selectedFolder.id] !== false;
+    const childFolders = shouldIncludeChildren
+      ? folders.filter((f) => f.parentId === selectedFolder.id)
+      : [];
+    const folderIds = [selectedFolder.id, ...childFolders.map((f) => f.id)];
+    Promise.all(folderIds.map((id) => api.getNotesByFolder(id)))
+      .then((results) => setNotes(results.flat()))
+      .catch(console.error)
+      .finally(() => setLoadingNotes(false));
+  }, [selectedFolder, refreshKey, folders, includeChildrenMap]);
 
   const loadStats = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -149,6 +152,17 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
   };
 
   const totalNotes = folders.reduce((sum, f) => sum + f.noteCount, 0);
+
+  const folderById = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
+
+  const getNoteFolderLabel = (folderId: string): string | null => {
+    const folder = folderById.get(folderId);
+    if (!folder) return null;
+    const parent = folder.parentId ? folderById.get(folder.parentId) : undefined;
+    return parent
+      ? `${parent.icon ?? "📁"} ${parent.name} → ${folder.icon ?? "📁"} ${folder.name}`
+      : `${folder.icon ?? "📁"} ${folder.name}`;
+  };
 
   if (!isAuthenticated) {
     return (
@@ -221,18 +235,24 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
               </div>
             )}
             {/* Fix 1: navigate to /scroll/[id] instead of opening NoteViewer */}
-            {searchResults.map((note) => (
-              <button
-                key={note.id}
-                onClick={() => router.push(`/scroll/${note.id}`)}
-                className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 hover:border-amber-300 dark:hover:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-slate-800/60 transition-all"
-              >
-                <p className="text-sm text-gray-800 dark:text-slate-200 truncate">{note.title}</p>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                  {formatDate(note.createdAt)}
-                </p>
-              </button>
-            ))}
+            {searchResults.map((note) => {
+              const folderLabel = getNoteFolderLabel(note.folderId);
+              return (
+                <button
+                  key={note.id}
+                  onClick={() => router.push(`/scroll/${note.id}`)}
+                  className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 hover:border-amber-300 dark:hover:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-slate-800/60 transition-all"
+                >
+                  {folderLabel && (
+                    <p className="text-[10px] text-amber-600 dark:text-amber-500 mb-0.5 truncate">{folderLabel}</p>
+                  )}
+                  <p className="text-sm text-gray-800 dark:text-slate-200 truncate">{note.title}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                    {formatDate(note.createdAt)}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -246,9 +266,25 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
                 ← Back
               </button>
               <span className="text-xs text-gray-300 dark:text-slate-500">·</span>
-              <span className="text-xs text-gray-500 dark:text-slate-400">
+              <span className="text-xs text-gray-500 dark:text-slate-400 truncate">
                 {selectedFolder.icon} {selectedFolder.name}
               </span>
+              {selectedFolder.icon !== "📝" &&
+                folders.some((f) => f.parentId === selectedFolder.id) && (
+                  <button
+                    onClick={() =>
+                      setIncludeChildrenMap((prev) => ({
+                        ...prev,
+                        [selectedFolder.id]: prev[selectedFolder.id] !== false ? false : true,
+                      }))
+                    }
+                    className="ml-auto flex-shrink-0 text-[10px] text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                  >
+                    {includeChildrenMap[selectedFolder.id] === false
+                      ? "Show subfolders ▼"
+                      : "Hide subfolders ▲"}
+                  </button>
+                )}
             </div>
 
             {loadingNotes && (
@@ -273,32 +309,37 @@ export function KnowledgePanel({ folders, refreshKey }: KnowledgePanelProps) {
 
             {!loadingNotes && notes.length > 0 && (
               <div className="space-y-2">
-                {notes.map((note) => (
-                  /* Fix 1: navigate to /scroll/[id] instead of NoteViewer */
-                  <button
-                    key={note.id}
-                    onClick={() => router.push(`/scroll/${note.id}`)}
-                    className="w-full text-left px-3 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 hover:border-amber-300 dark:hover:border-amber-500/30 hover:bg-amber-50/50 dark:hover:bg-slate-800/60 transition-all group"
-                  >
-                    <p className="text-sm text-gray-800 dark:text-slate-200 font-medium truncate group-hover:text-amber-700 dark:group-hover:text-amber-200 transition-colors">
-                      {note.title}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 line-clamp-2">
-                      {(() => { const t = note.cleanContent.replace(/[#*`_>]/g, "").replace(/\s+/g, " ").trim(); if (t.length <= 90) return t; const cut = t.slice(0, 90); const s = cut.lastIndexOf(" "); return (s > 0 ? cut.slice(0, s) : cut) + "..."; })()}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      {note.tags.slice(0, 3).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-xs border-gray-300 dark:border-slate-700 text-gray-400 dark:text-slate-500 py-0"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </button>
-                ))}
+                {notes.map((note) => {
+                  const folderLabel = getNoteFolderLabel(note.folderId);
+                  return (
+                    <button
+                      key={note.id}
+                      onClick={() => router.push(`/scroll/${note.id}`)}
+                      className="w-full text-left px-3 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40 hover:border-amber-300 dark:hover:border-amber-500/30 hover:bg-amber-50/50 dark:hover:bg-slate-800/60 transition-all group"
+                    >
+                      {folderLabel && (
+                        <p className="text-[10px] text-amber-600 dark:text-amber-500 mb-1 truncate">{folderLabel}</p>
+                      )}
+                      <p className="text-sm text-gray-800 dark:text-slate-200 font-medium truncate group-hover:text-amber-700 dark:group-hover:text-amber-200 transition-colors">
+                        {note.title}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-slate-600 mt-1 line-clamp-2">
+                        {(() => { const t = note.cleanContent.replace(/[#*`_>]/g, "").replace(/\s+/g, " ").trim(); if (t.length <= 90) return t; const cut = t.slice(0, 90); const s = cut.lastIndexOf(" "); return (s > 0 ? cut.slice(0, s) : cut) + "..."; })()}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        {note.tags.slice(0, 3).map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="text-xs border-gray-300 dark:border-slate-700 text-gray-400 dark:text-slate-500 py-0"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
