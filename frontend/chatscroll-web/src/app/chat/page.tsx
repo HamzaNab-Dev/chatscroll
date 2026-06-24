@@ -17,6 +17,7 @@ const PINNED_KEY = "cs_pinned_convs";
 function ChatContent() {
   const { isAuthenticated, authState } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [foldersLoading, setFoldersLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
   const [conversationId, setConversationId] = useState<string>(() => crypto.randomUUID());
@@ -137,12 +138,14 @@ function ChatContent() {
   }, [authState.status]);
 
   const loadFolders = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) { setFoldersLoading(false); return; }
     try {
       const data = await api.getFolders();
       setFolders(data);
     } catch (err) {
       console.error("Failed to load folders:", err);
+    } finally {
+      setFoldersLoading(false);
     }
   }, [isAuthenticated]);
 
@@ -286,6 +289,7 @@ function ChatContent() {
           <ChatPanel
             key={conversationId}
             folders={folders}
+            foldersLoading={foldersLoading}
             onNoteSaved={handleNoteSaved}
             initialMessage={initialMessage}
             conversationId={conversationId}

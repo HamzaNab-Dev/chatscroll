@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, Plus, X } from "lucide-react";
+import { ChevronDown, Plus, X, Loader2 } from "lucide-react";
 import type { Folder, FolderSuggestion } from "@/lib/api";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -26,12 +26,18 @@ function sortFoldersForPicker(folders: Folder[]): Folder[] {
 
 const FOLDER_ICONS = ["📁","💻","🔷","🏥","📚","🎓","🔬","💡","🎯","🚀","💼","🎮","🍕","🎵","📝","🌐","🔧","⚡","🧪","📊","🏋️","🌱","🎨","🐍","🦀","☁️"];
 
+// Slugs that are too generic to be worth creating as child folders.
+// When the only missing segment is one of these and a parent already exists,
+// we save directly in the parent instead.
+const GENERIC_SLUGS = new Set(["general", "misc", "other", "miscellaneous"]);
+
 
 interface SaveNoteModalProps {
   question: string;
   cleanNote: string;
   folderSuggestion: FolderSuggestion;
   folders: Folder[];
+  foldersLoading?: boolean;
   onSave: (folderId: string, title: string) => Promise<void>;
 }
 
@@ -59,6 +65,7 @@ export function SaveNoteModal({
   cleanNote: _cleanNote,
   folderSuggestion,
   folders,
+  foldersLoading = false,
   onSave,
 }: SaveNoteModalProps) {
   const [localFolders, setLocalFolders] = useState<Folder[]>(folders);
@@ -84,14 +91,26 @@ export function SaveNoteModal({
     : suggestedFolder;
 
   // An exact match means the deepest existing folder covers the full suggested path.
-  // A partial match (parent found but child missing) still requires folder creation.
   const hasExactMatch = !selectedFolderId && suggestedFolder?.path === folderSuggestion.suggestedPath;
-  const willCreateFolder = !selectedFolderId && !hasExactMatch;
 
-  // Show full suggested path whenever we'll be creating anything — partial match included.
+  // True when the only missing segment is a generic catch-all (e.g. "general", "misc").
+  // In this case we save directly in the parent — no new folder is created.
+  const pathSegments = folderSuggestion.suggestedPath.split(".");
+  const existingDepth = suggestedFolder ? suggestedFolder.path.split(".").length : 0;
+  const pendingSegments = pathSegments.slice(existingDepth);
+  const isGenericChildOnly =
+    !selectedFolderId &&
+    !!suggestedFolder &&
+    pendingSegments.length === 1 &&
+    GENERIC_SLUGS.has(pendingSegments[0].toLowerCase());
+
+  const willCreateFolder = !selectedFolderId && !hasExactMatch && !isGenericChildOnly;
+
+  // Label: show parent path when the generic-child guard applies; full path when creating.
   const folderLabel = (() => {
     if (selectedFolderId && activeFolder) return formatPath(activeFolder.path);
     if (hasExactMatch && activeFolder) return formatPath(activeFolder.path);
+    if (isGenericChildOnly && suggestedFolder) return formatPath(suggestedFolder.path);
     return formatPath(folderSuggestion.suggestedPath);
   })();
 
@@ -107,37 +126,50 @@ export function SaveNoteModal({
           folderId = suggestedFolder.id;
         } else {
           // Partial match or no match: create every missing segment in order.
-          // E.g. suggested "programming.software" with "programming" already existing
-          // → only create "software" as a child of "programming".
+          // E.g. suggested "programming.docker" with "programming" already existing
+          // → only create "docker" as a child of "programming".
           const allSegments = folderSuggestion.suggestedPath.split(".");
           const existingDepth = suggestedFolder ? suggestedFolder.path.split(".").length : 0;
           const segmentsToCreate = allSegments.slice(existingDepth);
 
-          let parent: { id: string; path: string } | null = suggestedFolder
-            ? { id: suggestedFolder.id, path: suggestedFolder.path }
-            : null;
+          // Guard: if the only segment to create is a generic catch-all name and a parent
+          // folder already exists, save directly in the parent — never auto-create a
+          // meaningless child folder.
+          if (
+            suggestedFolder &&
+            segmentsToCreate.length === 1 &&
+            GENERIC_SLUGS.has(segmentsToCreate[0].toLowerCase())
+          ) {
+            folderId = suggestedFolder.id;
+          } else {
+            let parent: { id: string; path: string } | null = suggestedFolder
+              ? { id: suggestedFolder.id, path: suggestedFolder.path }
+              : null;
 
-          for (let i = 0; i < segmentsToCreate.length; i++) {
-            const seg = segmentsToCreate[i];
-            const slug = seg.toLowerCase().replace(/[^a-z0-9_]/g, "_") || "general";
-            const isLeaf = i === segmentsToCreate.length - 1;
-            // Leaf gets the AI's human-readable name; intermediate segments get capitalized slug.
-            const name = isLeaf
-              ? (folderSuggestion.suggestedName || slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
-              : slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-            const path = parent ? `${parent.path}.${slug}` : slug;
+            for (let i = 0; i < segmentsToCreate.length; i++) {
+              const seg = segmentsToCreate[i];
+              const slug = seg.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+              // Skip empty slugs that would produce a meaningless folder
+              if (!slug) continue;
+              const isLeaf = i === segmentsToCreate.length - 1;
+              // Leaf gets the AI's human-readable name; intermediate segments get capitalized slug.
+              const name = isLeaf
+                ? (folderSuggestion.suggestedName || slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()))
+                : slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+              const path = parent ? `${parent.path}.${slug}` : slug;
 
-            const created = await api.createFolder({
-              name,
-              path,
-              icon: "📁",
-              parentId: parent?.id,
-            });
-            setLocalFolders((prev) => [...prev, created]);
-            parent = { id: created.id, path: created.path };
+              const created = await api.createFolder({
+                name,
+                path,
+                icon: "📁",
+                parentId: parent?.id,
+              });
+              setLocalFolders((prev) => [...prev, created]);
+              parent = { id: created.id, path: created.path };
+            }
+
+            folderId = parent?.id ?? "";
           }
-
-          folderId = parent?.id ?? "";
         }
       }
 
@@ -185,23 +217,24 @@ export function SaveNoteModal({
 
   return (
     <div className="rounded-xl border border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/10">
-      {/* Compact single row */}
-      <div className="flex items-center gap-2 px-3 py-1.5">
+      {/* Compact single row — all children are flex-shrink-0 except the picker button */}
+      <div className="flex items-center gap-2 px-3 py-1.5 w-full">
         <span className="text-sm flex-shrink-0">📜</span>
 
-        <div className="flex-1 min-w-0">
+        {foldersLoading && localFolders.length === 0 ? (
+          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-500 flex-1 min-w-0">
+            <Loader2 className="w-3 h-3 animate-spin flex-shrink-0" />
+            <span>Loading folders…</span>
+          </div>
+        ) : (
+          /* Picker button takes all remaining width; text truncates inside it */
           <button
             onClick={() => { setShowPicker((v) => !v); setShowNewFolder(false); }}
-            className="flex items-center gap-1 group min-w-0"
+            className="flex items-center gap-1 group flex-1 min-w-0"
           >
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-400 truncate group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
+            <span className="text-xs font-medium text-amber-700 dark:text-amber-400 truncate min-w-0 flex-1 text-left group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
               {folderLabel}
             </span>
-            {willCreateFolder && (
-              <span className="text-[9px] font-bold bg-emerald-500 text-white rounded-full px-1.5 py-px leading-none flex-shrink-0">
-                New
-              </span>
-            )}
             <ChevronDown
               className={cn(
                 "w-3 h-3 flex-shrink-0 text-amber-500 dark:text-amber-500 transition-transform",
@@ -209,7 +242,14 @@ export function SaveNoteModal({
               )}
             />
           </button>
-        </div>
+        )}
+
+        {/* Badge lives outside the picker button so it never competes with the text */}
+        {willCreateFolder && (
+          <span className="text-[9px] font-bold bg-emerald-500 text-white rounded-full px-1.5 py-px leading-none flex-shrink-0">
+            New
+          </span>
+        )}
 
         <button
           onClick={handleSave}

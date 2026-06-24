@@ -31,6 +31,7 @@ const WELCOME_MESSAGE: Message = {
 
 interface ChatPanelProps {
   folders: Folder[];
+  foldersLoading?: boolean;
   onNoteSaved: (folderId: string) => void;
   initialMessage?: string;
   conversationId?: string;
@@ -40,6 +41,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({
   folders,
+  foldersLoading = false,
   onNoteSaved,
   initialMessage,
   conversationId,
@@ -436,6 +438,7 @@ export function ChatPanel({
                         cleanNote={message.cleanNote ?? message.content}
                         folderSuggestion={message.folderSuggestion ?? { suggestedPath: "general", suggestedName: "General", reasoning: "", isNewFolder: true }}
                         folders={folders}
+                        foldersLoading={foldersLoading}
                         onSave={(folderId, title) =>
                           handleSaveNote(message.id, folderId, title, message)
                         }
