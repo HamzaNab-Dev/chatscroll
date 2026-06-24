@@ -210,7 +210,7 @@ export function ConversationsSidebar({
       <div className="px-3 py-1 border-b border-gray-200 dark:border-slate-800">
         <button
           onClick={onNew}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors font-medium"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/35 transition-colors font-medium"
         >
           <PenSquare className="w-3.5 h-3.5" />
           New Chat

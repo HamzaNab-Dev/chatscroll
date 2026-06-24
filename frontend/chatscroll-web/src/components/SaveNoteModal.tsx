@@ -72,7 +72,11 @@ export function SaveNoteModal({
   const [selectedFolderId, setSelectedFolderId] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string>("");
-  const [showPicker, setShowPicker] = useState(false);
+  // Open the picker immediately when there is no meaningful AI suggestion.
+  const [showPicker, setShowPicker] = useState(() => {
+    const p = folderSuggestion.suggestedPath;
+    return !p || (p.split(".").length === 1 && GENERIC_SLUGS.has(p.toLowerCase()));
+  });
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderIcon, setNewFolderIcon] = useState("📁");
@@ -83,35 +87,48 @@ export function SaveNoteModal({
     setLocalFolders(folders);
   }, [folders]);
 
+  const suggestedPath = folderSuggestion.suggestedPath ?? "";
+
   // Smart suggestion: exact path → parent segments → first leaf
-  const suggestedFolder = findBestFolder(localFolders, folderSuggestion.suggestedPath);
+  const suggestedFolder = findBestFolder(localFolders, suggestedPath);
 
   const activeFolder = selectedFolderId
     ? localFolders.find((f) => f.id === selectedFolderId)
     : suggestedFolder;
 
   // An exact match means the deepest existing folder covers the full suggested path.
-  const hasExactMatch = !selectedFolderId && suggestedFolder?.path === folderSuggestion.suggestedPath;
+  const hasExactMatch = !selectedFolderId && !!suggestedPath && suggestedFolder?.path === suggestedPath;
 
-  // True when the only missing segment is a generic catch-all (e.g. "general", "misc").
-  // In this case we save directly in the parent — no new folder is created.
-  const pathSegments = folderSuggestion.suggestedPath.split(".");
+  // No meaningful suggestion: empty path, or the entire path is a single generic slug
+  // (e.g. "general", "misc") with no existing folder to fall back to.
+  const pathSegments = suggestedPath ? suggestedPath.split(".") : [];
+  const isNoSuggestion =
+    !selectedFolderId &&
+    (!suggestedPath ||
+      (pathSegments.length === 1 &&
+        GENERIC_SLUGS.has(pathSegments[0].toLowerCase()) &&
+        !suggestedFolder));
+
+  // True when the only missing segment is a generic catch-all under an existing parent.
+  // Save directly in the parent — no new child folder is created.
   const existingDepth = suggestedFolder ? suggestedFolder.path.split(".").length : 0;
   const pendingSegments = pathSegments.slice(existingDepth);
   const isGenericChildOnly =
     !selectedFolderId &&
+    !isNoSuggestion &&
     !!suggestedFolder &&
     pendingSegments.length === 1 &&
     GENERIC_SLUGS.has(pendingSegments[0].toLowerCase());
 
-  const willCreateFolder = !selectedFolderId && !hasExactMatch && !isGenericChildOnly;
+  const willCreateFolder = !selectedFolderId && !hasExactMatch && !isGenericChildOnly && !isNoSuggestion;
 
-  // Label: show parent path when the generic-child guard applies; full path when creating.
+  // Label display
   const folderLabel = (() => {
     if (selectedFolderId && activeFolder) return formatPath(activeFolder.path);
     if (hasExactMatch && activeFolder) return formatPath(activeFolder.path);
     if (isGenericChildOnly && suggestedFolder) return formatPath(suggestedFolder.path);
-    return formatPath(folderSuggestion.suggestedPath);
+    if (isNoSuggestion) return null; // rendered separately as placeholder
+    return formatPath(suggestedPath);
   })();
 
   const handleSave = async () => {
@@ -125,10 +142,23 @@ export function SaveNoteModal({
           // Full path already exists — use it directly.
           folderId = suggestedFolder.id;
         } else {
+          // If there is no meaningful suggestion, require the user to pick a folder
+          // rather than auto-creating a generic one.
+          if (isNoSuggestion) {
+            if (localFolders.length > 0) {
+              setSaveError("Please select a folder from the list.");
+              setShowPicker(true);
+              return;
+            }
+            // No folders exist at all — create a neutral starter folder.
+            const created = await api.createFolder({ name: "Notes", path: "notes", icon: "📝" });
+            setLocalFolders((prev) => [...prev, created]);
+            folderId = created.id;
+          } else {
           // Partial match or no match: create every missing segment in order.
           // E.g. suggested "programming.docker" with "programming" already existing
           // → only create "docker" as a child of "programming".
-          const allSegments = folderSuggestion.suggestedPath.split(".");
+          const allSegments = suggestedPath.split(".");
           const existingDepth = suggestedFolder ? suggestedFolder.path.split(".").length : 0;
           const segmentsToCreate = allSegments.slice(existingDepth);
 
@@ -170,6 +200,7 @@ export function SaveNoteModal({
 
             folderId = parent?.id ?? "";
           }
+          } // end else (not isNoSuggestion)
         }
       }
 
@@ -232,9 +263,15 @@ export function SaveNoteModal({
             onClick={() => { setShowPicker((v) => !v); setShowNewFolder(false); }}
             className="flex items-center gap-1 group flex-1 min-w-0"
           >
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-400 truncate min-w-0 flex-1 text-left group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
-              {folderLabel}
-            </span>
+            {isNoSuggestion ? (
+              <span className="text-xs text-gray-400 dark:text-slate-500 truncate min-w-0 flex-1 text-left italic group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
+                Select a folder…
+              </span>
+            ) : (
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400 truncate min-w-0 flex-1 text-left group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
+                {folderLabel}
+              </span>
+            )}
             <ChevronDown
               className={cn(
                 "w-3 h-3 flex-shrink-0 text-amber-500 dark:text-amber-500 transition-transform",

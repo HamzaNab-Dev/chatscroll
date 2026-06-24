@@ -79,7 +79,27 @@ jobs:
 
       - name: Wait for ECS service to stabilize
         run: |
-          aws ecs wait services-stable \
-            --cluster default \
-            --services chatscroll-api \
-            --region us-east-1
+          for i in {1..40}; do
+            STATUS=$(aws ecs describe-services \
+              --cluster default \
+              --services chatscroll-api \
+              --region us-east-1 \
+              --query 'services[0].deployments[0].status' \
+              --output text)
+            if [ "$STATUS" = "PRIMARY" ]; then
+              RUNNING=$(aws ecs describe-services \
+                --cluster default \
+                --services chatscroll-api \
+                --region us-east-1 \
+                --query 'services[0].runningCount' \
+                --output text)
+              if [ "$RUNNING" -gt "0" ]; then
+                echo "Service is stable"
+                exit 0
+              fi
+            fi
+            echo "Waiting... attempt $i (status=$STATUS)"
+            sleep 15
+          done
+          echo "Timeout waiting for service to stabilize"
+          exit 1

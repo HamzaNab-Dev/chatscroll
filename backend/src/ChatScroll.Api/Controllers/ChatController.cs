@@ -169,7 +169,7 @@ public class ChatController : ApiControllerBase
         {
             return Ok(new ChatMessageResponse(
                 Answer: answer,
-                FolderSuggestion: new FolderSuggestion("general", "General", "", false),
+                FolderSuggestion: new FolderSuggestion("notes", "Notes", "", false),
                 CleanNote: "",
                 IsAlreadyKnown: false,
                 AlreadyKnownMessage: null,

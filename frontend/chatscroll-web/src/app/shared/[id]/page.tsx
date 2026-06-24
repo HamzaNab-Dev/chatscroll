@@ -97,7 +97,7 @@ export default function SharedScrollPage() {
         if (first) {
           targetFolderId = first.id;
         } else {
-          const created = await api.createFolder({ name: "General", path: "general", icon: "📁" });
+          const created = await api.createFolder({ name: "Notes", path: "notes", icon: "📝" });
           targetFolderId = created.id;
         }
       }

@@ -110,8 +110,8 @@ public class GeminiAiService : IAiService
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            var suggestedPath = root.GetProperty("suggestedPath").GetString() ?? "general";
-            var suggestedName = root.GetProperty("suggestedName").GetString() ?? "General";
+            var suggestedPath = root.GetProperty("suggestedPath").GetString() ?? "notes";
+            var suggestedName = root.GetProperty("suggestedName").GetString() ?? "Notes";
 
             // Root-level folders (no dot = single segment) must not be prefixed with "General"
             // e.g. "General Programming" → "Programming"
@@ -130,7 +130,7 @@ public class GeminiAiService : IAiService
         }
         catch
         {
-            return new FolderSuggestion("general", "General", "Could not determine folder", true);
+            return new FolderSuggestion("notes", "Notes", "Could not determine folder", true);
         }
     }
 

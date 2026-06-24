@@ -96,8 +96,8 @@ public class BedrockAiService : IAiService
             var root = doc.RootElement;
 
             return new FolderSuggestion(
-                SuggestedPath: root.GetProperty("suggestedPath").GetString() ?? "general",
-                SuggestedName: root.GetProperty("suggestedName").GetString() ?? "General",
+                SuggestedPath: root.GetProperty("suggestedPath").GetString() ?? "notes",
+                SuggestedName: root.GetProperty("suggestedName").GetString() ?? "Notes",
                 Reasoning: root.GetProperty("reasoning").GetString() ?? "",
                 IsNewFolder: root.GetProperty("isNewFolder").GetBoolean()
             );
@@ -105,7 +105,7 @@ public class BedrockAiService : IAiService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Folder suggestion failed");
-            return new FolderSuggestion("general", "General", "Could not determine folder", true);
+            return new FolderSuggestion("notes", "Notes", "Could not determine folder", true);
         }
     }
 

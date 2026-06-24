@@ -436,7 +436,7 @@ export function ChatPanel({
                       <SaveNoteModal
                         question={prevUserMsg?.content ?? ""}
                         cleanNote={message.cleanNote ?? message.content}
-                        folderSuggestion={message.folderSuggestion ?? { suggestedPath: "general", suggestedName: "General", reasoning: "", isNewFolder: true }}
+                        folderSuggestion={message.folderSuggestion ?? { suggestedPath: "", suggestedName: "", reasoning: "", isNewFolder: false }}
                         folders={folders}
                         foldersLoading={foldersLoading}
                         onSave={(folderId, title) =>

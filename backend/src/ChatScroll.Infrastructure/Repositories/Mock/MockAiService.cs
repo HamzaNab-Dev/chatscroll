@@ -30,7 +30,7 @@ public class MockAiService : IAiService
             ? new FolderSuggestion("programming.dotnet", ".NET", "Question is about .NET programming", false)
             : q.Contains("medicine") || q.Contains("drug") || q.Contains("medication")
             ? new FolderSuggestion("medicine", "Medicine", "Question is about medical topics", false)
-            : new FolderSuggestion("general", "General", "General knowledge question", true);
+            : new FolderSuggestion("notes", "Notes", "General knowledge question", true);
 
         return Task.FromResult(suggestion);
     }
