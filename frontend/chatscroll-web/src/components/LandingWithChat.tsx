@@ -229,6 +229,30 @@ export function LandingWithChat() {
         </div>
       </div>
 
+      {/* Problem Statistics */}
+      <section className="py-20 bg-white dark:bg-slate-950">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">The Problem</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">
+              The problem with AI answers today
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              { stat: "73%",     desc: "of people re-Google questions they've already found answers to before" },
+              { stat: "30 days", desc: "before AI chat history becomes too long to search through effectively" },
+              { stat: "0",       desc: "knowledge saved from your last 100 AI conversations — unless you use ChatScroll" },
+            ].map(({ stat, desc }) => (
+              <div key={stat} className="text-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm hover:shadow-md hover:border-amber-200 dark:hover:border-amber-800/40 transition-all">
+                <div className="text-4xl sm:text-5xl font-bold text-amber-600 dark:text-amber-400 mb-3">{stat}</div>
+                <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* How it works — visual product demo */}
       <section id="how-it-works" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
@@ -487,6 +511,66 @@ export function LandingWithChat() {
                 <div className="text-2xl mb-3">{icon}</div>
                 <h3 className="font-bold text-gray-800 dark:text-slate-200 mb-1.5 text-sm">{title}</h3>
                 <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Table */}
+      <section className="py-20 bg-white dark:bg-slate-950">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">Comparison</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">
+              Not just another AI chat
+            </h2>
+          </div>
+          <div className="rounded-2xl border border-gray-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="grid grid-cols-3 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700">
+              <div className="px-5 py-3 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Feature</div>
+              <div className="px-5 py-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider text-center">Other AI Chats</div>
+              <div className="px-5 py-3 text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider text-center">ChatScroll</div>
+            </div>
+            {[
+              { feature: "Save answers",     other: "❌ Lost forever",     us: "✅ Saved as Scrolls"     },
+              { feature: "Organization",     other: "❌ None",             us: "✅ AI auto-organizes"    },
+              { feature: "Search",           other: "❌ Keyword only",     us: "✅ Semantic AI search"   },
+              { feature: "Study mode",       other: "❌ Not available",    us: "✅ Flashcard review"     },
+              { feature: "Share knowledge",  other: "❌ Copy-paste only",  us: "✅ Share scroll links"   },
+              { feature: "Cross-device",     other: "❌ Session only",     us: "✅ Login anywhere"       },
+              { feature: "Export",           other: "❌ Screenshots",      us: "✅ PDF & Markdown"       },
+            ].map(({ feature, other, us }, i) => (
+              <div key={feature} className={cn("grid grid-cols-3 border-b border-gray-100 dark:border-slate-800 last:border-0", i % 2 === 1 ? "bg-gray-50/50 dark:bg-slate-900/30" : "")}>
+                <div className="px-5 py-3.5 text-sm font-medium text-gray-700 dark:text-slate-300">{feature}</div>
+                <div className="px-5 py-3.5 text-sm text-gray-400 dark:text-slate-500 text-center">{other}</div>
+                <div className="px-5 py-3.5 text-sm font-semibold text-gray-900 dark:text-slate-100 text-center">{us}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* User Personas */}
+      <section className="py-20 bg-gray-50/60 dark:bg-slate-900/30">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-500 uppercase tracking-widest mb-3">Who It&apos;s For</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">
+              Built for curious minds
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-5">
+            {[
+              { emoji: "👨‍🎓", title: "Students",          desc: "Save lecture notes and study explanations. Review with flashcards before exams." },
+              { emoji: "👨‍💼", title: "Professionals",      desc: "Build your personal knowledge base. Never re-research the same topic twice." },
+              { emoji: "👨‍💻", title: "Developers",         desc: "Save technical answers and code explanations. Search semantically across your library." },
+              { emoji: "📚",  title: "Lifelong Learners", desc: "Curious about everything? Build a library across any topic — science, history, cooking, languages." },
+            ].map(({ emoji, title, desc }) => (
+              <div key={title} className="bg-white dark:bg-slate-900 border border-amber-200/60 dark:border-amber-700/20 rounded-2xl p-6 hover:border-amber-400/60 dark:hover:border-amber-600/40 hover:shadow-lg hover:shadow-amber-500/5 transition-all">
+                <div className="text-3xl mb-3">{emoji}</div>
+                <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-2">{title}</h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
