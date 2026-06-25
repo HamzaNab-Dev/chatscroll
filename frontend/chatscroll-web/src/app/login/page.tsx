@@ -84,12 +84,11 @@ export default function LoginPage() {
     { label: "One special character (!@#$…)", met: /[^a-zA-Z0-9]/.test(registerPassword) },
   ];
   const strengthCount = passwordRequirements.filter((r) => r.met).length;
-  // 8-char rule is mandatory — cap display at Weak (1 bar) until it's met
   const hasMinLength = registerPassword.length >= 8;
-  const strengthForDisplay = hasMinLength ? strengthCount : Math.min(strengthCount, 1);
-  const strengthLabel = strengthForDisplay <= 1 ? "Weak" : strengthForDisplay <= 2 ? "Fair" : strengthForDisplay <= 3 ? "Good" : strengthForDisplay === 4 ? "Strong" : "Very Strong";
-  const strengthBarColor = strengthForDisplay <= 1 ? "bg-red-500" : strengthForDisplay <= 2 ? "bg-orange-400" : strengthForDisplay <= 3 ? "bg-amber-400" : "bg-emerald-500";
-  const strengthTextColor = strengthForDisplay <= 1 ? "text-red-500" : strengthForDisplay <= 2 ? "text-orange-400" : strengthForDisplay <= 3 ? "text-amber-500" : "text-emerald-500";
+  // Each criterion counts independently — no capping; bar fills progressively 1–5
+  const strengthLabel = strengthCount <= 1 ? "Weak" : strengthCount === 2 ? "Fair" : strengthCount === 3 ? "Good" : strengthCount === 4 ? "Strong" : "Very Strong";
+  const strengthBarColor = strengthCount <= 1 ? "bg-red-500" : strengthCount === 2 ? "bg-orange-400" : strengthCount === 3 ? "bg-amber-400" : strengthCount === 4 ? "bg-blue-500" : "bg-emerald-500";
+  const strengthTextColor = strengthCount <= 1 ? "text-red-500" : strengthCount === 2 ? "text-orange-400" : strengthCount === 3 ? "text-amber-500" : strengthCount === 4 ? "text-blue-500" : "text-emerald-500";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,7 +328,7 @@ export default function LoginPage() {
                               key={i}
                               className={cn(
                                 "h-1 flex-1 rounded-full transition-colors duration-200",
-                                i < strengthForDisplay ? strengthBarColor : "bg-gray-200 dark:bg-slate-700"
+                                i < strengthCount ? strengthBarColor : "bg-gray-200 dark:bg-slate-700"
                               )}
                             />
                           ))}
@@ -387,7 +386,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              disabled={loading || (mode === "verify" && verifyCode.length !== 6) || (mode === "signup" && (strengthCount < 5 || registerEmailError !== ""))}
+              disabled={loading || (mode === "verify" && verifyCode.length !== 6) || (mode === "signup" && (!hasMinLength || strengthCount < 2 || registerEmailError !== ""))}
               className="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 rounded-xl"
             >
               {loading ? (
