@@ -114,7 +114,16 @@ function ProfileContent() {
       setPwStatus({ type: "success", msg: "Password changed successfully." });
       setOldPw(""); setNewPw(""); setConfirmPw("");
     } catch (err) {
-      setPwStatus({ type: "error", msg: err instanceof Error ? err.message : "Failed to change password." });
+      const name = (err as { name?: string }).name ?? "";
+      const msg =
+        name === "NotAuthorizedException"
+          ? "Current password is incorrect. Please try again."
+          : name === "LimitExceededException"
+          ? "Too many attempts. Please wait a few minutes and try again."
+          : name === "InvalidPasswordException"
+          ? "New password doesn't meet requirements. Use at least 8 characters with uppercase, lowercase, and numbers."
+          : "Something went wrong. Please try again.";
+      setPwStatus({ type: "error", msg });
     } finally {
       setSavingPw(false);
     }

@@ -65,7 +65,7 @@ export function ChatPanel({
   const autoSentRef = useRef(false);
   const firstUserMessageSentRef = useRef(false);
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -399,7 +399,9 @@ export function ChatPanel({
                       : "bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300"
                   )}
                 >
-                  {message.role === "user" ? "H" : "AI"}
+                  {message.role === "user"
+                    ? (user?.displayName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()
+                    : "AI"}
                 </div>
 
                 <div

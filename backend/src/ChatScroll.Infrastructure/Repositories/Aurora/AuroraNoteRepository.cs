@@ -177,8 +177,11 @@ public class AuroraNoteRepository : INoteRepository
         return merged;
     }
 
-    public async Task<IEnumerable<Note>> GetRelatedAsync(Guid noteId, Guid userId, int limit = 3)
+    public async Task<IEnumerable<Note>> GetRelatedAsync(Guid noteId, Guid userId, IReadOnlyCollection<Guid> allowedFolderIds, int limit = 3)
     {
+        if (allowedFolderIds.Count == 0) return Enumerable.Empty<Note>();
+
+        var folderArray = allowedFolderIds.ToArray();
         // CTE fetches the source embedding once; cross-joining with a zero-row CTE
         // (note not found or no embedding) naturally returns zero rows — no error thrown.
         return await _db.Notes
@@ -193,7 +196,7 @@ public class AuroraNoteRepository : INoteRepository
                   AND n.id != {noteId}
                   AND n.embedding IS NOT NULL
                   AND cur.embedding IS NOT NULL
-                  AND 1 - (n.embedding <=> cur.embedding) > 0.5
+                  AND n.folder_id = ANY({folderArray})
                 ORDER BY n.embedding <=> cur.embedding
                 LIMIT {limit}
                 """)

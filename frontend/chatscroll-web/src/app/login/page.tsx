@@ -54,6 +54,7 @@ export default function LoginPage() {
     try {
       if (mode === "signin") {
         await signIn(email, password);
+        try { sessionStorage.setItem("cs_force_new", "1"); } catch {}
         router.push("/chat");
 
       } else if (mode === "signup") {
@@ -62,6 +63,7 @@ export default function LoginPage() {
           setMode("verify");
           setSuccess(`Verification code sent to ${email}`);
         } else {
+          try { sessionStorage.setItem("cs_force_new", "1"); } catch {}
           router.push("/chat");
         }
 
@@ -180,7 +182,7 @@ export default function LoginPage() {
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       required
-                      placeholder="Hamza"
+                      placeholder="Your full name"
                       className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500 dark:focus:border-amber-500/50"
                     />
                   </div>
@@ -193,7 +195,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="hamza@example.com"
+                    placeholder="your@email.com"
                     className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500 dark:focus:border-amber-500/50"
                   />
                 </div>

@@ -118,12 +118,13 @@ public class MockNoteRepository : INoteRepository
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<Note>> GetRelatedAsync(Guid noteId, Guid userId, int limit = 3)
+    public Task<IEnumerable<Note>> GetRelatedAsync(Guid noteId, Guid userId, IReadOnlyCollection<Guid> allowedFolderIds, int limit = 3)
     {
         var note = _notes.FirstOrDefault(n => n.Id == noteId && n.UserId == userId);
         if (note is null) return Task.FromResult(Enumerable.Empty<Note>());
         var related = _notes
-            .Where(n => n.Id != noteId && n.UserId == userId && n.Tags.Any(t => note.Tags.Contains(t)))
+            .Where(n => n.Id != noteId && n.UserId == userId &&
+                   (allowedFolderIds.Count == 0 || allowedFolderIds.Contains(n.FolderId)))
             .Take(limit);
         return Task.FromResult(related);
     }

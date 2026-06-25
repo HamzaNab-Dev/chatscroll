@@ -184,18 +184,34 @@ public class NotesController : ApiControllerBase
     /// Call once after fixing the embedding pipeline to populate existing notes.
     /// </summary>
     /// <summary>
-    /// Returns up to 3 notes most similar to the given note by pgvector cosine distance.
+    /// Returns up to 3 notes most similar to the given note by pgvector cosine distance,
+    /// scoped to the same root folder category (root + its direct children).
     /// Falls back to an empty list if the note has no embedding yet.
     /// </summary>
     [HttpGet("{id}/related")]
     public async Task<IActionResult> GetRelated(Guid id)
     {
         var userId = GetUserId();
-        var related = (await _noteRepository.GetRelatedAsync(id, userId, 3)).ToList();
-        if (related.Count == 0) return Ok(Array.Empty<object>());
 
-        var folderMap = (await _folderRepository.GetByUserIdAsync(userId))
-            .ToDictionary(f => f.Id);
+        // Resolve the category scope before querying related notes.
+        var note = await _noteRepository.GetByIdAsync(id, userId);
+        if (note is null) return Ok(Array.Empty<object>());
+
+        var allFolders = (await _folderRepository.GetByUserIdAsync(userId)).ToList();
+        var folderMap = allFolders.ToDictionary(f => f.Id);
+
+        // Root = direct parent when one exists; otherwise the note's own folder is the root.
+        folderMap.TryGetValue(note.FolderId, out var currentFolder);
+        var rootId = currentFolder?.ParentId ?? note.FolderId;
+
+        // Scope = root folder + all its direct children.
+        var allowedFolderIds = allFolders
+            .Where(f => f.Id == rootId || f.ParentId == rootId)
+            .Select(f => f.Id)
+            .ToHashSet();
+
+        var related = (await _noteRepository.GetRelatedAsync(id, userId, allowedFolderIds, 3)).ToList();
+        if (related.Count == 0) return Ok(Array.Empty<object>());
 
         var result = related.Select(n =>
         {
