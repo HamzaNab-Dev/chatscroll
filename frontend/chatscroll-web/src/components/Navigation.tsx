@@ -82,6 +82,7 @@ export function Navigation() {
           <a href="/#features" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Features</a>
           <a href="/#how-it-works" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">How it works</a>
           <a href="/#pricing" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">Pricing</a>
+          <Link href="/aws-showcase" className="hover:text-gray-900 dark:hover:text-slate-200 transition-colors">🏗️ Architecture</Link>
         </nav>
       )}
 

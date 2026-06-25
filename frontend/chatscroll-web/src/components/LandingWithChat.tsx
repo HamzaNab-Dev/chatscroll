@@ -671,6 +671,8 @@ export function LandingWithChat() {
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-slate-800 py-6 text-center text-xs text-gray-400 dark:text-slate-600">
         ChatScroll · Built for AWS H0 Hackathon · #H0Hackathon
+        <span className="mx-2">·</span>
+        <Link href="/aws-showcase" className="hover:text-amber-500 dark:hover:text-amber-400 transition-colors">🏗️ AWS Architecture Deep Dive →</Link>
       </footer>
     </div>
   );

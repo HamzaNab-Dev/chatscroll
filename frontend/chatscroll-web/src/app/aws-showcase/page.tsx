@@ -60,7 +60,7 @@ function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-300">
       <span className="mt-1 w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-      {children}
+      <span>{children}</span>
     </li>
   );
 }
@@ -281,54 +281,68 @@ WHERE folder_id = ANY($allowedIds::uuid[])`}</SqlBlock>
 
           <Card>
             <div className="overflow-x-auto">
-              <div className="min-w-[540px] space-y-3 text-sm font-mono">
-                {/* Row 1 */}
-                <div className="flex items-center justify-center gap-0">
-                  <div className="px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-center">
+              <div className="min-w-[540px] text-sm font-mono">
+                <div className="flex items-start gap-3">
+
+                  {/* Left: Browser box */}
+                  <div className="px-4 py-3 rounded-xl bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-center self-start mt-2 min-w-[150px]">
                     <div className="text-xs text-gray-500 dark:text-slate-400">Browser</div>
                     <div className="font-semibold text-gray-800 dark:text-slate-200">Next.js / Vercel</div>
                   </div>
-                  <div className="flex-1 border-t-2 border-dashed border-gray-300 dark:border-slate-600 mx-2" />
-                  <div className="px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/40 text-center">
-                    <div className="text-xs text-amber-600 dark:text-amber-400">AWS ECS Fargate</div>
-                    <div className="font-semibold text-amber-800 dark:text-amber-200">ASP.NET Core API</div>
-                  </div>
-                </div>
 
-                {/* Down arrows from API */}
-                <div className="flex justify-end pr-[60px]">
-                  <div className="flex gap-20">
-                    <div className="flex flex-col items-center">
-                      <div className="w-0.5 h-6 bg-gray-300 dark:bg-slate-600" />
-                      <div className="text-gray-400">↓</div>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-0.5 h-6 bg-gray-300 dark:bg-slate-600" />
-                      <div className="text-gray-400">↓</div>
-                    </div>
+                  {/* Horizontal arrow */}
+                  <div className="flex items-center self-start mt-5 flex-shrink-0">
+                    <div className="w-8 border-t-2 border-dashed border-gray-300 dark:border-slate-600" />
+                    <span className="text-gray-400 text-base leading-none">→</span>
                   </div>
-                </div>
 
-                {/* Row 2 — two DB boxes */}
-                <div className="flex items-stretch justify-end gap-4 pr-0">
-                  <div className="flex-1" />
-                  <div className="px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 text-center min-w-[190px]">
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Aurora PostgreSQL</div>
-                    <div className="text-xs text-gray-600 dark:text-slate-300 space-y-0.5">
-                      <div>📜 scrolls + embeddings</div>
-                      <div>🌲 folders (ltree)</div>
-                      <div>👤 users (Cognito sub)</div>
-                      <div>💬 conversation metadata</div>
+                  {/* Right column: ECS box → arrows → DB boxes */}
+                  <div className="flex flex-col items-stretch flex-1">
+
+                    {/* ECS Fargate box */}
+                    <div className="px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/40 text-center">
+                      <div className="text-xs text-amber-600 dark:text-amber-400">AWS ECS Fargate</div>
+                      <div className="font-semibold text-amber-800 dark:text-amber-200">ASP.NET Core API</div>
                     </div>
-                  </div>
-                  <div className="px-4 py-3 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40 text-center min-w-[190px]">
-                    <div className="text-xs text-purple-600 dark:text-purple-400 mb-1">DynamoDB</div>
-                    <div className="text-xs text-gray-600 dark:text-slate-300 space-y-0.5">
-                      <div>💬 chat messages</div>
-                      <div>⚡ TTL (90-day expiry)</div>
-                      <div>🔑 composite sort keys</div>
-                      <div>📈 pay-per-request scale</div>
+
+                    {/* Down arrows — one per DB box, spanning the width of the DB row */}
+                    <div className="flex">
+                      <div className="flex-1 flex justify-center py-1">
+                        <div className="flex flex-col items-center">
+                          <div className="w-px h-4 bg-gray-300 dark:bg-slate-600" />
+                          <span className="text-gray-400 text-base leading-none">↓</span>
+                        </div>
+                      </div>
+                      <div className="flex-1 flex justify-center py-1">
+                        <div className="flex flex-col items-center">
+                          <div className="w-px h-4 bg-gray-300 dark:bg-slate-600" />
+                          <span className="text-gray-400 text-base leading-none">↓</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Database boxes */}
+                    <div className="flex gap-3">
+                      <div className="flex-1 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 text-center">
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">Aurora PostgreSQL</div>
+                        <div className="text-xs text-gray-600 dark:text-slate-300 space-y-0.5">
+                          <div>📜 scrolls + embeddings</div>
+                          <div>🌲 folders (ltree)</div>
+                          <div>👤 users (Cognito sub)</div>
+                          <div>💬 conversation metadata</div>
+                        </div>
+                      </div>
+                      <div className="flex-1 px-4 py-3 rounded-xl bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40 text-center">
+                        <div className="text-xs text-purple-600 dark:text-purple-400 mb-1">DynamoDB</div>
+                        <div className="text-xs text-gray-600 dark:text-slate-300 space-y-0.5">
+                          <div>💬 chat messages</div>
+                          <div>⚡ TTL (90-day expiry)</div>
+                          <div>🔑 composite sort keys</div>
+                          <div>📈 pay-per-request scale</div>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>
