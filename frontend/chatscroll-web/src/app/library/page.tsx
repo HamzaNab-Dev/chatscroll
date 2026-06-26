@@ -217,6 +217,8 @@ function FolderSidebar({
   onSelect,
   onFolderCreated,
   onFolderUpdated,
+  className,
+  onClose,
 }: {
   folders: Folder[];
   notes: Note[];
@@ -224,6 +226,8 @@ function FolderSidebar({
   onSelect: (id: string | null) => void;
   onFolderCreated?: (folder: Folder) => void;
   onFolderUpdated?: (folder: Folder) => void;
+  className?: string;
+  onClose?: () => void;
 }) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [showNewFolder, setShowNewFolder] = useState(false);
@@ -305,11 +309,22 @@ function FolderSidebar({
   };
 
   return (
-    <aside className="w-48 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full overflow-x-hidden">
+    <aside className={cn("w-48 flex-shrink-0 border-r border-gray-200 dark:border-slate-800 flex flex-col h-full overflow-x-hidden", className)}>
       <div className="px-3 py-3 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between">
-        <h2 className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-          Folders
-        </h2>
+        <div className="flex items-center gap-1.5">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-0.5 rounded text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              title="Close"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <h2 className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+            Folders
+          </h2>
+        </div>
         <button
           onClick={() => setShowNewFolder((v) => !v)}
           className="p-0.5 rounded text-gray-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
@@ -923,14 +938,14 @@ function LibraryContent() {
           />
         </div>
 
-        {/* Mobile folder overlay */}
+        {/* Mobile folder overlay — full-screen drawer */}
         {showFolderPanel && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div
-              className="absolute inset-0 bg-black/30"
+              className="absolute inset-0 bg-black/40"
               onClick={() => setShowFolderPanel(false)}
             />
-            <div className="absolute inset-y-0 left-0 w-72 bg-white dark:bg-slate-950 shadow-xl">
+            <div className="absolute inset-y-0 left-0 right-0 bg-white dark:bg-slate-950 shadow-xl overflow-y-auto">
               <FolderSidebar
                 folders={folders}
                 notes={allNotes}
@@ -938,6 +953,8 @@ function LibraryContent() {
                 onSelect={(id) => { setSelectedFolderId(id); setShowFolderPanel(false); }}
                 onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
                 onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
+                className="w-full h-auto border-r-0"
+                onClose={() => setShowFolderPanel(false)}
               />
             </div>
           </div>

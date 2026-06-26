@@ -69,6 +69,14 @@ export function ChatPanel({
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   // Load messages from DynamoDB (via backend) when the panel mounts for a conversation
   useEffect(() => {
     if (!conversationId) { setLoadingHistory(false); return; }
@@ -479,19 +487,21 @@ export function ChatPanel({
                         }
                       />
                     ) : (
-                      <div className="rounded-xl border border-amber-500/25 bg-transparent px-4 py-2.5 flex items-center gap-3">
-                        <span className="text-base flex-shrink-0">📜</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                            This answer can be saved as a Scroll
-                          </p>
-                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">
-                            Create a free account to build your knowledge library
-                          </p>
+                      <div className="rounded-xl border border-amber-500/25 bg-transparent px-4 py-2.5 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                        <div className="flex items-center gap-3 w-full min-w-0">
+                          <span className="text-base flex-shrink-0">📜</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                              This answer can be saved as a Scroll
+                            </p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">
+                              Create a free account to build your knowledge library
+                            </p>
+                          </div>
                         </div>
                         <Link
                           href="/login"
-                          className="text-xs px-3 py-1.5 rounded-full bg-amber-600 hover:bg-amber-500 text-white font-medium flex-shrink-0 whitespace-nowrap transition-colors"
+                          className="text-xs px-3 py-1.5 rounded-full bg-amber-600 hover:bg-amber-500 text-white font-medium w-full sm:w-auto text-center whitespace-nowrap transition-colors"
                         >
                           Sign up free
                         </Link>
@@ -570,7 +580,7 @@ export function ChatPanel({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask anything... (Enter to send, Shift+Enter for new line)"
+            placeholder={isMobile ? "Ask anything..." : "Ask anything... (Enter to send, Shift+Enter for new line)"}
             rows={1}
             className="flex-1 bg-gray-50 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:border-amber-400 dark:focus:border-amber-500/50 resize-none min-h-[44px] max-h-32 transition-colors"
             onInput={(e) => {

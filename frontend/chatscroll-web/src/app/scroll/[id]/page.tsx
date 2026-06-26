@@ -184,15 +184,12 @@ function ScrollDetailContent() {
           {backLabel}
         </Link>
 
-        {/* Title + actions */}
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 leading-snug">
-            {note.title}
-          </h1>
-          <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Title + actions — buttons above title on mobile, side-by-side on md+ */}
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+          <div className="order-1 md:order-2 flex items-center gap-2 flex-wrap flex-shrink-0">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
               title="Copy content"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -201,7 +198,7 @@ function ScrollDetailContent() {
 
             <button
               onClick={() => setShowExport(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
               title="Export scroll"
             >
               <Download className="w-3.5 h-3.5" />
@@ -215,7 +212,7 @@ function ScrollDetailContent() {
                 setShared(true);
                 setTimeout(() => setShared(false), 2500);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
               title="Copy share link"
             >
               {shared ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -223,7 +220,7 @@ function ScrollDetailContent() {
             </button>
 
             {/* Move to folder */}
-            <div className="relative" ref={moveMenuRef}>
+            <div className="relative flex-shrink-0" ref={moveMenuRef}>
               <button
                 onClick={() => setShowMoveMenu((v) => !v)}
                 disabled={moving}
@@ -234,7 +231,7 @@ function ScrollDetailContent() {
                 {moving ? "Moving..." : "Move"}
               </button>
               {showMoveMenu && (
-                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[180px] max-h-60 overflow-y-auto">
+                <div className="absolute left-0 md:right-0 md:left-auto top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[180px] max-h-60 overflow-y-auto">
                   {folders.map((folder) => (
                     <button
                       key={folder.id}
@@ -261,13 +258,16 @@ function ScrollDetailContent() {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-red-200 dark:border-red-900/40 text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-800/50 transition-colors disabled:opacity-50"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-red-200 dark:border-red-900/40 text-red-400 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-300 dark:hover:border-red-800/50 transition-colors disabled:opacity-50"
               title="Delete scroll"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {deleting ? "Deleting..." : "Delete"}
             </button>
           </div>
+          <h1 className="order-2 md:order-1 text-xl font-bold text-gray-900 dark:text-slate-100 leading-snug flex-1">
+            {note.title}
+          </h1>
         </div>
 
         {/* Meta row */}

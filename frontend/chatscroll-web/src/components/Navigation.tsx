@@ -31,7 +31,10 @@ export function Navigation() {
   }, [isAuthenticated]);
 
   return (
-    <header className="flex items-center px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0">
+    <header
+      className="flex items-center px-6 pb-4 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0"
+      style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
+    >
       {/* Logo — left anchor */}
       <div className="flex-1 flex items-center">
         <Link href="/" className="flex items-center gap-2">
