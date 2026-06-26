@@ -787,7 +787,7 @@ function LibraryContent() {
   const [includeChildrenMap, setIncludeChildrenMap] = useState<Record<string, boolean>>({});
   const [showWriteModal, setShowWriteModal] = useState(false);
 
-  const [searchMode, setSearchMode] = useState<"exact" | "smart">("exact");
+  const [searchMode, setSearchMode] = useState<"exact" | "smart">("smart");
   const [searchResults, setSearchResults] = useState<Note[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
