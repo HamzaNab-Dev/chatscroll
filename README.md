@@ -121,24 +121,24 @@ DynamoDB stores the high-volume chat message stream:
 ## 🏗️ System Architecture
 
 ```
-┌─────────────────┐         ┌──────────────────────────────────────┐
-│   Browser /     │         │           AWS Cloud                  │
-│   Mobile        │         │                                      │
-│                 │         │  ┌─────────────┐  ┌──────────────┐  │
-│  Next.js 14     │◄───────►│  │ AWS ECS     │  │ AWS Cognito  │  │
-│  Vercel         │         │  │ Fargate     │  │ JWT Auth     │  │
-└─────────────────┘         │  │ ASP.NET 9   │  └──────────────┘  │
-                             │  └──────┬──────┘                    │
-┌─────────────────┐         │         │                            │
-│  GitHub Actions │──────►  │  ┌──────▼──────┐  ┌─────────────┐  │
-│  CI/CD Pipeline │  ECR    │  │   Aurora    │  │  DynamoDB   │  │
-└─────────────────┘         │  │ PostgreSQL  │  │  chatscroll │  │
-                             │  │ pgvector    │  │  -messages  │  │
-┌─────────────────┐         │  │ ltree       │  │  TTL 90d    │  │
-│  Google Gemini  │◄───────►│  │ tsvector    │  │  PAY_PER_   │  │
-│  2.5 Flash      │         │  └─────────────┘  │  REQUEST    │  │
-│  embedding-001  │         │                    └─────────────┘  │
-└─────────────────┘         └──────────────────────────────────────┘
++------------------+     +--------------------------------------+
+|   Browser /      |     |           AWS Cloud                  |
+|   Mobile         |     |                                      |
+|                  |     |  +------------+   +--------------+   |
+|   Next.js 14     |<--->|  | AWS ECS    |   |  AWS Cognito |   |
+|   Vercel         |     |  | Fargate    |   |  JWT Auth    |   |
++------------------+     |  | ASP.NET 9  |   +--------------+   |
+                         |  +-----+------+                      |
++------------------+     |        |                             |
+| GitHub Actions   |---->|  +-----v------+   +--------------+   |
+| CI/CD Pipeline   | ECR |  |   Aurora   |   |  DynamoDB    |   |
++------------------+     |  | PostgreSQL |   |  chatscroll  |   |
+                         |  | pgvector   |   |  -messages   |   |
++------------------+     |  | ltree      |   |  TTL 90d     |   |
+| Google Gemini    |<--->|  | tsvector   |   |  PAY_PER_    |   |
+| 2.5 Flash        |     |  +------------+   |  REQUEST     |   |
+| embedding-001    |     |                   +--------------+   |
++------------------+     +--------------------------------------+
 ```
 
 **CI/CD Pipeline:**
