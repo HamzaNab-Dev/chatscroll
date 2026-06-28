@@ -62,7 +62,7 @@ export function WriteScrollModal({ folders, defaultFolderId, onSaved, onClose }:
         icon: newFolderIcon,
         parentId: newFolderParentId || undefined,
       });
-      setLocalFolders((prev) => [...prev, created]);
+      setLocalFolders((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
       setSelectedFolderId(created.id);
       setShowNewFolder(false);
       setShowPicker(false);
@@ -148,7 +148,7 @@ export function WriteScrollModal({ folders, defaultFolderId, onSaved, onClose }:
               onClick={() => { setShowPicker((v) => !v); setShowNewFolder(false); }}
               className="w-full flex items-center gap-2 px-3 py-2.5 group"
             >
-              <span className="text-sm flex-shrink-0">📁</span>
+              <span className="text-sm flex-shrink-0">{activeFolder?.icon ?? "📁"}</span>
               <span className="flex-1 text-left text-xs font-medium text-amber-700 dark:text-amber-400 truncate group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
                 {folderLabel}
               </span>

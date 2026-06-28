@@ -352,9 +352,9 @@ function FolderSidebar({
       </div>
 
       {showNewFolder && (
-        <div className="px-3 py-2 border-b border-gray-200 dark:border-slate-800 space-y-1.5">
+        <div className="w-full px-3 py-2 border-b border-gray-200 dark:border-slate-800 space-y-1.5 overflow-hidden">
           <div className="flex gap-1.5">
-            <span className="text-lg leading-none pt-0.5">{newFolderIcon}</span>
+            <span className="text-base leading-none pt-0.5 flex-shrink-0">{newFolderIcon}</span>
             <input
               autoFocus
               value={newFolderName}
@@ -364,16 +364,16 @@ function FolderSidebar({
                 if (e.key === "Escape") { setShowNewFolder(false); setNewFolderName(""); setNewFolderIcon("📁"); setNewFolderParentId(""); }
               }}
               placeholder="Folder name..."
-              className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400"
+              className="flex-1 min-w-0 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1 text-xs text-gray-700 dark:text-slate-300 placeholder-gray-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-400"
             />
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="w-full flex flex-wrap gap-0.5 max-h-[96px] overflow-y-auto">
             {FOLDER_ICONS.map((icon) => (
               <button
                 key={icon}
                 onClick={() => setNewFolderIcon(icon)}
                 className={cn(
-                  "text-sm w-7 h-7 rounded flex items-center justify-center transition-all",
+                  "text-xs w-6 h-6 rounded flex items-center justify-center transition-all flex-shrink-0",
                   newFolderIcon === icon
                     ? "bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-400 dark:ring-amber-600"
                     : "hover:bg-gray-100 dark:hover:bg-slate-700"
