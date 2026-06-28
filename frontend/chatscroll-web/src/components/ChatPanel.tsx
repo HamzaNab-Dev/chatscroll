@@ -329,16 +329,6 @@ export function ChatPanel({
       });
     }
 
-    // Remove persisted suggestion — scroll is now saved, no longer needed
-    if (conversationId && userQuestion) {
-      try {
-        const key = `cs_suggestions_${conversationId}`;
-        const stored: Record<string, FolderSuggestion> = JSON.parse(localStorage.getItem(key) ?? "{}");
-        delete stored[userQuestion.trim()];
-        localStorage.setItem(key, JSON.stringify(stored));
-      } catch {}
-    }
-
     setMessages((prev) =>
       prev.map((m) => (m.id === messageId ? { ...m, saved: true } : m))
     );
