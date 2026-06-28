@@ -202,10 +202,11 @@ export const api = {
     request<Array<{ id: string; title: string; folderPath?: string; folderIcon?: string; preview: string }>>(`/api/notes/${id}/related`),
 
   // ── Chat ─────────────────────────────────────────────────────────────────────
-  sendMessage: (message: string, conversationHistory: string, conversationId?: string, isGuest = false) =>
+  sendMessage: (message: string, conversationHistory: string, conversationId?: string, isGuest = false, signal?: AbortSignal) =>
     request<ChatResponse>("/api/chat/message", {
       method: "POST",
       body: JSON.stringify({ message, conversationHistory, conversationId, isGuest }),
+      signal,
     }),
   previewChat: (q: string) =>
     request<ChatResponse>(`/api/chat/preview?q=${encodeURIComponent(q)}`),
