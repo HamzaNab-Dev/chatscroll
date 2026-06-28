@@ -62,7 +62,7 @@ export function WriteScrollModal({ folders, defaultFolderId, onSaved, onClose }:
         icon: newFolderIcon,
         parentId: newFolderParentId || undefined,
       });
-      setLocalFolders((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setLocalFolders((prev) => [...prev, created].sort((a, b) => a.path.localeCompare(b.path)));
       setSelectedFolderId(created.id);
       setShowNewFolder(false);
       setShowPicker(false);
