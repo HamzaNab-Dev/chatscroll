@@ -15,6 +15,7 @@ import {
   Plus,
   X,
   Download,
+  Trash2,
   BookOpen,
   Zap,
   ChevronLeft,
@@ -87,7 +88,7 @@ function getFolderPath(folder: Folder, folderMap: Map<string, Folder>): string {
   return parts.join(" → ");
 }
 
-function NoteGridItem({ note, folder, folderMap, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; folderMap?: Map<string, Folder>; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
+function NoteGridItem({ note, folder, folderMap, onExport, onDelete, query, isAiResult, rank }: { note: Note; folder?: Folder; folderMap?: Map<string, Folder>; onExport: (n: Note) => void; onDelete: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
   const borderColor = folder?.color ?? "#d97706";
   const rankBadge = rank !== undefined && rank < 3 ? RANK_BADGES[rank] : null;
   return (
@@ -142,15 +143,22 @@ function NoteGridItem({ note, folder, folderMap, onExport, query, isAiResult, ra
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onExport(note); }}
         title="Export"
-        className="absolute top-2 right-2 z-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm"
+        className="absolute top-2 right-10 z-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm"
       >
         <Download className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(note); }}
+        title="Delete"
+        className="absolute top-2 right-2 z-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-600 transition-all shadow-sm"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
   );
 }
 
-function NoteListItem({ note, folder, folderMap, onExport, query, isAiResult, rank }: { note: Note; folder?: Folder; folderMap?: Map<string, Folder>; onExport: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
+function NoteListItem({ note, folder, folderMap, onExport, onDelete, query, isAiResult, rank }: { note: Note; folder?: Folder; folderMap?: Map<string, Folder>; onExport: (n: Note) => void; onDelete: (n: Note) => void; query?: string; isAiResult?: boolean; rank?: number }) {
   const borderColor = folder?.color ?? "#d97706";
   const rankBadge = rank !== undefined && rank < 3 ? RANK_BADGES[rank] : null;
   return (
@@ -185,7 +193,7 @@ function NoteListItem({ note, folder, folderMap, onExport, query, isAiResult, ra
               : truncateAtWord(note.cleanContent, 100)}
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 pr-8">
+        <div className="flex items-center gap-2 flex-shrink-0 pr-20">
           {note.tags.slice(0, 1).map((tag) => (
             <span
               key={tag}
@@ -202,9 +210,16 @@ function NoteListItem({ note, folder, folderMap, onExport, query, isAiResult, ra
       <button
         onClick={() => onExport(note)}
         title="Export"
-        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm flex-shrink-0"
+        className="absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm flex-shrink-0"
       >
         <Download className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => onDelete(note)}
+        title="Delete"
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-600 transition-all shadow-sm flex-shrink-0"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
   );
@@ -217,6 +232,7 @@ function FolderSidebar({
   onSelect,
   onFolderCreated,
   onFolderUpdated,
+  onError,
   className,
   onClose,
 }: {
@@ -226,6 +242,7 @@ function FolderSidebar({
   onSelect: (id: string | null) => void;
   onFolderCreated?: (folder: Folder) => void;
   onFolderUpdated?: (folder: Folder) => void;
+  onError?: (msg: string) => void;
   className?: string;
   onClose?: () => void;
 }) {
@@ -258,7 +275,7 @@ function FolderSidebar({
       setEditingId(null);
       setEditIconPickerOpen(false);
     } catch {
-      // silently skip
+      onError?.("Could not rename folder. Please try again.");
     } finally {
       setSavingEdit(false);
     }
@@ -302,7 +319,7 @@ function FolderSidebar({
       setNewFolderIcon("📁");
       setNewFolderParentId("");
     } catch {
-      // silently skip
+      onError?.("Could not create folder. Please try again.");
     } finally {
       setCreatingFolder(false);
     }
@@ -792,7 +809,16 @@ function LibraryContent() {
   const [searchLoading, setSearchLoading] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [loadError, setLoadError] = useState(false);
+  const [searchError, setSearchError] = useState(false);
+
+  const [confirmDelete, setConfirmDelete] = useState<Note | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const load = useCallback(async () => {
+    setLoadError(false);
+    setLoading(true);
     try {
       const [notesData, foldersData] = await Promise.all([
         api.getAllNotes(),
@@ -801,7 +827,7 @@ function LibraryContent() {
       setAllNotes(notesData);
       setFolders(foldersData);
     } catch {
-      // silently continue
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -811,11 +837,31 @@ function LibraryContent() {
     load();
   }, [load]);
 
+  const showToast = (msg: string, type: "success" | "error") => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ msg, type });
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleDelete = async (note: Note) => {
+    try {
+      await api.deleteNote(note.id);
+      setAllNotes((prev) => prev.filter((n) => n.id !== note.id));
+      setSearchResults((prev) => prev ? prev.filter((n) => n.id !== note.id) : null);
+      setConfirmDelete(null);
+      showToast("Scroll deleted", "success");
+    } catch {
+      setConfirmDelete(null);
+      showToast("Failed to delete scroll", "error");
+    }
+  };
+
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults(null); return; }
 
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     setSearchLoading(true);
+    setSearchError(false);
     searchTimerRef.current = setTimeout(async () => {
       try {
         if (searchMode === "smart") {
@@ -826,7 +872,8 @@ function LibraryContent() {
           setSearchResults(results);
         }
       } catch {
-        setSearchResults([]);
+        setSearchResults(null);
+        setSearchError(true);
       } finally {
         setSearchLoading(false);
       }
@@ -935,6 +982,7 @@ function LibraryContent() {
             onSelect={setSelectedFolderId}
             onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
             onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
+            onError={(msg) => showToast(msg, "error")}
           />
         </div>
 
@@ -953,6 +1001,7 @@ function LibraryContent() {
                 onSelect={(id) => { setSelectedFolderId(id); setShowFolderPanel(false); }}
                 onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
                 onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
+                onError={(msg) => showToast(msg, "error")}
                 className="w-full h-auto border-r-0"
                 onClose={() => setShowFolderPanel(false)}
               />
@@ -1148,7 +1197,35 @@ function LibraryContent() {
                 </div>
               ))}
             </div>
+          ) : loadError ? (
+            <div className="text-center py-16">
+              <ScrollText className="w-8 h-8 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
+              <p className="text-sm font-medium text-gray-500 dark:text-slate-500 mb-1">
+                Could not load your Scrolls
+              </p>
+              <p className="text-xs text-gray-400 dark:text-slate-600 mb-4">
+                Please check your connection and try again.
+              </p>
+              <button
+                onClick={() => load()}
+                className="inline-flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-500 font-medium border border-amber-200 dark:border-amber-700/40 rounded-lg px-3 py-1.5 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Retry
+              </button>
+            </div>
           ) : displayNotes.length === 0 ? (
+            searchError && searchQuery.trim() ? (
+              <div className="text-center py-16">
+                <Search className="w-8 h-8 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
+                <p className="text-sm font-medium text-gray-500 dark:text-slate-500 mb-1">
+                  Search failed
+                </p>
+                <p className="text-xs text-gray-400 dark:text-slate-600">
+                  Please try again.
+                </p>
+              </div>
+            ) : (
             <div className="text-center py-16">
               <ScrollText className="w-8 h-8 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
               <p className="text-sm font-medium text-gray-500 dark:text-slate-500">
@@ -1174,6 +1251,7 @@ function LibraryContent() {
                   : "Start chatting →"}
               </Link>
             </div>
+            )
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {displayNotes.map((note, index) => (
@@ -1183,6 +1261,7 @@ function LibraryContent() {
                   folder={folderMap.get(note.folderId)}
                   folderMap={folderMap}
                   onExport={setExportNote}
+                  onDelete={setConfirmDelete}
                   query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
                   isAiResult={searchMode === "smart" && !!searchQuery.trim()}
                   rank={searchMode === "smart" && searchQuery.trim() ? index : undefined}
@@ -1198,6 +1277,7 @@ function LibraryContent() {
                   folder={folderMap.get(note.folderId)}
                   folderMap={folderMap}
                   onExport={setExportNote}
+                  onDelete={setConfirmDelete}
                   query={searchMode === "exact" && searchQuery.trim() ? searchQuery : undefined}
                   isAiResult={searchMode === "smart" && !!searchQuery.trim()}
                   rank={searchMode === "smart" && searchQuery.trim() ? index : undefined}
@@ -1250,6 +1330,36 @@ function LibraryContent() {
           folderMap={folderMap}
           onClose={() => setExportCollection(false)}
         />
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-1">Delete scroll?</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-1 font-medium line-clamp-1">{confirmDelete.title}</p>
+            <p className="text-sm text-gray-400 dark:text-slate-500 mb-5">This action cannot be undone.</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${toast.type === "success" ? "bg-emerald-600" : "bg-red-600"}`}>
+          {toast.msg}
+        </div>
       )}
     </div>
   );

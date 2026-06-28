@@ -52,7 +52,10 @@ export function ChatPanel({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyLoadError, setHistoryLoadError] = useState(false);
   const [savedNotesMap, setSavedNotesMap] = useState<Map<string, Pick<Note, "id" | "folderId">>>(new Map());
+  const [saveWarning, setSaveWarning] = useState<string | null>(null);
+  const saveWarningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Typewriter state
   const [animatingId, setAnimatingId] = useState<string | null>(null);
@@ -126,6 +129,7 @@ export function ChatPanel({
         firstUserMessageSentRef.current = mapped.some((m) => m.role === "user");
       } else {
         console.warn("Failed to load conversation messages:", messagesResult.reason);
+        setHistoryLoadError(true);
       }
     }).finally(() => setLoadingHistory(false));
   }, []); // intentionally empty — only runs on mount (key remount handles conversation switching)
@@ -252,14 +256,16 @@ export function ChatPanel({
       }
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
+    } catch (err) {
+      const isNetworkError = err instanceof TypeError;
       setMessages((prev) => [
         ...prev,
         {
           id: generateId(),
           role: "assistant",
-          content:
-            "Sorry, I encountered an error. Please make sure the backend is running and try again.",
+          content: isNetworkError
+            ? "Connection lost. Please check your internet and try again."
+            : "Something went wrong. Please try again.",
           timestamp: new Date(),
         },
       ]);
@@ -309,6 +315,12 @@ export function ChatPanel({
       tags: [],
     });
 
+    if (createdNote?.embeddingGenerated === false) {
+      if (saveWarningTimerRef.current) clearTimeout(saveWarningTimerRef.current);
+      setSaveWarning("Scroll saved — Smart search may take a moment to index this scroll");
+      saveWarningTimerRef.current = setTimeout(() => setSaveWarning(null), 4000);
+    }
+
     if (userQuestion && createdNote) {
       setSavedNotesMap((prev) => {
         const next = new Map(prev);
@@ -334,7 +346,7 @@ export function ChatPanel({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-transparent">
+    <div className="relative flex flex-col h-full bg-white dark:bg-transparent">
       {/* Chat header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-slate-800">
         <ScrollText className="w-4 h-4 text-amber-500 dark:text-amber-400" />
@@ -361,6 +373,14 @@ export function ChatPanel({
       )}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {!loadingHistory && historyLoadError && (
+          <div className="text-center px-3 py-2 mb-2">
+            <p className="text-xs text-gray-400 dark:text-slate-500 bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2">
+              Could not load previous messages. Starting a fresh conversation.
+            </p>
+          </div>
+        )}
+
         {loadingHistory && (
           <div className="space-y-4 animate-pulse">
             <div className="flex justify-end"><div className="h-8 bg-gray-100 dark:bg-slate-800 rounded-2xl w-48" /></div>
@@ -605,6 +625,12 @@ export function ChatPanel({
           Powered by Gemini 2.5 Flash · ChatScroll
         </p>
       </div>
+
+      {saveWarning && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium text-white bg-emerald-600 whitespace-nowrap pointer-events-none">
+          {saveWarning}
+        </div>
+      )}
     </div>
   );
 }

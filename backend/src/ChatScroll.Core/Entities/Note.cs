@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace ChatScroll.Core.Entities;
 
 public class Note
@@ -27,5 +29,9 @@ public class Note
     public User User { get; set; } = null!;
     public Folder Folder { get; set; } = null!;
     public Conversation? Conversation { get; set; }
+
+    // Transient — set after CreateAsync, not persisted
+    [NotMapped]
+    public bool EmbeddingGenerated { get; set; }
 }
 

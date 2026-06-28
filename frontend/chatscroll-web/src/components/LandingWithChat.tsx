@@ -18,7 +18,7 @@ const SUGGESTIONS = [
 
 const AWS_STACK = [
   { icon: "🗄️", name: "Aurora PostgreSQL", desc: "Serverless v2 with pgvector + ltree" },
-  { icon: "⚡", name: "Amazon ECS", desc: "Express Mode auto-scaling" },
+  { icon: "⚡", name: "Amazon ECS Fargate", desc: "Containerized API auto-scaling" },
   { icon: "🔐", name: "Cognito", desc: "User auth & JWT" },
   { icon: "🤖", name: "Gemini 2.5 Flash", desc: "AI responses & knowledge rewriting" },
   { icon: "📦", name: "Amazon ECR", desc: "Container registry" },
@@ -501,7 +501,7 @@ export function LandingWithChat() {
               {
                 icon: "☁️",
                 title: "AWS Native",
-                desc: "Aurora PostgreSQL Serverless v2 with pgvector · DynamoDB chat logs · ECS Express · ECR · Cognito auth · GitHub Actions CI/CD",
+                desc: "Aurora PostgreSQL Serverless v2 with pgvector · DynamoDB chat logs · ECS Fargate · ECR · Cognito auth · GitHub Actions CI/CD",
               },
             ].map(({ icon, title, desc }) => (
               <div

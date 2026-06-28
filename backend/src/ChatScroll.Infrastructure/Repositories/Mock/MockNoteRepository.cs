@@ -83,6 +83,7 @@ public class MockNoteRepository : INoteRepository
         note.Id = Guid.NewGuid();
         note.CreatedAt = DateTime.UtcNow;
         note.UpdatedAt = DateTime.UtcNow;
+        note.EmbeddingGenerated = true;
         _notes.Add(note);
         return Task.FromResult(note);
     }

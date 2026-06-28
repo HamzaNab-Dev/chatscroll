@@ -107,7 +107,7 @@ public class HealthController : ControllerBase
             {
                 type = aiType,
                 isRealAi = aiType is "GeminiAiService" or "AnthropicAiService",
-                embeddingModel = aiType is "GeminiAiService" ? "text-embedding-004 (768-dim)" : null,
+                embeddingModel = aiType is "GeminiAiService" ? "gemini-embedding-001 (3072-dim)" : null,
                 chatModel = aiType switch
                 {
                     "GeminiAiService" => "gemini-2.5-flash",

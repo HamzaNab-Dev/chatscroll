@@ -216,7 +216,7 @@ public class AuroraNoteRepository : INoteRepository
         await _db.SaveChangesAsync();
 
         // Persist embedding synchronously — returns immediately when Gemini not configured
-        await TrySaveEmbeddingAsync(note.Id, $"{note.Title} {note.CleanContent}");
+        note.EmbeddingGenerated = await TrySaveEmbeddingAsync(note.Id, $"{note.Title} {note.CleanContent}");
 
         return note;
     }
@@ -291,22 +291,24 @@ public class AuroraNoteRepository : INoteRepository
         return (success, failed, notesWithoutEmbeddings.Count);
     }
 
-    private async Task TrySaveEmbeddingAsync(Guid noteId, string text)
+    private async Task<bool> TrySaveEmbeddingAsync(Guid noteId, string text)
     {
         try
         {
             var embedding = await _aiService.GenerateEmbeddingAsync(text, "RETRIEVAL_DOCUMENT");
-            if (embedding.Length == 0) return;
+            if (embedding.Length == 0) return false;
 
             var vecStr = '[' + string.Join(",",
                 embedding.Select(f => f.ToString("G6", CultureInfo.InvariantCulture))) + ']';
 
             await _db.Database.ExecuteSqlInterpolatedAsync(
                 $"UPDATE notes SET embedding = {vecStr}::vector WHERE id = {noteId}");
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save embedding for note {NoteId}", noteId);
+            return false;
         }
     }
 }

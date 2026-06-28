@@ -41,6 +41,7 @@ export type Note = {
   codeLanguage?: string;
   viewCount: number;
   createdAt: string;
+  embeddingGenerated?: boolean;
 };
 
 export type FolderSuggestion = {

@@ -93,17 +93,21 @@ public class NotesController : ApiControllerBase
     public async Task<IActionResult> GetStats()
     {
         var userId = GetUserId();
-        var allNotes = (await _noteRepository.SearchAsync(userId, "")).ToList();
+        var allNotes = (await _noteRepository.GetAllAsync(userId)).ToList();
         var today = DateTime.UtcNow.Date;
-        var todaySaved = allNotes.Count(n => n.CreatedAt.Date == today);
+        var cutoff = today.AddDays(-6);
 
-        // Demo baseline shows realistic activity; today's count is real (session saves)
-        var demoBase = new[] { 0, 2, 1, 3, 0, 2, 1 };
+        // Real per-day counts from Aurora for the last 7 days
+        var activityMap = allNotes
+            .Where(n => n.CreatedAt.Date >= cutoff)
+            .GroupBy(n => n.CreatedAt.Date)
+            .ToDictionary(g => g.Key, g => g.Count());
+
         var weeklyActivity = Enumerable.Range(0, 7).Select(i => new
         {
             date = today.AddDays(-6 + i).ToString("yyyy-MM-dd"),
             dayLabel = today.AddDays(-6 + i).ToString("ddd"),
-            count = i == 6 ? Math.Max(todaySaved, demoBase[i]) : demoBase[i]
+            count = activityMap.GetValueOrDefault(today.AddDays(-6 + i), 0)
         }).ToArray();
 
         return Ok(new

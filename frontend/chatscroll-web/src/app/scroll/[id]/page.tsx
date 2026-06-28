@@ -60,6 +60,7 @@ function ScrollDetailContent() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [showMoveMenu, setShowMoveMenu] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [shared, setShared] = useState(false);
   const moveMenuRef = useRef<HTMLDivElement>(null);
@@ -126,6 +127,9 @@ function ScrollDetailContent() {
     try {
       const updated = await api.updateNote(note.id, { folderId });
       setNote(updated);
+    } catch {
+      setMoveError(true);
+      setTimeout(() => setMoveError(false), 3000);
     } finally {
       setMoving(false);
     }
@@ -269,6 +273,12 @@ function ScrollDetailContent() {
             {note.title}
           </h1>
         </div>
+
+        {moveError && (
+          <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 text-xs text-red-600 dark:text-red-400">
+            Could not move scroll. Please try again.
+          </div>
+        )}
 
         {/* Meta row */}
         <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-slate-500 mb-4">
