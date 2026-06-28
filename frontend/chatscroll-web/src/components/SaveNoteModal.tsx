@@ -152,7 +152,7 @@ export function SaveNoteModal({
             }
             // No folders exist at all — create a neutral starter folder.
             const created = await api.createFolder({ name: "Notes", path: "notes", icon: "📝" });
-            setLocalFolders((prev) => [...prev, created]);
+            setLocalFolders((prev) => [...prev, created].sort((a, b) => a.path.localeCompare(b.path)));
             folderId = created.id;
           } else {
           const allSegments = suggestedPath.split(".");
@@ -178,7 +178,7 @@ export function SaveNoteModal({
               icon: "📁",
               parentId: parent?.id,
             });
-            setLocalFolders((prev) => [...prev, created]);
+            setLocalFolders((prev) => [...prev, created].sort((a, b) => a.path.localeCompare(b.path)));
             parent = { id: created.id, path: created.path };
           }
 
@@ -215,7 +215,7 @@ export function SaveNoteModal({
         icon: newFolderIcon,
         parentId: newFolderParentId || undefined,
       });
-      setLocalFolders((prev) => [...prev, created]);
+      setLocalFolders((prev) => [...prev, created].sort((a, b) => a.path.localeCompare(b.path)));
       setSelectedFolderId(created.id);
       setShowNewFolder(false);
       setShowPicker(false);

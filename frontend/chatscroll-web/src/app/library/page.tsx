@@ -980,7 +980,7 @@ function LibraryContent() {
             notes={allNotes}
             selectedFolderId={selectedFolderId}
             onSelect={setSelectedFolderId}
-            onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
+            onFolderCreated={(folder) => setFolders((prev) => [...prev, folder].sort((a, b) => a.path.localeCompare(b.path)))}
             onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
             onError={(msg) => showToast(msg, "error")}
           />
@@ -999,7 +999,7 @@ function LibraryContent() {
                 notes={allNotes}
                 selectedFolderId={selectedFolderId}
                 onSelect={(id) => { setSelectedFolderId(id); setShowFolderPanel(false); }}
-                onFolderCreated={(folder) => setFolders((prev) => [...prev, folder])}
+                onFolderCreated={(folder) => setFolders((prev) => [...prev, folder].sort((a, b) => a.path.localeCompare(b.path)))}
                 onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
                 onError={(msg) => showToast(msg, "error")}
                 className="w-full h-auto border-r-0"
