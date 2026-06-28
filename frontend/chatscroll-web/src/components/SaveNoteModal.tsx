@@ -233,7 +233,7 @@ export function SaveNoteModal({
     <div className="rounded-xl border border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/10">
       {/* Compact single row — all children are flex-shrink-0 except the picker button */}
       <div className="flex items-center gap-2 px-3 py-1.5 w-full">
-        <span className="text-sm flex-shrink-0">📜</span>
+        <span className="text-sm flex-shrink-0">{activeFolder?.icon ?? "📁"}</span>
 
         {foldersLoading && localFolders.length === 0 ? (
           <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-500 flex-1 min-w-0">
