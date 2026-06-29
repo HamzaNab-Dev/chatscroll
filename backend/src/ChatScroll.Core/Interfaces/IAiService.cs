@@ -2,7 +2,7 @@ namespace ChatScroll.Core.Interfaces;
 
 public interface IAiService
 {
-    Task<string> ChatAsync(string message, string conversationHistory);
+    Task<string> ChatAsync(string message, string conversationHistory, CancellationToken cancellationToken = default);
     Task<FolderSuggestion> SuggestFolderAsync(string question, string answer, IEnumerable<string> existingFolders);
     Task<string> RewriteAsNoteAsync(string question, string answer);
     Task<(bool IsKnown, string? MatchingTitle)> IsAlreadyKnownAsync(string question, IEnumerable<string> existingNoteTitles);

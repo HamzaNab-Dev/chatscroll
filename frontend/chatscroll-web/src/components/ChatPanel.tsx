@@ -261,7 +261,7 @@ export function ChatPanel({
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
+      if (err instanceof Error && err.name === "AbortError") {
         setMessages((prev) => {
           const last = prev[prev.length - 1];
           if (last?.role === "assistant") return prev; // partial response already showing — keep it

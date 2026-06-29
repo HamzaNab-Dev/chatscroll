@@ -19,7 +19,7 @@ public class GeminiAiService : IAiService
         _logger = logger;
     }
 
-    public async Task<string> ChatAsync(string message, string conversationHistory)
+    public async Task<string> ChatAsync(string message, string conversationHistory, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -42,7 +42,11 @@ public class GeminiAiService : IAiService
                 ? message
                 : $"Previous context:\n{conversationHistory}\n\n{message}";
 
-            return await CallGeminiAsync(userContent, systemPrompt);
+            return await CallGeminiAsync(userContent, systemPrompt, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // propagate cancellation to the controller — do not swallow
         }
         catch (HttpRequestException ex) when (ex.Message.Contains("429"))
         {
@@ -256,7 +260,7 @@ public class GeminiAiService : IAiService
         }
     }
 
-    private async Task<string> CallGeminiAsync(string userMessage, string systemInstruction = "")
+    private async Task<string> CallGeminiAsync(string userMessage, string systemInstruction = "", CancellationToken cancellationToken = default)
     {
         var contents = new[] { new { role = "user", parts = new[] { new { text = userMessage } } } };
         var generationConfig = new { maxOutputTokens = 8192, temperature = 0.7 };
@@ -275,12 +279,12 @@ public class GeminiAiService : IAiService
         for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync($"{BaseUrl}?key={_apiKey}", requestContent);
+            var response = await _httpClient.PostAsync($"{BaseUrl}?key={_apiKey}", requestContent, cancellationToken);
 
             if ((int)response.StatusCode == 429 && attempt < maxAttempts - 1)
             {
                 // 2s then 4s backoff
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt + 1)));
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt + 1)), cancellationToken);
                 continue;
             }
 

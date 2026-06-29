@@ -26,7 +26,7 @@ public class BedrockAiService : IAiService
     // ─────────────────────────────────────────
     // CHAT
     // ─────────────────────────────────────────
-    public async Task<string> ChatAsync(string message, string conversationHistory)
+    public async Task<string> ChatAsync(string message, string conversationHistory, CancellationToken cancellationToken = default)
     {
         try
         {

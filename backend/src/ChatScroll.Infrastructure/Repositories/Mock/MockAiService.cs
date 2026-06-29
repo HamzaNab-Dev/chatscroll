@@ -13,7 +13,7 @@ public class MockAiService : IAiService
 
     private static readonly Random _random = new();
 
-    public Task<string> ChatAsync(string message, string conversationHistory)
+    public Task<string> ChatAsync(string message, string conversationHistory, CancellationToken cancellationToken = default)
     {
         var response = _mockResponses[_random.Next(_mockResponses.Length)];
         return Task.FromResult(response);
