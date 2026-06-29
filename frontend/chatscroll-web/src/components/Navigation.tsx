@@ -32,7 +32,7 @@ export function Navigation() {
 
   return (
     <header
-      className="flex items-center px-6 pb-4 border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-10 flex-shrink-0"
+      className="sticky top-0 z-50 flex items-center px-6 pb-4 border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md flex-shrink-0"
       style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
     >
       {/* Logo — left anchor */}
