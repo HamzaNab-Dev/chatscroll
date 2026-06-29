@@ -9,4 +9,5 @@ public interface IFolderRepository
     Task<Folder> CreateAsync(Folder folder);
     Task<Folder> UpdateAsync(Folder folder);
     Task DeleteAsync(Guid id, Guid userId);
+    Task<bool> HasChildrenAsync(Guid id, Guid userId);
 }

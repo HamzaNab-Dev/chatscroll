@@ -262,7 +262,11 @@ export function ChatPanel({
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
-        // User stopped generation — do nothing, keep chat as-is
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant") return prev; // partial response already showing — keep it
+          return [...prev, { id: generateId(), role: "assistant", content: "", interrupted: true, timestamp: new Date() }];
+        });
       } else {
         const isNetworkError = err instanceof TypeError;
         setMessages((prev) => [
@@ -396,6 +400,14 @@ export function ChatPanel({
           </div>
         )}
         {!loadingHistory && messages.map((message, idx) => {
+          if (message.interrupted) {
+            return (
+              <div key={message.id}>
+                <p className="text-xs text-gray-400 italic px-2">Generation interrupted.</p>
+              </div>
+            );
+          }
+
           const isAnimating = message.id === animatingId;
 
           // Find the user question that preceded this assistant message

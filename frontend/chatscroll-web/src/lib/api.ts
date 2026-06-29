@@ -73,6 +73,7 @@ export type Message = {
   similarNoteTitle?: string;
   similarNoteDate?: string;
   saved?: boolean;
+  interrupted?: boolean;
   timestamp: Date;
 };
 
@@ -139,7 +140,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers,
     credentials: "include",
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    let message = `API error: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.message) message = body.message;
+    } catch {}
+    throw new Error(message);
+  }
   if (res.status === 204 || res.headers.get("content-length") === "0") {
     return undefined as T;
   }

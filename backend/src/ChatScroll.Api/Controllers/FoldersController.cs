@@ -82,6 +82,8 @@ public class FoldersController : ApiControllerBase
     public async Task<IActionResult> Delete(Guid id)
     {
         var userId = GetUserId();
+        if (await _folderRepository.HasChildrenAsync(id, userId))
+            return BadRequest(new { message = "Cannot delete this folder — it has subfolders. Delete all subfolders first." });
         await _folderRepository.DeleteAsync(id, userId);
         return NoContent();
     }

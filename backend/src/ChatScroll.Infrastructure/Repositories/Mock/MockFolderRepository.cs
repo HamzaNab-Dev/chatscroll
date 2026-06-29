@@ -80,4 +80,7 @@ public class MockFolderRepository : IFolderRepository
         if (folder != null) _folders.Remove(folder);
         return Task.CompletedTask;
     }
+
+    public Task<bool> HasChildrenAsync(Guid id, Guid userId) =>
+        Task.FromResult(_folders.Any(f => f.ParentId == id && f.UserId == userId));
 }

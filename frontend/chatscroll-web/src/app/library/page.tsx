@@ -232,6 +232,7 @@ function FolderSidebar({
   onSelect,
   onFolderCreated,
   onFolderUpdated,
+  onFolderDeleted,
   onError,
   className,
   onClose,
@@ -242,6 +243,7 @@ function FolderSidebar({
   onSelect: (id: string | null) => void;
   onFolderCreated?: (folder: Folder) => void;
   onFolderUpdated?: (folder: Folder) => void;
+  onFolderDeleted?: (folderId: string) => void;
   onError?: (msg: string) => void;
   className?: string;
   onClose?: () => void;
@@ -259,6 +261,36 @@ function FolderSidebar({
     const childIds = folders.filter((f) => f.parentId === parentId).map((f) => f.id);
     return notes.filter((n) => n.folderId === parentId || childIds.includes(n.folderId)).length;
   };
+  const [confirmDeleteFolder, setConfirmDeleteFolder] = useState<Folder | null>(null);
+  const [blockingDeleteFolder, setBlockingDeleteFolder] = useState<Folder | null>(null);
+  const [deletingFolder, setDeletingFolder] = useState(false);
+
+  const handleDeleteFolder = (folder: Folder) => {
+    const hasChildren = folders.some((f) => f.parentId === folder.id);
+    if (hasChildren) {
+      setBlockingDeleteFolder(folder);
+    } else {
+      setConfirmDeleteFolder(folder);
+    }
+  };
+
+  const executeDeleteFolder = async () => {
+    if (!confirmDeleteFolder) return;
+    setDeletingFolder(true);
+    try {
+      await api.deleteFolder(confirmDeleteFolder.id);
+      onFolderDeleted?.(confirmDeleteFolder.id);
+      setConfirmDeleteFolder(null);
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : "";
+      const msg = raw.startsWith("API error:") ? "Could not delete folder. Please try again." : (raw || "Could not delete folder. Please try again.");
+      onError?.(msg);
+      setConfirmDeleteFolder(null);
+    } finally {
+      setDeletingFolder(false);
+    }
+  };
+
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -525,6 +557,13 @@ function FolderSidebar({
                   )}
                 </button>
                 <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteFolder(parent); }}
+                  className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-0.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                  title="Delete folder"
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                </button>
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditingId(parent.id);
@@ -622,6 +661,13 @@ function FolderSidebar({
                               )}
                             </button>
                             <button
+                              onClick={(e) => { e.stopPropagation(); handleDeleteFolder(child); }}
+                              className="opacity-0 group-hover:opacity-100 flex-shrink-0 p-0.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                              title="Delete folder"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingId(child.id);
@@ -645,6 +691,54 @@ function FolderSidebar({
           );
         })}
       </nav>
+
+      {/* Blocking dialog — folder has subfolders */}
+      {blockingDeleteFolder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">Cannot Delete Folder</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-5">
+              Cannot delete &apos;{blockingDeleteFolder.name}&apos; — it has subfolders. Delete all subfolders first, then delete this folder.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setBlockingDeleteFolder(null)}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm delete dialog */}
+      {confirmDeleteFolder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-2xl p-6">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-2">Delete Folder</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-5">
+              Delete &apos;{confirmDeleteFolder.name}&apos;? All scrolls inside will be permanently deleted. This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDeleteFolder(null)}
+                disabled={deletingFolder}
+                className="px-4 py-2 rounded-xl text-sm text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeDeleteFolder}
+                disabled={deletingFolder}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-red-600 hover:bg-red-500 text-white disabled:opacity-40 transition-colors"
+              >
+                {deletingFolder ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
@@ -982,6 +1076,12 @@ function LibraryContent() {
             onSelect={setSelectedFolderId}
             onFolderCreated={(folder) => setFolders((prev) => [...prev, folder].sort((a, b) => a.path.localeCompare(b.path)))}
             onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
+            onFolderDeleted={(folderId) => {
+              setFolders((prev) => prev.filter((f) => f.id !== folderId));
+              setAllNotes((prev) => prev.filter((n) => n.folderId !== folderId));
+              setSelectedFolderId((prev) => (prev === folderId || prev === `__general__${folderId}`) ? null : prev);
+              showToast("Folder deleted", "success");
+            }}
             onError={(msg) => showToast(msg, "error")}
           />
         </div>
@@ -1001,6 +1101,13 @@ function LibraryContent() {
                 onSelect={(id) => { setSelectedFolderId(id); setShowFolderPanel(false); }}
                 onFolderCreated={(folder) => setFolders((prev) => [...prev, folder].sort((a, b) => a.path.localeCompare(b.path)))}
                 onFolderUpdated={(folder) => setFolders((prev) => prev.map((f) => f.id === folder.id ? folder : f))}
+                onFolderDeleted={(folderId) => {
+                  setFolders((prev) => prev.filter((f) => f.id !== folderId));
+                  setAllNotes((prev) => prev.filter((n) => n.folderId !== folderId));
+                  setSelectedFolderId((prev) => (prev === folderId || prev === `__general__${folderId}`) ? null : prev);
+                  setShowFolderPanel(false);
+                  showToast("Folder deleted", "success");
+                }}
                 onError={(msg) => showToast(msg, "error")}
                 className="w-full h-auto border-r-0"
                 onClose={() => setShowFolderPanel(false)}

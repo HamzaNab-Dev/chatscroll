@@ -86,6 +86,9 @@ public class AuroraFolderRepository : IFolderRepository
         await _db.SaveChangesAsync();
     }
 
+    public async Task<bool> HasChildrenAsync(Guid id, Guid userId) =>
+        await _db.Folders.AnyAsync(f => f.ParentId == id && f.UserId == userId);
+
     private static string Slugify(string name) =>
         name.ToLowerInvariant()
             .Replace(" ", "_")
