@@ -336,7 +336,7 @@ export function LandingWithChat() {
                 {/* Save bar — compact version of the real UI */}
                 <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/10 px-3 py-1.5">
                   <span className="text-sm">📜</span>
-                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex-1">Databases → General</span>
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex-1">Databases → Distributed Systems</span>
                   <span className="text-[11px] px-2.5 py-0.5 bg-amber-600 text-white rounded-full font-medium">Save</span>
                   <span className="text-[11px] text-gray-400 dark:text-slate-500">Skip</span>
                 </div>
@@ -346,20 +346,15 @@ export function LandingWithChat() {
               <div className="sm:col-span-2 p-5 space-y-2 bg-gray-50/50 dark:bg-slate-900/30">
                 <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-600 uppercase tracking-wider mb-3">Your Scroll Library</p>
                 {[
-                  { icon: "💻", folder: "Programming", title: "SOLID Principles", tags: ["oop", "design"] },
-                  { icon: "🗄️", folder: "Databases", title: "CAP Theorem", tags: ["distributed"] },
-                  { icon: "🐳", folder: "DevOps", title: "Docker vs VMs", tags: ["containers"] },
-                ].map(({ icon, folder, title, tags }) => (
+                  { icon: "💻", folder: "Programming", title: "SOLID Principles" },
+                  { icon: "🗄️", folder: "Databases", title: "CAP Theorem" },
+                  { icon: "🐳", folder: "DevOps", title: "Docker vs VMs" },
+                ].map(({ icon, folder, title }) => (
                   <div key={title} className="flex items-start gap-2.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/60">
                     <span className="text-base flex-shrink-0 mt-0.5">{icon}</span>
                     <div className="min-w-0">
                       <p className="text-[10px] text-amber-500 dark:text-amber-400 font-medium">{folder}</p>
                       <p className="text-xs font-medium text-gray-700 dark:text-slate-300 truncate">{title}</p>
-                      <div className="flex gap-1 mt-1">
-                        {tags.map((t) => (
-                          <span key={t} className="text-[9px] text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800 rounded px-1">{t}</span>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 ))}
