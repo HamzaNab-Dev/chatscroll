@@ -7,9 +7,7 @@ import { Sun, Moon, ArrowRight } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -21,14 +19,6 @@ export function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { isAuthenticated } = useAuth();
-  const [scrollCount, setScrollCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    api.getNotesStats()
-      .then((s) => setScrollCount(s.totalNotes))
-      .catch(() => {});
-  }, [isAuthenticated]);
 
   return (
     <header
@@ -65,14 +55,6 @@ export function Navigation() {
               )}
             >
               {link.label}
-              {link.label === "Library" && (
-                <span
-                  className="inline-flex items-center justify-center rounded-full text-xs px-1.5 min-w-[20px] h-5 whitespace-nowrap font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                  style={{ opacity: scrollCount && scrollCount > 0 ? 1 : 0, pointerEvents: "none" }}
-                >
-                  {(scrollCount ?? 0) > 99 ? "99+" : (scrollCount ?? 0)}
-                </span>
-              )}
             </Link>
           ))}
           <Link
