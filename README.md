@@ -12,6 +12,33 @@
 
 ---
 
+## 🧪 Try It Now — Judges & Testers
+
+**Live app:** https://chatscroll.vercel.app
+
+1. **Register a free account**
+   - Click "Sign In" → "Sign Up" tab
+   - Enter your name, email and password
+   - Verify with the 6-digit code sent to your inbox
+   - ⚠️ If you don't see the email, check your spam/junk folder
+
+2. **Start chatting**
+   - Ask any question in the chat
+   - Click "Save as Scroll" to save the best answer
+   - AI will automatically suggest the right folder
+
+3. **Explore your Library**
+   - Go to /library
+   - Try Smart search: type "blood thinner" to find the warfarin scroll by meaning not keywords
+   - Try Study Mode, Share, Write your own Scroll
+
+4. **View AWS Architecture**
+   - https://chatscroll.vercel.app/aws-showcase
+
+> All data is real — Aurora PostgreSQL + DynamoDB, no mocks or stubs in production.
+
+---
+
 ## 🧠 What is ChatScroll?
 
 Every day people ask AI assistants valuable questions and get great answers — then lose them forever. Chat history is linear, unsearchable, and ephemeral.

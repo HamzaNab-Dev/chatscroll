@@ -244,6 +244,9 @@ export default function LoginPage() {
                   autoComplete="one-time-code"
                   autoFocus
                 />
+                <p className="text-sm text-gray-500 dark:text-slate-500 text-center">
+                  Didn&apos;t receive the code? Check your spam folder.
+                </p>
               </div>
             ) : (
               <>
