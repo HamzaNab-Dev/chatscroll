@@ -62,6 +62,7 @@ export default function LoginPage() {
     setLoginEmailError(""); setRegisterEmailError("");
     setError(""); setSuccess(""); setShowSignInFallback(false);
     setResendCooldown(0); setResendStatus("");
+    setShowPassword(false);
   };
 
   const handleResend = async () => {
