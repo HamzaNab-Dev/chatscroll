@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Database, Zap, Server, GitBranch, Code2, Layers } from "lucide-react";
+import { Navigation } from "@/components/Navigation";
+import { useAuth } from "@/context/AuthContext";
 
 function Badge({ emoji, label }: { emoji: string; label: string }) {
   return (
@@ -90,24 +94,30 @@ function AccessPattern({ pk, sk, note }: { pk: string; sk: string; note: string 
 }
 
 export default function AwsShowcasePage() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100">
-      {/* Minimal public nav */}
-      <header className="border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="ChatScroll" width={26} height={26} className="rounded-md" />
-            <span className="font-bold text-sm text-gray-900 dark:text-slate-100">ChatScroll</span>
-          </Link>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to App
-          </Link>
-        </div>
-      </header>
+      {isAuthenticated ? (
+        <Navigation />
+      ) : (
+        /* Minimal public nav */
+        <header className="border-b border-gray-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo.png" alt="ChatScroll" width={26} height={26} className="rounded-md" />
+              <span className="font-bold text-sm text-gray-900 dark:text-slate-100">ChatScroll</span>
+            </Link>
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to App
+            </Link>
+          </div>
+        </header>
+      )}
 
       <main className="max-w-4xl mx-auto px-4 py-12 sm:px-6 space-y-14">
 
