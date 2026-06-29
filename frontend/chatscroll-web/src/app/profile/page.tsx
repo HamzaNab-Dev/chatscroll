@@ -43,7 +43,7 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label
 }
 
 function ProfileContent() {
-  const { user, signOut, updatePassword } = useAuth();
+  const { user, signOut, updatePassword, updateDisplayName } = useAuth();
   const router = useRouter();
 
   const [me, setMe] = useState<UserMe | null>(null);
@@ -89,6 +89,7 @@ function ProfileContent() {
     try {
       await api.updateMe({ displayName: nameValue.trim() });
       setMe((prev) => prev ? { ...prev, displayName: nameValue.trim() } : prev);
+      await updateDisplayName(nameValue.trim());
       setNameStatus({ type: "success", msg: "Name updated." });
       setEditingName(false);
     } catch {
