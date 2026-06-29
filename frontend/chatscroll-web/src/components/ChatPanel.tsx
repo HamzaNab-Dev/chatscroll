@@ -344,7 +344,7 @@ export function ChatPanel({
           {title ?? conversationTitle}
         </h2>
         <span className="text-xs text-gray-400 dark:text-slate-600 flex-shrink-0">
-          {messages.length - 1} messages
+          {messages.filter((m) => m.id !== "welcome").length} messages
         </span>
       </div>
 
