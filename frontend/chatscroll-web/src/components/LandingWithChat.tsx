@@ -54,7 +54,7 @@ export function LandingWithChat() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100 overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-slate-100">
       <Navigation />
 
       {/* Hero */}
