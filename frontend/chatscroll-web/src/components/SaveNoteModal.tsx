@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, Plus, X, Loader2 } from "lucide-react";
 import type { Folder, FolderSuggestion } from "@/lib/api";
 import { api } from "@/lib/api";
@@ -82,10 +82,17 @@ export function SaveNoteModal({
   const [newFolderIcon, setNewFolderIcon] = useState("📁");
   const [newFolderParentId, setNewFolderParentId] = useState<string>("");
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLocalFolders(folders);
   }, [folders]);
+
+  useEffect(() => {
+    if (showPicker) {
+      dropdownRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [showPicker]);
 
   const suggestedPath = folderSuggestion.suggestedPath ?? "";
 
@@ -289,7 +296,7 @@ export function SaveNoteModal({
 
       {/* Folder picker */}
       {showPicker && (
-        <div className={cn("absolute bottom-full left-0 right-0 z-50 mb-1 rounded-xl border border-amber-200/60 dark:border-amber-700/20 bg-white dark:bg-slate-900 shadow-lg px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto", showNewFolder ? "max-h-96" : "max-h-[200px]")}>
+        <div ref={dropdownRef} className={cn("absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-amber-200/60 dark:border-amber-700/20 bg-white dark:bg-slate-900 shadow-lg px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto", showNewFolder ? "max-h-96" : "max-h-[250px]")}>
           {/* New folder — always at the top */}
           {!showNewFolder ? (
             <button

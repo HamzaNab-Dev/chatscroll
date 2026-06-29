@@ -198,33 +198,37 @@ export function LandingWithChat() {
       </section>
 
       {/* Stats bar */}
-      <div className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-4">
-        <div className="max-w-3xl mx-auto px-6 grid grid-cols-2 sm:flex sm:items-center sm:justify-center gap-y-3 gap-x-4 sm:gap-8">
-          {totalScrolls !== null && (
-            <div className="flex items-center gap-1.5 justify-center">
-              {totalScrolls === undefined ? (
-                <div className="h-4 w-14 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
-              ) : (
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                  📜 {totalScrolls.toLocaleString()}
-                </span>
-              )}
-              <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved by our community</span>
-            </div>
-          )}
-          <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
-          <div className="flex items-center gap-1.5 justify-center">
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">5-Step</span>
-            <span className="text-xs text-gray-500 dark:text-slate-400">AI reasoning</span>
+      <div className="border-y border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-3">
+        <div className="max-w-4xl mx-auto px-6 flex flex-wrap items-center justify-center gap-x-0 gap-y-2">
+          {/* Item 1: dynamic scroll count */}
+          <div className="flex items-center gap-1.5 px-5">
+            <span className="text-sm">📜</span>
+            {totalScrolls === undefined ? (
+              <div className="h-3.5 w-10 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
+            ) : totalScrolls !== null ? (
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{totalScrolls.toLocaleString()}</span>
+            ) : null}
+            <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved globally</span>
           </div>
-          <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
-          <div className="flex items-center gap-1.5 justify-center">
-            <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">🤖 Gemini</span>
-            <span className="text-xs text-gray-500 dark:text-slate-400">Powered by Google</span>
+          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          {/* Item 2 */}
+          <div className="flex items-center gap-1.5 px-5">
+            <span className="text-sm">⚡</span>
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Gemini 2.5 Flash</span>
           </div>
-          <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
-          <div className="flex items-center gap-1.5 justify-center">
-            <span className="text-xs text-gray-500 dark:text-slate-400">🏆 AWS H0 Hackathon</span>
+          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          {/* Item 3 */}
+          <div className="flex items-center gap-1.5 px-5">
+            <span className="text-sm">🔍</span>
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">pgvector</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400">Semantic Search</span>
+          </div>
+          <div className="w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+          {/* Item 4 */}
+          <div className="flex items-center gap-1.5 px-5">
+            <span className="text-sm">🏆</span>
+            <span className="text-xs font-bold text-amber-600 dark:text-amber-400">AWS H0 Hackathon</span>
+            <span className="text-xs text-gray-500 dark:text-slate-400">2026</span>
           </div>
         </div>
       </div>
