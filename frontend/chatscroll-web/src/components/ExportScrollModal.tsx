@@ -66,7 +66,7 @@ const PDF_STYLES = `
   .cover-title{font-size:28px;font-weight:700;color:#111827;line-height:1.2;margin-bottom:12px}
   .cover-meta{display:flex;gap:16px;font-size:12px;color:#6b7280}
   /* Table of contents */
-  .toc-section{margin-bottom:0}
+  .toc-section{margin-bottom:56px}
   .toc-heading{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#9ca3af;margin-bottom:14px}
   .toc-item{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px dotted #e5e7eb}
   .toc-num{font-size:11px;color:#9ca3af;min-width:22px;flex-shrink:0}
