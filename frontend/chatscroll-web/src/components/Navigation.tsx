@@ -58,9 +58,9 @@ export function Navigation() {
                 }
               }}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5",
+                "px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 font-medium",
                 pathname === link.href
-                  ? "bg-amber-100 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 font-medium"
+                  ? "bg-amber-100 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300"
                   : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
               )}
             >
