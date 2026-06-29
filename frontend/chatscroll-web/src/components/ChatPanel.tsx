@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Send, ScrollText, Sparkles, Check, Square } from "lucide-react";
+import { Send, ScrollText, Sparkles, Check } from "lucide-react";
 import { Markdown } from "@/components/ui/markdown";
 import { SaveNoteModal } from "@/components/SaveNoteModal";
 import { formatDate, generateId } from "@/lib/utils";
@@ -51,8 +51,6 @@ export function ChatPanel({
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyLoadError, setHistoryLoadError] = useState(false);
   const [savedNotesMap, setSavedNotesMap] = useState<Map<string, Pick<Note, "id" | "folderId">>>(new Map());
@@ -212,8 +210,6 @@ export function ChatPanel({
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
-    setIsGenerating(true);
-    abortControllerRef.current = new AbortController();
 
     // Notify parent on first user message (for conversation title + sidebar)
     if (isFirst) {
@@ -227,7 +223,7 @@ export function ChatPanel({
         .map((m) => `${m.role}: ${m.content}`)
         .join("\n");
 
-      const response = await api.sendMessage(content, history, conversationId, !isAuthenticated, abortControllerRef.current.signal);
+      const response = await api.sendMessage(content, history, conversationId, !isAuthenticated);
 
       const assistantMessage: Message = {
         id: generateId(),
@@ -261,29 +257,20 @@ export function ChatPanel({
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        setMessages((prev) => {
-          const last = prev[prev.length - 1];
-          if (last?.role === "assistant") return prev; // partial response already showing — keep it
-          return [...prev, { id: generateId(), role: "assistant", content: "", interrupted: true, timestamp: new Date() }];
-        });
-      } else {
-        const isNetworkError = err instanceof TypeError;
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: generateId(),
-            role: "assistant",
-            content: isNetworkError
-              ? "Connection lost. Please check your internet and try again."
-              : "Something went wrong. Please try again.",
-            timestamp: new Date(),
-          },
-        ]);
-      }
+      const isNetworkError = err instanceof TypeError;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: generateId(),
+          role: "assistant",
+          content: isNetworkError
+            ? "Connection lost. Please check your internet and try again."
+            : "Something went wrong. Please try again.",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setLoading(false);
-      setIsGenerating(false);
       inputRef.current?.focus();
     }
   };
@@ -305,13 +292,6 @@ export function ChatPanel({
       e.preventDefault();
       sendMessage();
     }
-  };
-
-  const handleStop = () => {
-    abortControllerRef.current?.abort();
-    setIsGenerating(false);
-    setLoading(false);
-    inputRef.current?.focus();
   };
 
   const handleSaveNote = async (
@@ -400,14 +380,6 @@ export function ChatPanel({
           </div>
         )}
         {!loadingHistory && messages.map((message, idx) => {
-          if (message.interrupted) {
-            return (
-              <div key={message.id}>
-                <p className="text-xs text-gray-400 italic px-2">Generation interrupted.</p>
-              </div>
-            );
-          }
-
           const isAnimating = message.id === animatingId;
 
           // Find the user question that preceded this assistant message
@@ -627,25 +599,14 @@ export function ChatPanel({
               t.style.height = `${Math.min(t.scrollHeight, 128)}px`;
             }}
           />
-          {isGenerating ? (
-            <Button
-              onClick={handleStop}
-              size="sm"
-              title="Stop generating"
-              className="bg-rose-500 hover:bg-rose-600 text-white h-11 w-11 p-0 flex-shrink-0 rounded-xl transition-all"
-            >
-              <Square className="w-4 h-4 fill-current" />
-            </Button>
-          ) : (
-            <Button
-              onClick={() => sendMessage()}
-              disabled={!input.trim()}
-              size="sm"
-              className="bg-amber-600 hover:bg-amber-500 text-white h-11 w-11 p-0 flex-shrink-0 rounded-xl disabled:opacity-40 transition-all"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          )}
+          <Button
+            onClick={() => sendMessage()}
+            disabled={loading || !input.trim()}
+            size="sm"
+            className="bg-amber-600 hover:bg-amber-500 text-white h-11 w-11 p-0 flex-shrink-0 rounded-xl disabled:opacity-40 transition-all"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
         <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1 text-center">
           ChatScroll AI can make mistakes. Please double-check responses.

@@ -73,7 +73,6 @@ export type Message = {
   similarNoteTitle?: string;
   similarNoteDate?: string;
   saved?: boolean;
-  interrupted?: boolean;
   timestamp: Date;
 };
 
@@ -210,11 +209,10 @@ export const api = {
     request<Array<{ id: string; title: string; folderPath?: string; folderIcon?: string; preview: string }>>(`/api/notes/${id}/related`),
 
   // ── Chat ─────────────────────────────────────────────────────────────────────
-  sendMessage: (message: string, conversationHistory: string, conversationId?: string, isGuest = false, signal?: AbortSignal) =>
+  sendMessage: (message: string, conversationHistory: string, conversationId?: string, isGuest = false) =>
     request<ChatResponse>("/api/chat/message", {
       method: "POST",
       body: JSON.stringify({ message, conversationHistory, conversationId, isGuest }),
-      signal,
     }),
   previewChat: (q: string) =>
     request<ChatResponse>(`/api/chat/preview?q=${encodeURIComponent(q)}`),

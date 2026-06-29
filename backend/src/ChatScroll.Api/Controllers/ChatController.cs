@@ -112,28 +112,22 @@ public class ChatController : ApiControllerBase
     }
 
     [HttpPost("message")]
-    public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
     {
         var conversationId = request.ConversationId ?? Guid.NewGuid();
         var isGuest = request.IsGuest;
         var userId = GetUserId();
 
-        // Call Gemini first — if the client aborts before this returns, nothing is saved.
-        string answer;
-        try
-        {
-            answer = await _aiService.ChatAsync(request.Message, request.ConversationHistory ?? "", cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            // Client disconnected before Gemini responded — do not save anything to DynamoDB.
-            return StatusCode(499);
-        }
-
-        // Only persist turns for authenticated users — both messages saved atomically after Gemini succeeds.
+        // Only persist turns for authenticated users — guests must never write to another user's account.
         if (!isGuest)
         {
             await _dynamoDb.SaveMessageAsync(conversationId, "user", request.Message, userId);
+        }
+
+        var answer = await _aiService.ChatAsync(request.Message, request.ConversationHistory ?? "");
+
+        if (!isGuest)
+        {
             await _dynamoDb.SaveMessageAsync(conversationId, "assistant", answer, userId);
 
             // Update conversation in Aurora: create if missing, bump updatedAt, auto-set title
