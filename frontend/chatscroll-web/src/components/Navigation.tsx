@@ -68,7 +68,7 @@ export function Navigation() {
               {link.label === "Library" && scrollCount !== null && scrollCount > 0 && (
                 <span
                   className={cn(
-                    "text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none",
+                    "text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none min-w-[20px] text-center",
                     pathname === link.href
                       ? "bg-amber-200 dark:bg-amber-700/50 text-amber-800 dark:text-amber-200"
                       : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
