@@ -67,15 +67,10 @@ export function Navigation() {
               {link.label}
               {link.label === "Library" && (
                 <span
-                  className={cn(
-                    "text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none min-w-[20px] text-center",
-                    pathname === link.href
-                      ? "bg-amber-200 dark:bg-amber-700/50 text-amber-800 dark:text-amber-200"
-                      : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                  )}
-                  style={{ visibility: scrollCount && scrollCount > 0 ? "visible" : "hidden" }}
+                  className="inline-flex items-center justify-center rounded-full text-xs px-1.5 min-w-[20px] h-5 whitespace-nowrap font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                  style={{ opacity: scrollCount && scrollCount > 0 ? 1 : 0, pointerEvents: "none" }}
                 >
-                  {scrollCount || 0}
+                  {(scrollCount ?? 0) > 99 ? "99+" : (scrollCount ?? 0)}
                 </span>
               )}
             </Link>
