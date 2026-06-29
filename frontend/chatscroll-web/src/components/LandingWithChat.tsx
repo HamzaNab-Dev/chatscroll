@@ -209,7 +209,7 @@ export function LandingWithChat() {
                   📜 {totalScrolls.toLocaleString()}
                 </span>
               )}
-              <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved</span>
+              <span className="text-xs text-gray-500 dark:text-slate-400">Scrolls saved by our community</span>
             </div>
           )}
           <div className="hidden sm:block w-px h-4 bg-gray-200 dark:bg-slate-700 flex-shrink-0" />

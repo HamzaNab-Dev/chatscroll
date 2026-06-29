@@ -230,7 +230,7 @@ export function SaveNoteModal({
   };
 
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/10">
+    <div className="relative rounded-xl border border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/10">
       {/* Compact single row — all children are flex-shrink-0 except the picker button */}
       <div className="flex items-center gap-2 px-3 py-1.5 w-full">
         <span className="text-sm flex-shrink-0">{activeFolder?.icon ?? "📁"}</span>
@@ -289,7 +289,7 @@ export function SaveNoteModal({
 
       {/* Folder picker */}
       {showPicker && (
-        <div className={cn("border-t border-amber-200/60 dark:border-amber-700/20 px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto", showNewFolder ? "max-h-96" : "max-h-48")}>
+        <div className={cn("absolute bottom-full left-0 right-0 z-50 mb-1 rounded-xl border border-amber-200/60 dark:border-amber-700/20 bg-white dark:bg-slate-900 shadow-lg px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto", showNewFolder ? "max-h-96" : "max-h-[200px]")}>
           {/* New folder — always at the top */}
           {!showNewFolder ? (
             <button
