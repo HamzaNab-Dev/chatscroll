@@ -3,6 +3,10 @@
 /* Class-based dark mode — toggled by adding/removing .dark on <html> */
 @variant dark (&:where(.dark, .dark *));
 
+html {
+  overflow-y: scroll;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
