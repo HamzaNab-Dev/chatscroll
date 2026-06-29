@@ -39,6 +39,8 @@ interface SaveNoteModalProps {
   folders: Folder[];
   foldersLoading?: boolean;
   onSave: (folderId: string, title: string) => Promise<void>;
+  closePickerSignal?: number;
+  onPickerOpen?: () => void;
 }
 
 function formatPath(path: string): string {
@@ -67,6 +69,8 @@ export function SaveNoteModal({
   folders,
   foldersLoading = false,
   onSave,
+  closePickerSignal,
+  onPickerOpen,
 }: SaveNoteModalProps) {
   const [localFolders, setLocalFolders] = useState<Folder[]>(folders);
   const [selectedFolderId, setSelectedFolderId] = useState<string>("");
@@ -91,8 +95,13 @@ export function SaveNoteModal({
   useEffect(() => {
     if (showPicker) {
       dropdownRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      onPickerOpen?.();
     }
   }, [showPicker]);
+
+  useEffect(() => {
+    if (closePickerSignal) setShowPicker(false);
+  }, [closePickerSignal]);
 
   const suggestedPath = folderSuggestion.suggestedPath ?? "";
 

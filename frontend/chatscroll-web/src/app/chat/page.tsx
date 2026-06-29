@@ -33,6 +33,7 @@ function ChatContent() {
   // Mobile panel visibility
   const [showConversations, setShowConversations] = useState(false);
   const [showScrolls, setShowScrolls] = useState(false);
+  const [closeSavePickerSignal, setCloseSavePickerSignal] = useState(0);
 
   // Prevents double-init when authState.status changes from "loading" → settled
   const hasInitRef = useRef(false);
@@ -231,7 +232,7 @@ function ChatContent() {
       {/* Mobile top bar: conversation toggle + scrolls toggle */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-gray-200 dark:border-slate-800 md:hidden">
         <button
-          onClick={() => { setShowConversations((v) => !v); setShowScrolls(false); }}
+          onClick={() => { setShowConversations((v) => !v); setShowScrolls(false); setCloseSavePickerSignal((s) => s + 1); }}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
             showConversations
               ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-600/40"
@@ -243,7 +244,7 @@ function ChatContent() {
           History
         </button>
         <button
-          onClick={() => { setShowScrolls((v) => !v); setShowConversations(false); }}
+          onClick={() => { setShowScrolls((v) => !v); setShowConversations(false); setCloseSavePickerSignal((s) => s + 1); }}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
             showScrolls
               ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-600/40"
@@ -295,6 +296,8 @@ function ChatContent() {
             conversationId={conversationId}
             onFirstMessage={handleFirstMessage}
             title={conversations.find((c) => c.id === conversationId)?.title}
+            closePickerSignal={closeSavePickerSignal}
+            onPickerOpen={() => { setShowConversations(false); setShowScrolls(false); }}
           />
         </main>
 

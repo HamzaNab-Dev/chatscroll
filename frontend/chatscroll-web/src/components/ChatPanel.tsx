@@ -37,6 +37,8 @@ interface ChatPanelProps {
   conversationId?: string;
   onFirstMessage?: (msg: string, conversationId: string) => void;
   title?: string;
+  closePickerSignal?: number;
+  onPickerOpen?: () => void;
 }
 
 export function ChatPanel({
@@ -47,6 +49,8 @@ export function ChatPanel({
   conversationId,
   onFirstMessage,
   title,
+  closePickerSignal,
+  onPickerOpen,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState("");
@@ -495,6 +499,8 @@ export function ChatPanel({
                         onSave={(folderId, title) =>
                           handleSaveNote(message.id, folderId, title, message)
                         }
+                        closePickerSignal={closePickerSignal}
+                        onPickerOpen={onPickerOpen}
                       />
                     ) : (
                       <div className="rounded-xl border border-amber-500/25 bg-transparent px-4 py-2.5 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
