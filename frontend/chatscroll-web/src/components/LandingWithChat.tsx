@@ -338,7 +338,6 @@ export function LandingWithChat() {
                   <span className="text-sm">📜</span>
                   <span className="text-xs font-medium text-amber-700 dark:text-amber-400 flex-1">Databases → Distributed Systems</span>
                   <span className="text-[11px] px-2.5 py-0.5 bg-amber-600 text-white rounded-full font-medium">Save</span>
-                  <span className="text-[11px] text-gray-400 dark:text-slate-500">Skip</span>
                 </div>
               </div>
 
