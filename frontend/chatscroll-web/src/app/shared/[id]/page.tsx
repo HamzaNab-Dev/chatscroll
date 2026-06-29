@@ -174,19 +174,21 @@ export default function SharedScrollPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-600/40 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied!" : "Copy link"}
+              <span className="hidden sm:inline">{copied ? "Copied!" : "Copy link"}</span>
             </button>
             {isAuthenticated ? (
               <SaveButton size="sm" />
             ) : (
               <Link
                 href="/login?mode=signup"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors whitespace-nowrap"
               >
-                Save your own Scrolls <ArrowRight className="w-3 h-3" />
+                <span className="sm:hidden">Save Scrolls</span>
+                <span className="hidden sm:inline">Save your own Scrolls</span>
+                <ArrowRight className="w-3 h-3" />
               </Link>
             )}
           </div>
