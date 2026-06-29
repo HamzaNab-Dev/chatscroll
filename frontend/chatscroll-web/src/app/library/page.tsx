@@ -143,14 +143,14 @@ function NoteGridItem({ note, folder, folderMap, onExport, onDelete, query, isAi
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onExport(note); }}
         title="Export"
-        className="absolute top-2 right-10 z-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm"
+        className="absolute top-2 right-10 z-10 p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm"
       >
         <Download className="w-3.5 h-3.5" />
       </button>
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(note); }}
         title="Delete"
-        className="absolute top-2 right-2 z-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-600 transition-all shadow-sm"
+        className="absolute top-2 right-2 z-10 p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-600 transition-all shadow-sm"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -210,14 +210,14 @@ function NoteListItem({ note, folder, folderMap, onExport, onDelete, query, isAi
       <button
         onClick={() => onExport(note)}
         title="Export"
-        className="absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm flex-shrink-0"
+        className="absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-300 dark:hover:border-amber-600 transition-all shadow-sm flex-shrink-0"
       >
         <Download className="w-3.5 h-3.5" />
       </button>
       <button
         onClick={() => onDelete(note)}
         title="Delete"
-        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-600 transition-all shadow-sm flex-shrink-0"
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300 dark:hover:border-red-600 transition-all shadow-sm flex-shrink-0"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
