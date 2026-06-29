@@ -79,6 +79,17 @@ export function Navigation() {
               )}
             </Link>
           ))}
+          <Link
+            href="/aws-showcase"
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-sm transition-colors",
+              pathname === "/aws-showcase"
+                ? "bg-amber-100 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 font-medium"
+                : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
+            )}
+          >
+            🏗️ Architecture
+          </Link>
         </nav>
       ) : (
         <nav className="hidden md:flex items-center gap-6 text-sm text-gray-500 dark:text-slate-400">
