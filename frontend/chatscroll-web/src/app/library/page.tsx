@@ -1063,7 +1063,7 @@ function LibraryContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 flex flex-col">
       <Navigation />
 
       <div className="flex flex-1 overflow-hidden">
