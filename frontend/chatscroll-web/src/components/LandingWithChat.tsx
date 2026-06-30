@@ -58,7 +58,7 @@ export function LandingWithChat() {
       <Navigation />
 
       {/* Hero */}
-      <section className="relative max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
+      <section className="relative max-w-3xl mx-auto px-6 pt-20 pb-16 text-center overflow-hidden">
         {/* Ambient glow behind icon */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[420px] bg-amber-300/10 dark:bg-amber-500/5 blur-3xl rounded-full pointer-events-none -z-10" />
 
